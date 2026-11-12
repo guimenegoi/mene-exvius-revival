@@ -23,6 +23,16 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
 - [x] Implementar instalador de manifesto (19 pacotes, retomada, SHA-256,
       reserva de espaço e verificação local sem rede) em `android/data`.
 - [x] Testar layout de compartilhamento nativo/servidor sem duplicações em Linux.
+- [x] Preservar os **cinco splits APK de laboratório** assinados no HD externo
+      ZFS `storage-media` do LXC 117, com comparação SHA-256 após transferência;
+      copiar manifesto e fontes do instalador fora do Git.
+- [x] Concluir cache SHA-256 dos **19 ZIPs upstream** no HD externo:
+      **14.647.871.919 bytes (14,65 GB)**, conferidos contra o manifesto
+      fixado. Isso não substitui a instalação privada no aparelho.
+- [ ] Integrar no APK a **tela de primeira execução**, retomada, instalação
+      dos pacotes, anexação de `game-assets.apk` e readiness do servidor.
+      Reutilizar mecanismos upstream (`DataDownloadActivity`, `DataUpdates`,
+      `DataPack`, `GameAssets`) após conciliar os formatos de recibo.
 - [x] Executar código Python 3.14.10 ARM64 dentro do processo FFBE em laboratório:
       JNI, stdlib privada, `Py_InitializeFromConfig` e `PYTHON-EXECUTED-42`.
 - [x] Importar extensões oficiais nativas (67 módulos do CPython) no FFBE:
@@ -89,6 +99,29 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       depois do primeiro APK offline realmente jogável.
 
 ## Registro de execução
+
+### 2026-11-12 — cópia privada no armazenamento externo e instalação inicial
+
+- Armazenamento identificado no LXC `workspace` 117: ZFS `storage-media`
+  (disco externo EC-7352), em `/workspace/projects/ffbe-revival-distribution`.
+  Espaço disponível na preparação: cerca de 2,7 TB. Não usa a pasta
+  sincronizada `dev-exchange`, evitando sincronizar os recursos pesados.
+- Os cinco splits Android foram copiados por SSH/rsync, cada um comparado
+  por SHA-256 no destino, com nomes padronizados em `apk/`. O certificado
+  é de **teste**, e o aplicativo continua experimental.
+- `installer/` contém o manifesto atual de 19 pacotes, os programas
+  `offline_data.py` e `fetch_data.py` e o wrapper de cache no LXC.
+  `android/distribution/cache_packs.py` reutiliza o downloader do Revival
+  e valida tamanho + SHA-256 sem extração; **5 testes sem rede aprovados**.
+- Diagnóstico do primeiro uso em [ANDROID_FIRST_RUN.md](ANDROID_FIRST_RUN.md):
+  o upstream tem Activity de progresso e downloader prontos, mas produz
+  `installed.json` com lista, enquanto o backend atual exige `{id: sha}`
+  e recibo próprio do cliente. Adaptar esses contratos antes de ligar a UI.
+- **Cache dos 19 ZIPs concluído** no armazenamento externo, com cada arquivo
+  verificado por tamanho e SHA-256 da revisão do manifesto. Total:
+  **14.647.871.919 bytes**, além dos cinco splits APK e das fontes do instalador.
+  A **instalação automática no APK ainda está pendente**: o cache no LXC
+  não é acessível automaticamente pelo Android nem prova gameplay offline.
 
 ### 2026-11-12 — handler Revival loopback com bloqueio por inventário
 
