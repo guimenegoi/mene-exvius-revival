@@ -42,6 +42,18 @@ class DependencyWheelTests(unittest.TestCase):
                 zf.writestr("cryptography/hazmat/bindings/_rust.abi3.so", elf(183))
             self.assertTrue(check_wheel(archive, "cryptography", "arm64-v8a")["tags"])
 
+
+    def test_cffi_backend_arm64(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = Path(tmp) / "cffi-2.1.1-cp314-cp314-android_24_arm64_v8a.whl"
+            with zipfile.ZipFile(archive, "w") as zf:
+                zf.writestr("cffi-2.1.1.dist-info/WHEEL",
+                            "Wheel-Version: 1.0\nTag: cp314-cp314-android_24_arm64_v8a\n")
+                zf.writestr("_cffi_backend.cpython-314-aarch64-linux-android.so",
+                            elf(183))
+            result = check_wheel(archive, "cffi", "arm64-v8a")
+            self.assertEqual(len(result["native_modules"]), 1)
+
     def test_wrong_python_abi_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             archive = Path(tmp) / "pillow-13.0.0-cp313-cp313-android_24_arm64_v8a.whl"

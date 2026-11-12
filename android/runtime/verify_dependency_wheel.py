@@ -18,6 +18,7 @@ from build_python_probe import ARCHIVES
 EXPECTED = {
     "pillow": ("PIL/_imaging", "pillow"),
     "cryptography": ("cryptography/hazmat/bindings/_rust", "cryptography"),
+    "cffi": ("_cffi_backend", "cffi"),
 }
 ABI_PLATFORMS = {"arm64-v8a": "arm64_v8a", "x86_64": "x86_64"}
 

@@ -11,6 +11,7 @@ on:
         options:
           - pillow
           - cryptography
+          - cffi
       abi:
         description: Android 64-bit target ABI
         type: choice
@@ -87,6 +88,11 @@ jobs:
                   "7b46165bb56eb4704e2eaaf86f3c940d19154535d9b0ca7d6d590b04060e00d5",
                   "https://files.pythonhosted.org/packages/9d/af/182eb91b0df3fe75c4d9f26fe70684569566745f6ba7e5c9c73a862c5252/cryptography-50.0.2.tar.gz",
               ),
+              "cffi": (
+                  "2.1.1",
+                  "dd31f52ea1086513bb9df30f8fcee9b8918323ae067a3d5b78bc826a000712be",
+                  "https://files.pythonhosted.org/packages/9e/ef/008a1939e372c06329a3fce4279c02f328488f3526744906eeec3da7ad5f/cffi-2.1.1.tar.gz",
+              ),
           }
           package = os.environ["PACKAGE"]
           version, expected, url = pinned[package]
@@ -110,6 +116,7 @@ jobs:
           case "$PACKAGE" in
             pillow) VERSION=13.0.0 ;;
             cryptography) VERSION=50.0.2 ;;
+            cffi) VERSION=2.1.1 ;;
             *) exit 2 ;;
           esac
           if [ "$PACKAGE" = pillow ]; then
@@ -149,6 +156,34 @@ jobs:
             # but before assigning PYO3_CROSS_LIB_DIR (android.py 4.3.5).
             # Headers are next to the venv, under python/prefix/include/python3.14.
             export CIBW_ENVIRONMENT='C_INCLUDE_PATH=$VIRTUAL_ENV/../python/prefix/include/python3.14'
+          elif [ "$PACKAGE" = cffi ]; then
+            case "$TARGET_ABI" in
+              arm64_v8a) NDK_TRIPLE=aarch64-linux-android ;;
+              x86_64) NDK_TRIPLE=x86_64-linux-android ;;
+              *) exit 2 ;;
+            esac
+            NDK_BIN="$ANDROID_HOME/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin"
+            LIBFFI_SOURCE="source/libffi-3.5.2.tar.gz"
+            curl -fsSL --retry 2 \
+              "https://github.com/libffi/libffi/releases/download/v3.5.2/libffi-3.5.2.tar.gz" \
+              -o "$LIBFFI_SOURCE"
+            echo "f3a3082a23b37c293a4fcd1053147b371f2ff91fa7ea1b2a52e335676bac82dc  $LIBFFI_SOURCE" | sha256sum -c -
+            tar -xzf "$LIBFFI_SOURCE" -C source
+            (
+              cd source/libffi-3.5.2
+              env CC="$NDK_BIN/${NDK_TRIPLE}24-clang" AR="$NDK_BIN/llvm-ar" \
+                RANLIB="$NDK_BIN/llvm-ranlib" CFLAGS="-O2 -fPIC" \
+                ./configure --host="$NDK_TRIPLE" \
+                  --prefix="$GITHUB_WORKSPACE/ffbe-deps" \
+                  --libdir="$GITHUB_WORKSPACE/ffbe-deps/lib" \
+                  --disable-shared --enable-static
+              make -j2
+              make install
+            )
+            test -f "$GITHUB_WORKSPACE/ffbe-deps/lib/libffi.a"
+            test -f "$GITHUB_WORKSPACE/ffbe-deps/lib/pkgconfig/libffi.pc"
+            # cibuildwheel already provides VIRTUAL_ENV when it expands this.
+            export CIBW_ENVIRONMENT="PKG_CONFIG_PATH=$GITHUB_WORKSPACE/ffbe-deps/lib/pkgconfig "'C_INCLUDE_PATH=$VIRTUAL_ENV/../python/prefix/include/python3.14'
           fi
           python -m cibuildwheel --platform android --output-dir wheelhouse "source/$PACKAGE-$VERSION"
       - name: Validate Android wheel tags and ELF architecture
