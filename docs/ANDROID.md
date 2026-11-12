@@ -28,13 +28,14 @@ O fork deve evitar divergências desnecessárias do upstream: ajustes específic
 | Tabelas de recompensas da wiki | **Compatibilidade pendente** | `EXVIUS_WIKI_REWARDS=0` no ambiente de referência |
 | Python dentro do Android | **Validado** | Python 3.14.10 no Termux x86_64 (Waydroid) |
 | Servidor HTTP Python dentro do Android | **Validado** | `python -m http.server 18443`, acessado por outro dispositivo com HTTP 200 |
-| Imports do backend Revival no Android | **Validados** | Código compactado (7,5 MB), conferido por SHA-256, compilado no Python 3.14 e imports de `serve`, `certs`, `capture_server`, `cryptography`, `PyYAML`, `Pillow` e `tzdata` sem erros |
+| Imports do backend Revival no Android | **Validados no Termux** | Código compactado (7,5 MB), conferido por SHA-256, compilado no Python 3.14 e imports de `serve`, `certs`, `capture_server`, `cryptography`, `PyYAML`, `Pillow` e `tzdata` sem erros |
+| CPython 3.14.10 ARM64 dentro do processo do FFBE | **Validado em laboratório** | JNI carregou `libpython3.14.so`, biblioteca padrão em asset privado e `Py_InitializeFromConfig` executou código Python (`PYTHON-EXECUTED-42`); ainda sem dependências do motor Revival ou ciclo de vida de produção |
 | Runner Termux `android/ffbe-termux` | **Prévia validada** | Diagnóstico e bloqueio de execução sem dados testados no Waydroid; [comandos e limites](../android/README.md) |
 | Motor Revival no Termux (teste) | **Validado com dados parciais** | `ios-server/serve.py` iniciou, HTTPS 200 com CA própria, GET MST 200 e serviço ativo ao abrir o FFBE |
 | Transporte Java para localhost (teste) | **API e CRI validados** | APK 9.1.0 com somente dois DEX substituídos; chamada de API e downloads chegam a HTTP local na porta 18080; [detalhes](../android/network/README.md) |
 | Recursos completos no Android | **Pendente** | A cópia reduzida causou 404 em localized_texts (depois corrigido) e en/sd/area/Ver461_spdungeon1.cpk |
 | Instalador de recursos offline (Android) | **Validado em laboratório** | 19 pacotes preparados pelo mesmo downloader, incluindo client-assets real; verificação sem rede, pré-requisito de armazenamento e testes em [android/data](../android/data/README.md) |
-| Aplicativo independente (sem apps auxiliares) | **Pendente** | Python nativo incorporado, recursos compartilhados e jogabilidade offline ainda não implementados |
+| Aplicativo independente (sem apps auxiliares) | **Pendente** | CPython JNI só foi testado com código isolado; faltam dependências, engine, dados reais e jogabilidade offline |
 | Jogo completamente offline | **Pendente** | Testar funcionamento sem Termux, Proxmox ou internet, com saves locais |
 
 **Cuidado:** a prova de transporte usou Termux somente como laboratório. O
@@ -120,6 +121,7 @@ O `update` aceita alterações de código por fast-forward, cria backup consiste
 - [ ] Instalar os 19 pacotes no Android e compartilhar com o cliente sem duplicações.
 - [ ] Medir uso de RAM, CPU, armazenamento, estabilidade e operação com tela apagada; testar também Android ARM64 físico.
 - [x] Provar mapeamento HTTP local dos principais métodos de rede Java, sem root, VPN, DNS ou patch na biblioteca nativa.
+- [x] Compilar ponte JNI ARM64 e executar código CPython isolado dentro do processo FFBE (laboratório, sem servidor).
 - [ ] Incorporar o servidor e seu ciclo de vida ao mesmo aplicativo Android; validar os outros dois mecanismos de download.
 - [ ] Passar uma batalha e persistir o save **sem nenhuma requisição ao Proxmox nem à internet**.
 - [ ] Verificar exploração/encontros aleatórios, summons, inventário e demais telas essenciais.

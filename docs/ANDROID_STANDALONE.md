@@ -12,7 +12,7 @@ A fase de desenvolvimento pode usar Termux/Waydroid como bancada de testes.
 O runner `android/ffbe-termux` continua disponível apenas para testes e não integra
 a experiência ou a lista de requisitos da versão final.
 
-**Status em 12/11/2026: transporte Java e instalador completo de dados em laboratório; APK único ainda NÃO construído.**
+**Status em 12/11/2026: transporte Java, instalador de dados e execução de CPython 3.14.10 ARM64 no processo do FFBE comprovados em laboratório; APK offline independente ainda NÃO construído.**
 O pacote `mene-exvius-revival-termux-5a1afdc9.tar.gz` é um artefato de desenvolvimento,
 não é o instalador offline prometido.
 

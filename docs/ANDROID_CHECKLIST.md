@@ -23,6 +23,9 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
 - [x] Implementar instalador de manifesto (19 pacotes, retomada, SHA-256,
       reserva de espaço e verificação local sem rede) em `android/data`.
 - [x] Testar layout de compartilhamento nativo/servidor sem duplicações em Linux.
+- [x] Executar código Python 3.14.10 ARM64 dentro do processo FFBE em laboratório:
+      JNI, stdlib privada, `Py_InitializeFromConfig` e `PYTHON-EXECUTED-42`.
+      **Não** corresponde a servidor Revival executando ou runtime completo.
 - [ ] Instalar/verificar os 19 pacotes **reais** no Android; confirmar os arquivos
       de tutorial, mapa, áudio e combate no armazenamento privado do cliente.
 - [ ] Verificar escrita, atualização e preservação de saves no layout real ARM64.
@@ -58,6 +61,29 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       depois do primeiro APK offline realmente jogável.
 
 ## Registro de execução
+
+### 2026-11-12 — CPython ARM64 executado no processo FFBE
+
+- Distribuições oficiais Python 3.14.10 aarch64 e x86_64 baixadas com SHA-256
+  coincidente com python.org; NDK r27d instalado somente na bancada.
+- Ponte JNI compilada para ARM64, `libpython3.14.so` e ponte adicionadas ao
+  split `config.arm64_v8a.apk` de teste, sem modificar `libgame.so`.
+- Na base, somente `classes.dex`, `classes3.dex` e o novo asset
+  `assets/ffbe_python/stdlib.zip` foram adicionados/alterados.
+- O `Py_GetVersion` retornou `3.14.10` no PID do FFBE.
+- Primeira inicialização falhou por `encodings`: ZIP DEFLATED precisava da
+  extensão `zlib` indisponível no bootstrap. Com ZIP_STORED, a segunda
+  tentativa passou, sem crash do jogo.
+- Waydroid Android 13: logcat comprovou `CPython 3.14.10 initialized;
+  code executed` e `PYTHON-EXECUTED-42` após executar `assert 6*7==42`.
+- Reinicialização do app repetiu o resultado sem baixar a stdlib; após
+  `am force-stop` e estabilização do processo, listener 18081 foi fechado.
+- Ponte JNI x86_64 compilada e arquitetura ELF validada em bancada;
+  ainda **não** houve teste desse binário em cliente Android x86_64.
+- Persistem pendentes bibliotecas dinâmicas/dependências, servidor Revival,
+  lifecycle de produção, dados completos, Android ARM64 físico e gameplay offline.
+- Código-fonte e reprodução em [android/runtime](../android/runtime/README.md);
+  binários, APKs, NDK e recursos proprietários permanecem fora do Git.
 
 ### 2026-11-12 — bootstrap interno de laboratório
 
