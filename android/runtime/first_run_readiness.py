@@ -9,6 +9,9 @@ import re
 
 READINESS_PATH = "smali_classes6/com/mene/exvius/RevivalReadiness.smali"
 ACTIVITY_PATH = "smali_classes6/com/exvius/local/DataDownloadActivity.smali"
+UPDATES_PATH = "smali_classes6/com/exvius/local/DataUpdates.smali"
+STALE_READY_FILE = "mst/Ver9001_YW9MUm2H.dat"
+PINNED_READY_FILE = "mst"
 GATE_METHOD = "Lcom/mene/exvius/RevivalReadiness;->start(Lcom/exvius/local/DataDownloadActivity;Landroid/content/Intent;)V"
 START_ACTIVITY = "    invoke-virtual {p0, v0}, Lcom/exvius/local/DataDownloadActivity;->startActivity(Landroid/content/Intent;)V"
 FINISH_ACTIVITY = "    invoke-virtual {p0}, Lcom/exvius/local/DataDownloadActivity;->finish()V"
@@ -227,14 +230,44 @@ def patch_activity(source: str) -> str:
     return source.rstrip() + "\n" + FAILURE_METHOD
 
 
+def patch_ready_asset(source: str) -> str:
+    """Check native MST directory instead of an impossible versioned filename.
+
+    DataUpdates validates installed receipts, the client APK and decoded MST;
+    embedded Python does the exhaustive 19-pack integrity check before Lapis.
+    """
+    signature = ".method public static ready(Landroid/content/Context;)Z"
+    blocks = list(re.finditer(
+        r"(?ms)^" + re.escape(signature) + r"\n.*?^\.end method$", source,
+    ))
+    if len(blocks) != 1:
+        raise ValueError("Expected one pinned DataUpdates.ready method")
+    block = blocks[0].group()
+    old = f'const-string v2, "{STALE_READY_FILE}"'
+    if block.count(old) != 1 or f'const-string v2, "{PINNED_READY_FILE}"' in block:
+        raise ValueError("Unsupported or already updated readiness sentinel")
+    check = "invoke-virtual {v0}, Ljava/io/File;->isFile()Z"
+    if block.count(check) != 3 or block.rfind(check) < block.index(old):
+        raise ValueError("DataUpdates.ready missing native directory check")
+    last_check = block.rfind(check)
+    patched = block[:last_check] + block[last_check:].replace(
+        check, "invoke-virtual {v0}, Ljava/io/File;->isDirectory()Z", 1
+    )
+    patched = patched.replace(old, f'const-string v2, "{PINNED_READY_FILE}"', 1)
+    return source[:blocks[0].start()] + patched + source[blocks[0].end():]
+
+
 def patch_smali(decoded) -> None:
     """Only mutate the scratch upstream decode after all guards have passed."""
     activity = decoded / ACTIVITY_PATH
+    updates = decoded / UPDATES_PATH
     gate = decoded / READINESS_PATH
-    if gate.exists() or not activity.is_file():
+    if gate.exists() or not activity.is_file() or not updates.is_file():
         raise ValueError("Unexpected upstream gate state")
-    original = activity.read_text(encoding="utf-8")
-    modified = patch_activity(original)
+    modified = patch_activity(activity.read_text(encoding="utf-8"))
+    revised_updates = patch_ready_asset(updates.read_text(encoding="utf-8"))
+    # All guards passed before any writes; preserve original source outside scratch.
     gate.parent.mkdir(parents=True, exist_ok=True)
     activity.write_text(modified, encoding="utf-8")
+    updates.write_text(revised_updates, encoding="utf-8")
     gate.write_text(READINESS_CLASS, encoding="utf-8")

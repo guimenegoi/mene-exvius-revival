@@ -11,8 +11,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from first_run_readiness import (
-    ACTIVITY_PATH, READINESS_PATH, READINESS_CLASS, GATE_METHOD,
-    patch_activity, patch_smali,
+    ACTIVITY_PATH, READINESS_PATH, READINESS_CLASS, UPDATES_PATH,
+    STALE_READY_FILE, PINNED_READY_FILE, GATE_METHOD,
+    patch_activity, patch_ready_asset, patch_smali,
 )
 
 SOURCE = """.class public final Lcom/exvius/local/DataDownloadActivity;
@@ -42,6 +43,22 @@ SOURCE = """.class public final Lcom/exvius/local/DataDownloadActivity;
 .method private showDownloadPage()V
     .locals 1
     return-void
+.end method
+"""
+
+
+UPDATES = """.class public Lcom/exvius/local/DataUpdates;
+.super Ljava/lang/Object;
+.method public static ready(Landroid/content/Context;)Z
+    .locals 3
+    invoke-virtual {v0}, Ljava/io/File;->isFile()Z
+    move-result v0
+    invoke-virtual {v0}, Ljava/io/File;->isFile()Z
+    move-result v0
+    const-string v2, "mst/Ver9001_YW9MUm2H.dat"
+    invoke-virtual {v0}, Ljava/io/File;->isFile()Z
+    move-result v0
+    return v0
 .end method
 """
 
@@ -78,14 +95,34 @@ class FirstRunReadinessTests(unittest.TestCase):
             activity = root / ACTIVITY_PATH
             activity.parent.mkdir(parents=True)
             activity.write_text(SOURCE)
+            updates = root / UPDATES_PATH
+            updates.write_text(UPDATES)
             other = root / "untouched.txt"
             other.write_text("keep")
             patch_smali(root)
             self.assertEqual((root / READINESS_PATH).read_text(), READINESS_CLASS)
             self.assertIn(GATE_METHOD, activity.read_text())
+            self.assertIn(f'const-string v2, "{PINNED_READY_FILE}"', updates.read_text())
+            self.assertEqual(updates.read_text().count("->isDirectory()Z"), 1)
+            self.assertNotIn(STALE_READY_FILE, updates.read_text())
             self.assertEqual(other.read_text(), "keep")
             with self.assertRaisesRegex(ValueError, "gate state"):
                 patch_smali(root)
+
+    def test_pinned_ready_sentry_is_exact_and_fails_closed(self):
+        patched = patch_ready_asset(UPDATES)
+        self.assertEqual(patched.count(f'const-string v2, "{PINNED_READY_FILE}"'), 1)
+        self.assertEqual(patched.count("->isDirectory()Z"), 1)
+        self.assertEqual(patched.count("->isFile()Z"), 2)
+        self.assertNotIn(STALE_READY_FILE, patched)
+        with self.assertRaisesRegex(ValueError, "already updated"):
+            patch_ready_asset(patched)
+        with self.assertRaisesRegex(ValueError, "Unsupported"):
+            patch_ready_asset(UPDATES.replace(STALE_READY_FILE, "mst/not-shipped.dat"))
+        with self.assertRaisesRegex(ValueError, "native directory check"):
+            patch_ready_asset(UPDATES.replace("->isFile()Z", "->exists()Z"))
+        with self.assertRaisesRegex(ValueError, "Expected one"):
+            patch_ready_asset("no upstream ready method")
 
     def test_hello_handler_exposes_the_expected_readiness_reply(self):
         """Contract check using serve.py's real handler, not the game engine."""
