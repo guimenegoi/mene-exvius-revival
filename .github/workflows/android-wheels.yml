@@ -1,0 +1,125 @@
+name: FFBE Android CPython 3.14 dependency wheels
+
+# Intentionally manual: never build/publish proprietary game resources or keys.
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Source package to cross-build
+        type: choice
+        required: true
+        options:
+          - pillow
+          - cryptography
+      abi:
+        description: Android 64-bit target ABI
+        type: choice
+        required: true
+        options:
+          - arm64_v8a
+          - x86_64
+
+permissions:
+  contents: read
+
+jobs:
+  wheel:
+    name: ${{ inputs.package }} / Android ${{ inputs.abi }} / CPython 3.14
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      PACKAGE: ${{ inputs.package }}
+      TARGET_ABI: ${{ inputs.abi }}
+      CIBW_PLATFORM: android
+      CIBW_BUILD: cp314-android_${{ inputs.abi }}
+      CIBW_BUILD_FRONTEND: build
+      CIBW_BUILD_VERBOSITY: "1"
+      ANDROID_API_LEVEL: "24"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - name: Install pinned cibuildwheel
+        run: python -m pip install --disable-pip-version-check "cibuildwheel==4.3.5"
+      - name: Install Rust for cryptography
+        if: inputs.package == 'cryptography'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android
+      - name: Fetch and verify pinned PyPI source tarball
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python - <<'PY'
+          import hashlib
+          import os
+          import tarfile
+          import urllib.request
+          from pathlib import Path
+
+          pinned = {
+              "pillow": (
+                  "13.0.0",
+                  "cdcd1ba258178f7356d74170c9a81ba4eab6a5d55748bc402a5a2a6fe6be3510",
+                  "https://files.pythonhosted.org/packages/ce/a4/9cc30690a394a8305e8be4c9036aa16d0dfddadd09079860b582f562496d/pillow-13.0.0.tar.gz",
+              ),
+              "cryptography": (
+                  "50.0.2",
+                  "7b46165bb56eb4704e2eaaf86f3c940d19154535d9b0ca7d6d590b04060e00d5",
+                  "https://files.pythonhosted.org/packages/9d/af/182eb91b0df3fe75c4d9f26fe70684569566745f6ba7e5c9c73a862c5252/cryptography-50.0.2.tar.gz",
+              ),
+          }
+          package = os.environ["PACKAGE"]
+          version, expected, url = pinned[package]
+          destination = Path("source")
+          destination.mkdir(exist_ok=True)
+          archive = destination / f"{package}-{version}.tar.gz"
+          with urllib.request.urlopen(url, timeout=90) as source, archive.open("wb") as out:
+              import shutil
+              shutil.copyfileobj(source, out)
+          digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+          if digest != expected:
+              raise SystemExit(f"PyPI source SHA-256 mismatch: {digest}")
+          with tarfile.open(archive, "r:gz") as tar:
+              tar.extractall(destination, filter="data")
+          print(f"Pinned {package} {version} source verified: {digest}")
+          PY
+      - name: Cross-build for CPython 3.14 Android
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          case "$PACKAGE" in
+            pillow) VERSION=13.0.0 ;;
+            cryptography) VERSION=50.0.2 ;;
+            *) exit 2 ;;
+          esac
+          python -m cibuildwheel --platform android --output-dir wheelhouse "source/$PACKAGE-$VERSION"
+      - name: Validate Android wheel tags and ELF architecture
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          shopt -s nullglob
+          wheels=(wheelhouse/*.whl)
+          test "${#wheels[@]}" -eq 1
+          case "$TARGET_ABI" in
+            arm64_v8a) ABI=arm64-v8a ;;
+            x86_64) ABI=x86_64 ;;
+            *) exit 2 ;;
+          esac
+          python android/runtime/verify_dependency_wheel.py \
+            --wheel "${wheels[0]}" --package "$PACKAGE" --abi "$ABI"
+      - name: Upload wheel for isolated Android integration tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbe-${{ inputs.package }}-cp314-android-${{ inputs.abi }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+          retention-days: 7
