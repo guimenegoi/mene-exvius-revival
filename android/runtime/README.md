@@ -107,7 +107,8 @@ permissão somente leitura. `libcrypto_python.so`, `libssl_python.so` e
 
 O novo empacotador `package_engine_probe.py` acrescenta ao ZIP a árvore
 **versionada** de `ios-server/` e `source/server/`, junto do PyYAML 6.0.3
-**puro** extraído de um sdist verificado por SHA-256. O helper
+**puro** extraído de um sdist e do `tzdata` 2026.6 (wheel universal),
+ambos verificados por SHA-256. O helper
 `ffbe_engine_bootstrap.py` instala arquivos na pasta privada usando manifesto
 SHA-256, arquivos temporários e substituição atômica, sem utilizar o diretório
 de saves. Foi validada a instalação incremental: uma segunda execução não
@@ -125,6 +126,7 @@ python3 android/runtime/build_python_probe.py --abi arm64-v8a \
 
 python3 android/runtime/package_engine_probe.py --repo "$PWD" \
   --pyyaml-sdist "$PY_YAML_603_TARBALL" \
+  --tzdata-wheel "$TZDATA_2026_6_WHEEL" \
   --stdlib "$TMP/stdlib.zip" --out-stdlib "$TMP/stdlib-with-engine.zip" \
   --python-archive "$PYTHON_ARCHIVE" --python-prefix "$PYTHON_PREFIX" \
   --abi arm64-v8a --original-apk "$ORIGINAL_BASE_APK" \
@@ -133,13 +135,18 @@ python3 android/runtime/package_engine_probe.py --repo "$PWD" \
 
 O sdist PyYAML 6.0.3 é obtido do PyPI e tem SHA-256
 `d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f`.
-O pacote incorpora a licença do PyYAML e não inclui dados de jogo de terceiros.
+A wheel universal `tzdata-2026.6-py2.py3-none-any.whl` tem SHA-256
+`0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec`.
+Ambos os pacotes são obtidos do PyPI e suas licenças são incorporadas.
+Não são incluídos dados de jogo de terceiros.
 Assine os dois APKs e use os demais splits de teste com o mesmo certificado.
-No Waydroid, o logcat deve registrar `PYTHON-REVIVAL-IMPORTS-OK`.
+No Waydroid, o logcat deve registrar `PYTHON-REVIVAL-TZDATA-OK`.
 
-**Prova obtida:** 172 fontes e recursos do Revival + PyYAML importados de dentro
-do processo do FFBE, após extração com SHA-256, incluindo `yaml`, `serve`
-e `capture_server`. A reabertura do jogo repetiu os imports. **Não houve**
+**Prova obtida:** 801 arquivos do Revival + PyYAML + `tzdata` importados
+no processo do FFBE, após extração com SHA-256. Incluem `yaml`, `tzdata`,
+`zoneinfo`, `serve` e `capture_server`. Foi validado o fuso
+`America/Sao_Paulo` usando os dados empacotados, sem a base do Android.
+A reabertura do jogo repetiu os imports. **Não houve**
 chamada a `serve.main()`, HTTP em `18080` ou acesso aos saves.
 
 ## Limites e pendências reais
@@ -147,11 +154,14 @@ chamada a `serve.main()`, HTTP em `18080` ou acesso aos saves.
 - O Python **importa** os módulos de `ios-server/` e `source/server/`, mas
   **não inicia o servidor**, que ainda precisa ser integrado ao ciclo de vida.
   O listener Java 18081 continua sendo uma sonda, não o backend 18080.
-- A stdlib nativa e o PyYAML puro foram validados; as dependências Android
-  `cryptography`, `Pillow` e `tzdata` ainda não foram incorporadas e testadas.
+- A stdlib nativa, PyYAML e `tzdata` foram validados; `cryptography` e
+  `Pillow` exigem builds Android compatíveis com **CPython 3.14**. O índice
+  Chaquopy consultado em 12/11/2026 oferece wheels dessas bibliotecas para
+  CPython até 3.13, mas não 3.14; wheels Linux/3.13 não são substitutos.
 - A extração da stdlib e dos módulos `.so` ainda confere comprimento, **não
-  SHA-256** no dispositivo. Os 172 arquivos do motor têm SHA-256 e atualização
-  atômica, mas a entrega final precisa validar todos os assets e tratar falhas.
+  SHA-256** no dispositivo. Os 801 arquivos do motor e das dependências
+  puras têm SHA-256 e atualização atômica, mas a entrega final precisa
+  validar todos os assets e tratar falhas.
 - A inicialização/importação ocorre na thread da Activity e levou vários
   segundos, inclusive com timeout visual na primeira abertura. O backend real
   precisa iniciar em thread/serviço próprio, com start/stop/readiness seguros.

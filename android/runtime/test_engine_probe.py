@@ -118,6 +118,47 @@ class EngineBundleTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
                 package_engine_probe.pure_yaml(path)
 
+    def test_tzdata_hash_guard(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "tzdata-2026.6-py2.py3-none-any.whl"
+            path.write_bytes(b"tampered")
+            with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+                package_engine_probe.pure_tzdata(path)
+
+    def test_tzdata_universal_wheel_includes_zone_and_licenses(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "tzdata-2026.6-py2.py3-none-any.whl"
+            with zipfile.ZipFile(path, "w") as zf:
+                for file, value in {
+                    "tzdata/__init__.py": b"__version__='2026.6'\n",
+                    "tzdata/zoneinfo/__init__.py": b"",
+                    "tzdata/zoneinfo/America/Sao_Paulo": b"TZif2",
+                    "tzdata-2026.6.dist-info/licenses/LICENSE": b"License\n",
+                    "tzdata-2026.6.dist-info/licenses/licenses/LICENSE_APACHE":
+                        b"Apache license\n",
+                }.items():
+                    zf.writestr(file, value)
+            with patch.object(
+                package_engine_probe, "TZDATA_SHA256",
+                hashlib.sha256(path.read_bytes()).hexdigest()
+            ):
+                result = package_engine_probe.pure_tzdata(path)
+            self.assertEqual(result["vendor/tzdata/zoneinfo/America/Sao_Paulo"], b"TZif2")
+            self.assertEqual(result["vendor/LICENSE-tzdata.txt"], b"License\n")
+            self.assertIn("vendor/LICENSE-tzdata-apache.txt", result)
+            self.assertEqual(len(result), 5)
+
+    def test_tzdata_rejects_traversal_in_wheel(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "tzdata-2026.6-py2.py3-none-any.whl"
+            with zipfile.ZipFile(path, "w") as zf:
+                zf.writestr("tzdata/../../../outside", b"escaped")
+            with patch.object(
+                package_engine_probe, "TZDATA_SHA256",
+                hashlib.sha256(path.read_bytes()).hexdigest()
+            ), self.assertRaises(ValueError):
+                package_engine_probe.pure_tzdata(path)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -165,6 +165,6 @@ Java_com_mene_exvius_LocalPythonProbe_execute(JNIEnv *env, jclass unused,
         return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-IMPORT-FAILED");
     }
     __android_log_print(ANDROID_LOG_INFO, TAG,
-                        "Revival import-only probe: yaml serve capture_server OK");
-    return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-IMPORTS-OK");
+                        "Revival imports: yaml tzdata/zoneinfo serve capture_server OK");
+    return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-TZDATA-OK");
 }

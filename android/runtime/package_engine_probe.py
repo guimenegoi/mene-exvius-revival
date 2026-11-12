@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import io
 import json
+import stat
 import subprocess
 import tarfile
 import zipfile
@@ -21,6 +22,12 @@ from package_stdlib_probe import embed_asset, native_assets, NATIVE_INDEX, NATIV
 
 PY_YAML_SHA256 = "d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f"
 PY_YAML_PREFIX = "pyyaml-6.0.3/lib/yaml/"
+TZDATA_SHA256 = "0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec"
+TZDATA_LICENSES = {
+    "tzdata-2026.6.dist-info/licenses/LICENSE": "vendor/LICENSE-tzdata.txt",
+    "tzdata-2026.6.dist-info/licenses/licenses/LICENSE_APACHE":
+        "vendor/LICENSE-tzdata-apache.txt",
+}
 BOOTSTRAP = Path(__file__).with_name("embedded_engine.py")
 
 
@@ -74,12 +81,52 @@ def pure_yaml(sdist: Path) -> dict[str, bytes]:
     return contents
 
 
+def pure_tzdata(wheel: Path) -> dict[str, bytes]:
+    """Extract only a pinned, universal tzdata wheel with both license texts."""
+    if hashlib.sha256(wheel.read_bytes()).hexdigest() != TZDATA_SHA256:
+        raise ValueError("tzdata 2026.6 wheel SHA-256 mismatch")
+    if wheel.name != "tzdata-2026.6-py2.py3-none-any.whl":
+        raise ValueError("Unexpected tzdata distribution name")
+    result = {}
+    with zipfile.ZipFile(wheel) as source:
+        names = source.namelist()
+        if len(names) != len(set(names)):
+            raise ValueError("Duplicate names in tzdata wheel")
+        for entry in source.infolist():
+            if entry.is_dir():
+                raise ValueError("Directory entry in pinned tzdata wheel")
+            if stat.S_IFMT(entry.external_attr >> 16) == stat.S_IFLNK:
+                raise ValueError("Symlink in tzdata wheel")
+            if entry.filename in TZDATA_LICENSES:
+                destination = TZDATA_LICENSES[entry.filename]
+            elif entry.filename.startswith("tzdata/"):
+                destination = "vendor/" + entry.filename
+            else:
+                continue
+            validate_relative(destination)
+            if entry.file_size > MAX_FILE_SIZE:
+                raise ValueError("Oversized tzdata file")
+            result[destination] = source.read(entry)
+    mandatory = {
+        "vendor/tzdata/__init__.py",
+        "vendor/tzdata/zoneinfo/__init__.py",
+        "vendor/tzdata/zoneinfo/America/Sao_Paulo",
+        *TZDATA_LICENSES.values(),
+    }
+    if not mandatory.issubset(result):
+        raise ValueError("Incomplete tzdata 2026.6 wheel")
+    return result
+
+
 def package_engine(repository: Path, pyyaml_sdist: Path,
-                   original_stdlib: Path, output: Path) -> dict[str, int]:
+                   original_stdlib: Path, output: Path,
+                   tzdata_wheel: Path | None = None) -> dict[str, int]:
     if output.exists():
         raise FileExistsError(output)
     data = git_tracked_engine(repository)
     data.update(pure_yaml(pyyaml_sdist))
+    if tzdata_wheel is not None:
+        data.update(pure_tzdata(tzdata_wheel))
     if len(data) > MAX_FILES or sum(map(len, data.values())) > MAX_TOTAL:
         raise ValueError("Revival source bundle exceeds limits")
     manifest = {
@@ -124,6 +171,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--pyyaml-sdist", type=Path, required=True)
+    parser.add_argument("--tzdata-wheel", type=Path, required=True,
+                        help="pinned tzdata 2026.6 pure-Python wheel")
     parser.add_argument("--stdlib", type=Path, required=True)
     parser.add_argument("--out-stdlib", type=Path, required=True)
     parser.add_argument("--python-archive", type=Path, required=True)
@@ -135,7 +184,7 @@ def main() -> None:
     args = parser.parse_args()
     verify_archive(args.python_archive, args.abi)
     result = package_engine(args.repo, args.pyyaml_sdist,
-                            args.stdlib, args.out_stdlib)
+                            args.stdlib, args.out_stdlib, args.tzdata_wheel)
     embed_asset(args.original_apk, args.dex_apk, args.out_apk,
                 args.out_stdlib, native_assets(args.python_prefix, args.abi))
     print("Tracked Revival files:", result["engine_files"],

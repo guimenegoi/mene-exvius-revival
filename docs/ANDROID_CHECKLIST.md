@@ -29,12 +29,18 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       `ssl`, `zlib`, `sqlite3`, `socket`, `hashlib` e `zipfile`.
 - [x] Importar `yaml`, `serve` e `capture_server` **do Revival real** dentro
       do FFBE com 172 fontes/recursos do Git e PyYAML puro, SHA-256 validado.
+- [x] Incorporar `tzdata` 2026.6 e validar `zoneinfo` de
+      `America/Sao_Paulo` **com dados internos do APK**, inclusive após reabrir.
+      Pacote atual: 801 arquivos (Revival + PyYAML + tzdata) com SHA-256.
       **Somente importação**: backend e runtime final ainda não iniciam.
 - [ ] Instalar/verificar os 19 pacotes **reais** no Android; confirmar os arquivos
       de tutorial, mapa, áudio e combate no armazenamento privado do cliente.
 - [ ] Verificar escrita, atualização e preservação de saves no layout real ARM64.
 - [ ] Empacotar runtime CPython incorporado, stdlib e dependências
       `cryptography`, `Pillow`, `PyYAML`, `tzdata` para x86_64 e ARM64.
+      **Já validados em ARM64:** CPython, stdlib, PyYAML puro e tzdata.
+      **Bloqueadores:** builds Android CPython 3.14 de `cryptography` e
+      `Pillow`, com verificação das bibliotecas nativas e import real.
 - [ ] Integrar inicialização/desligamento do **motor Revival real** ao ciclo de
       vida do FFBE, com diagnóstico de readiness e falha segura.
 - [ ] Tirar extração/importações da thread principal da Activity; no teste
@@ -68,6 +74,32 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
 
 ## Registro de execução
 
+### 2026-11-12 — tzdata 2026.6 integrado e incompatibilidade de wheels mapeada
+
+- Wheel universal oficial PyPI, SHA-256
+  `0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec`.
+  Empacotados **629 arquivos** úteis de `tzdata` com licenças e fuso
+  `America/Sao_Paulo`. Arquivo binário do zoneinfo tem hash verificado.
+- Pacote completo do motor agora tem **801 arquivos / 80,94 MB**; instalação
+  em pasta privada, manifesto SHA-256 e atualização incremental sem reescrever
+  arquivos íntegros. Repetição comprovada no teste Linux.
+- **Waydroid Android 13:** imports de `yaml`, `tzdata`, `zoneinfo`, `serve`
+  e `capture_server`, cálculo do fuso Brasil com base **empacotada** e logcat
+  `PYTHON-REVIVAL-TZDATA-OK`. Reabertura do app repetiu a prova.
+- APK-base de laboratório: apenas `classes.dex`, `classes3.dex` e assets de
+  Python alterados/acrescentados; `libgame.so` intacta, assinatura validada.
+  Cliente de referência restaurado sem limpar dados.
+- **29 testes de runtime**, **4 de transporte**, **14 de dados** e
+  smoke test aprovados; compilação Python e `git diff --check` também passaram.
+- Auditados os índices PyPI/Chaquopy: em 12/11/2026 não há wheel Android
+  `cp314` pronta de `cryptography` ou `Pillow`. Não reutilizar ABI de
+  Python 3.13 nem wheel Linux: é necessária compilação Android compatível.
+- **Próxima prova de dependências:** produzir wheels Android `cp314`
+  ARM64 para `cryptography` e `Pillow` (via cross-build/cibuildwheel),
+  verificar ABI e importar no PID do jogo; depois repetir em x86_64.
+- Persistem a inicialização na thread da Activity (lenta), servidor real,
+  dependências nativas, 19 pacotes de dados e gameplay offline.
+
 ### 2026-11-12 — extensões Python e imports do Revival dentro do FFBE
 
 - Empacotados **67 módulos `.so` oficiais** do CPython Android em assets,
@@ -87,8 +119,9 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
   e smoke test; diffs do APK e split conferidos, assinatura de teste verificada.
 - A instalação/importação ainda ocorre na Activity principal e pode gerar
   aviso de timeout de inicialização; exige thread/serviço próprio antes do uso.
-- **Pendente:** servidor real em `127.0.0.1:18080`, dependências Android
-  `cryptography`/`Pillow`/`tzdata`, dados dos 19 pacotes e jogo offline.
+- **Pendente à época desta prova:** servidor real em `127.0.0.1:18080`,
+  `cryptography`/`Pillow`/`tzdata`, 19 pacotes e jogo offline. A prova de
+  `tzdata` está registrada acima como etapa posterior.
 - APK de laboratório revertido no Waydroid; instalação anterior preservada,
   sem limpar dados. Binários não são versionados no Git.
 

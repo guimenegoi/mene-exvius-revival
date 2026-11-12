@@ -15,8 +15,10 @@ from pathlib import Path, PurePosixPath
 
 MANIFEST = "ffbe_engine_manifest.json"
 ROOT = "ffbe_engine/"
-ALLOWED = ("ios-server/", "source/server/", "vendor/yaml/", "vendor/LICENSE-pyyaml.txt")
-MAX_FILES = 400
+ALLOWED = ("ios-server/", "source/server/", "vendor/yaml/", "vendor/tzdata/",
+           "vendor/LICENSE-pyyaml.txt", "vendor/LICENSE-tzdata.txt",
+           "vendor/LICENSE-tzdata-apache.txt")
+MAX_FILES = 1000
 MAX_FILE_SIZE = 24 * 1024 * 1024
 MAX_TOTAL = 128 * 1024 * 1024
 
@@ -119,8 +121,21 @@ def probe(archive: Path | None = None, target_root: Path | None = None) -> dict:
     # Do not import certs yet: cryptography's Android wheel is a separate gate.
     yaml = importlib.import_module("yaml")
     assert yaml.safe_load("enabled: true") == {"enabled": True}
+    tzdata = importlib.import_module("tzdata")
+    if not Path(tzdata.__file__).resolve().is_relative_to(target_root.resolve()):
+        raise RuntimeError("tzdata was not loaded from the verified private bundle")
+    from datetime import datetime, timedelta
+    import zoneinfo
+    previous_tzpath = zoneinfo.TZPATH
+    try:
+        # Require the packaged tzdata rather than a device's system database.
+        zoneinfo.reset_tzpath(to=())
+        brazil = zoneinfo.ZoneInfo("America/Sao_Paulo")
+        assert brazil.utcoffset(datetime(2026, 1, 1)) == timedelta(hours=-3)
+    finally:
+        zoneinfo.reset_tzpath(to=previous_tzpath)
     serve = importlib.import_module("serve")
     capture = importlib.import_module("capture_server")
     if not callable(serve.configure_engine) or not hasattr(capture, "Handler"):
         raise RuntimeError("Revival server module contract is incomplete")
-    return {"files": extracted, "imports": ("yaml", "serve", "capture_server")}
+    return {"files": extracted, "imports": ("yaml", "tzdata", "serve", "capture_server")}
