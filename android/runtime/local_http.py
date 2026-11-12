@@ -288,6 +288,10 @@ def run(archive: Path | None = None, app_files: Path | None = None,
         raise RuntimeError("Revival server imported before private data binding")
     os.environ["FFBE_DATA_DIR"] = str(files / "exvius/data")
     os.environ["FFBE_SERVER_ROOT"] = str(files / "exvius/server-root")
+    # The native Android client already has its own shipped MST and CPK data.
+    # Never advertise the iPhone-only table rewrites/large version offset.
+    os.environ["FFBE_ANDROID_EMBEDDED"] = "1"
+    os.environ["EXVIUS_TABLE_VERSION_OFFSET"] = "0"
     serve = importlib.import_module("serve")
     serve.configure_engine()
     capture = serve.start_engine()

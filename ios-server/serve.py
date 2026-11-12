@@ -51,6 +51,9 @@ def log(message: str) -> None:
 # --------------------------------------------------------------------------------------------------
 def configure_engine() -> None:
     static, native = DATA / 'static', DATA / 'native'
+    # Keep authored CDN data outside the Android client's installed resource
+    # tree; the client-side files are immutable inputs, not an overlay.
+    overlay = ROOT / 'overlay' if os.environ.get('FFBE_ANDROID_EMBEDDED') == '1' else native
     missing = [p for p in (static / 'mst_decoded', native / 'mst', native / 'common_lang') if not p.is_dir()]
     if missing:
         log('game data is missing: ' + ', '.join(map(str, missing)))
@@ -61,7 +64,7 @@ def configure_engine() -> None:
                       ('VERSION_TABLE_XML', static / 'client/shared_prefs/gamedata.xml'),
                       # The unpacked native tree is the client's own `files/` folder: serve it and use it
                       # as the overlay, exactly as the Android app does once its data is installed.
-                      ('CDN_ROOT', native), ('CDN_OVERLAY', native)):
+                      ('CDN_ROOT', native), ('CDN_OVERLAY', overlay)):
         os.environ[key] = str(path)
     os.environ['FFBE_DATA'] = str(ROOT)
     # The deal banners' art, downloaded once on startup (source/server/deal_art.py).
@@ -103,7 +106,10 @@ def start_engine():
         log(f'engine initialisation failed ({result})')
         sys.exit(3)
     capture_server.State.cdn_root = str(DATA / 'native')
-    capture_server.State.cdn_overlay = str(DATA / 'native')
+    capture_server.State.cdn_overlay = str(
+        ROOT / 'overlay' if os.environ.get('FFBE_ANDROID_EMBEDDED') == '1'
+        else DATA / 'native'
+    )
     # Unit pictures for the Drop Rates and News pages, copied out of the unit packs in the background
     # (source/server/unit_art.py; EXVIUS_NOTICE_ART=0 turns it off).
     import unit_art

@@ -1314,6 +1314,27 @@ def serve_version_table(spec):
     """
     if not isinstance(spec, dict) or not isinstance(spec.get("c1qYg84Q"), list):
         return spec
+    if os.environ.get("FFBE_ANDROID_EMBEDDED") == "1":
+        # Unlike a stock iPhone, the first-run Android installer already
+        # owns the full native tree and its matching gamedata.xml versions.
+        # iOS's +200000 offset and synthetic text/mission versions demand
+        # MST files absent from Android, causing 404s and login failure.
+        shipped = version_table()
+        if not shipped:
+            raise RuntimeError("Android native MST version table unavailable")
+        globals_only = [
+            dict(r) for r in spec["c1qYg84Q"] if isinstance(r, dict)
+            and (r.get("a4hXTIm0") in GLOBAL_VERSION_ROWS
+                 or not str(r.get("a4hXTIm0", "")).startswith("F_"))
+        ]
+        names = {r.get("a4hXTIm0") for r in globals_only}
+        spec = dict(spec)
+        spec["c1qYg84Q"] = globals_only + [
+            {"a4hXTIm0": name, "wM9AfX6I": value}
+            for name, value in sorted(shipped.items()) if name not in names
+        ]
+        _note(f"Android native version table: {len(shipped)} shipped rows, no iOS patch bumps")
+        return spec
     authored = [r for r in spec["c1qYg84Q"] if isinstance(r, dict)]
     have = {r.get("a4hXTIm0") for r in authored}
     added = [{"a4hXTIm0": n, "wM9AfX6I": v}
