@@ -1,5 +1,9 @@
 # mene-exvius-revival — runtime experimental para Android
 
+> **Dados para o aplicativo único:** [instalação integral dos 19 pacotes](data/README.md), com
+> SHA-256, atualização incremental e verificação sem internet. Esta ferramenta
+> é independente do Termux e será incorporada ao instalador do APK final.
+
 > **Somente laboratório:** a entrega final será um único aplicativo FFBE, sem
 > instalação de Termux, VPN ou servidor auxiliar. O alvo e os critérios estão em
 > [ANDROID_STANDALONE.md](../docs/ANDROID_STANDALONE.md).

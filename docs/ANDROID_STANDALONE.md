@@ -10,7 +10,7 @@ A fase de desenvolvimento pode usar Termux/Waydroid como bancada de testes.
 O runner `android/ffbe-termux` continua disponível apenas para testes e não integra
 a experiência ou a lista de requisitos da versão final.
 
-**Status em 12/11/2026: transporte local Java validado parcialmente; APK único ainda NÃO construído.**
+**Status em 12/11/2026: transporte Java e instalador completo de dados em laboratório; APK único ainda NÃO construído.**
 O pacote `mene-exvius-revival-termux-5a1afdc9.tar.gz` é um artefato de desenvolvimento,
 não é o instalador offline prometido.
 
@@ -33,6 +33,18 @@ não é o instalador offline prometido.
 - O fork tem backend Python, mas **não** possui fontes Android originais, módulo Gradle ou
   `AndroidManifest.xml` do cliente, portanto adicionar um `Service` via Gradle não é
   uma operação direta no aplicativo existente.
+
+## Instalação inicial de recursos
+
+O primeiro uso deve instalar os **19 pacotes** do manifesto em uma árvore
+única: 18 de dados do motor e um `client-assets` com os recursos específicos do
+cliente. Os hashes de download e o inventário são conferidos antes de liberar
+o modo offline. Ver [instalador Android de dados](../android/data/README.md).
+
+O instalador separado já foi implementado e testado, mas a ligação ao cliente
+e ao runtime incorporado ainda não. A versão PC usa um overlay de filesystem;
+no Android ainda precisamos evitar que o cliente grave uma cópia redundante
+dos mesmos recursos após recebê-los do servidor local.
 
 ## Arquitetura-alvo
 

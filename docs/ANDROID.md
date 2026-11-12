@@ -31,6 +31,7 @@ O fork deve evitar divergências desnecessárias do upstream: ajustes específic
 | Motor Revival no Termux (teste) | **Validado com dados parciais** | `ios-server/serve.py` iniciou, HTTPS 200 com CA própria, GET MST 200 e serviço ativo ao abrir o FFBE |
 | Transporte Java para localhost (teste) | **API e CRI validados** | APK 9.1.0 com somente dois DEX substituídos; chamada de API e downloads chegam a HTTP local na porta 18080; [detalhes](../android/network/README.md) |
 | Recursos completos no Android | **Pendente** | A cópia reduzida causou 404 em localized_texts (depois corrigido) e en/sd/area/Ver461_spdungeon1.cpk |
+| Instalador de recursos offline (Android) | **Validado em laboratório** | 19 pacotes preparados pelo mesmo downloader, incluindo client-assets real; verificação sem rede, pré-requisito de armazenamento e testes em [android/data](../android/data/README.md) |
 | Aplicativo independente (sem apps auxiliares) | **Pendente** | Python nativo incorporado, recursos compartilhados e jogabilidade offline ainda não implementados |
 | Jogo completamente offline | **Pendente** | Testar funcionamento sem Termux, Proxmox ou internet, com saves locais |
 
@@ -113,7 +114,8 @@ O `update` aceita alterações de código por fast-forward, cria backup consiste
 - [x] Disponibilizar CLI Termux com `setup`, `doctor`, `verify`, `fetch-data`, `start`, `stop` e `status`; testar proteção contra dados ausentes.
 - [x] Inicializar o motor no Android/Termux com dados mínimos e save independente, sem alterar o servidor de referência.
 - [x] Validar comunicação Java de API e CriFsWebInstaller do FFBE com o Revival em localhost usando APK de teste.
-- [ ] Instalar dados completos uma única vez e compartilhar com o cliente sem duplicações.
+- [x] Implementar instalador de dados do Android para 19 pacotes e diagnóstico local, reutilizando o downloader existente.
+- [ ] Instalar os 19 pacotes no Android e compartilhar com o cliente sem duplicações.
 - [ ] Medir uso de RAM, CPU, armazenamento, estabilidade e operação com tela apagada; testar também Android ARM64 físico.
 - [x] Provar mapeamento HTTP local dos principais métodos de rede Java, sem root, VPN, DNS ou patch na biblioteca nativa.
 - [ ] Incorporar o servidor e seu ciclo de vida ao mesmo aplicativo Android; validar os outros dois mecanismos de download.
