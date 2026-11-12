@@ -46,7 +46,15 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - uses: android-actions/setup-android@v3
+      # ubuntu-24.04 already ships Android SDK command-line tools. The
+      # setup-android v3 action asks sdkmanager to install removed 'tools'.
+      - name: Verify preinstalled Android SDK
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -d "${ANDROID_HOME:?Android SDK missing on GitHub runner}"
+          test -x "$ANDROID_HOME/platform-tools/adb"
+          find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -5
       - name: Install pinned cibuildwheel
         run: python -m pip install --disable-pip-version-check "cibuildwheel==4.3.5"
       - name: Install Rust for cryptography
