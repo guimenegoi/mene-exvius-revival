@@ -1,5 +1,11 @@
 # Exvius Revival for iOS
 
+> **Fork experimental para Android:** este repositório também acompanha a adaptação do
+> cliente FFBE Global 9.1.0 e a pesquisa para executar o backend no próprio Android.
+> Veja **[Estado dos testes, arquitetura e próximos passos](docs/ANDROID.md)**.
+> **O guia abaixo é o README original do upstream, para iOS; não descreve um
+> instalador Android pronto.**
+
 Play **Final Fantasy Brave Exvius** (Global) on an iPhone again, with the **unmodified App Store app**, against a game server you run yourself.
 
 This project runs the [Exvius Offline](https://github.com/Elvlin/exvius-offline) game engine as a server in Docker. The iPhone app thinks it's talking to the original servers. Nothing on the phone is modified apart from trusting one private certificate.
