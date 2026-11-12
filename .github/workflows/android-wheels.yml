@@ -32,8 +32,11 @@ jobs:
       TARGET_ABI: ${{ inputs.abi }}
       CIBW_PLATFORM: android
       CIBW_BUILD: cp314-android_${{ inputs.abi }}
+      CIBW_ARCHS: ${{ inputs.abi }}
       CIBW_BUILD_FRONTEND: build
       CIBW_BUILD_VERBOSITY: "1"
+      CIBW_BEFORE_ALL: ":"
+      CIBW_TEST_SKIP: "*"
       ANDROID_API_LEVEL: "24"
     steps:
       - uses: actions/checkout@v4
@@ -109,6 +112,11 @@ jobs:
             cryptography) VERSION=50.0.2 ;;
             *) exit 2 ;;
           esac
+          if [ "$PACKAGE" = pillow ]; then
+            # Pillow upstream CI assumes its own wheels-dependencies.sh script.
+            # Keep the FFBE probe dependency-minimal, as its iOS build does.
+            export CIBW_CONFIG_SETTINGS="raqm=disable imagequant=disable platform-guessing=disable"
+          fi
           python -m cibuildwheel --platform android --output-dir wheelhouse "source/$PACKAGE-$VERSION"
       - name: Validate Android wheel tags and ELF architecture
         shell: bash
