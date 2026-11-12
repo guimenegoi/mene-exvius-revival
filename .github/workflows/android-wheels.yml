@@ -152,10 +152,18 @@ jobs:
             # Pillow already reads JPEG_ROOT, C_INCLUDE_PATH and LIBRARY_PATH.
             export CIBW_ENVIRONMENT="JPEG_ROOT=$GITHUB_WORKSPACE/ffbe-deps C_INCLUDE_PATH=$SYSROOT/usr/include LIBRARY_PATH=$SYSROOT/usr/lib/$NDK_TRIPLE/24"
           elif [ "$PACKAGE" = cryptography ]; then
-            # cibuildwheel applies CIBW_ENVIRONMENT after creating VIRTUAL_ENV,
-            # but before assigning PYO3_CROSS_LIB_DIR (android.py 4.3.5).
-            # Headers are next to the venv, under python/prefix/include/python3.14.
-            export CIBW_ENVIRONMENT='C_INCLUDE_PATH=$VIRTUAL_ENV/../python/prefix/include/python3.14'
+            # cibuildwheel applies CIBW_ENVIRONMENT after creating VIRTUAL_ENV.
+            # Android extensions must link libpython explicitly (PEP 738).
+            # Otherwise PyExc_ValueError remains unresolved at Android dlopen.
+            case "$TARGET_ABI" in
+              arm64_v8a)
+                export CIBW_ENVIRONMENT='C_INCLUDE_PATH=$VIRTUAL_ENV/../python/prefix/include/python3.14 CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS="-C link-arg=-L$VIRTUAL_ENV/../python/prefix/lib -C link-arg=-lpython3.14"'
+                ;;
+              x86_64)
+                export CIBW_ENVIRONMENT='C_INCLUDE_PATH=$VIRTUAL_ENV/../python/prefix/include/python3.14 CARGO_TARGET_X86_64_LINUX_ANDROID_RUSTFLAGS="-C link-arg=-L$VIRTUAL_ENV/../python/prefix/lib -C link-arg=-lpython3.14"'
+                ;;
+              *) exit 2 ;;
+            esac
           elif [ "$PACKAGE" = cffi ]; then
             case "$TARGET_ABI" in
               arm64_v8a) NDK_TRIPLE=aarch64-linux-android ;;
