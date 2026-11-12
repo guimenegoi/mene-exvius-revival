@@ -186,9 +186,13 @@ def verify(manifest: dict, data: Path) -> list[str]:
     # first install even if all per-pack markers were written.
     expected_files = manifest.get("files")
     if isinstance(expected_files, int) and expected_files > 0:
+        # Native may be a link to Android getFilesDir(); count ONLY the five
+        # native roots or os.walk would also traverse exvius/data/static twice.
+        roots = [data / "native" / name for name in sorted(fetch_data.NATIVE_TOPS)]
+        roots.append(data / "static")
         actual = sum(
             len(files)
-            for root in (data / "native", data / "static")
+            for root in roots
             if root.is_dir()
             for _, dirs, files in os.walk(root)
         ) + int((data / "registry.json").is_file())
@@ -238,13 +242,65 @@ def minimum_free(manifest: dict, data: Path, server: list[dict], client: dict | 
     return client["size"] + client.get("unpackedSize", client["size"]) + (128 << 20)
 
 
+def android_files_layout(data: Path, client_files: Path, create: bool) -> None:
+    """Map only the five native data folders to the original game file root.
+
+    Android getFilesDir(): <files>/{mst,en,common_lang,...}
+    Server data root:     <files>/exvius/data/{static,native}
+    Only DATA/native/<whitelisted> is linked; never expose the complete
+    application-private files directory as the server's CDN_ROOT.
+    """
+    files = client_files.expanduser().resolve()
+    required = files / "exvius" / "data"
+    if data != required:
+        raise ValueError(f"Expected --data {required} when --android-files is set")
+    native = data / "native"
+    if native.is_symlink() or (native.exists() and not native.is_dir()):
+        raise ValueError(f"Refusing unsafe native root: {native}")
+    names = sorted(fetch_data.NATIVE_TOPS)
+    if native.exists():
+        unexpected = set(x.name for x in native.iterdir()) - set(names)
+        if unexpected:
+            raise ValueError(f"Refusing unexpected native entries: {sorted(unexpected)}")
+    absent = []
+    for name in names:
+        link = native / name
+        target = files / name
+        if link.is_symlink():
+            if link.resolve() != target:
+                raise ValueError(f"Refusing foreign native link: {link}")
+        elif link.exists():
+            raise ValueError(f"Refusing to replace an existing native tree: {link}")
+        else:
+            absent.append(name)
+    if create:
+        # pathlib.mkdir() does not treat a dangling symlink as a directory.
+        # Prepare actual game folders *before* linking the server's view.
+        for name in names:
+            target = files / name
+            if target.is_symlink() or (target.exists() and not target.is_dir()):
+                raise ValueError(f"Refusing unsafe game resource path: {target}")
+        files.mkdir(parents=True, exist_ok=True)
+        for name in names:
+            (files / name).mkdir(exist_ok=True)
+        native.mkdir(parents=True, exist_ok=True)
+        for name in absent:
+            link = native / name
+            link.symlink_to("../../../" + name, target_is_directory=True)
+            if link.resolve() != files / name:
+                link.unlink(missing_ok=True)
+                raise ValueError(f"Native link for {name} is not in game storage")
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("action", choices=("plan", "install", "verify"))
     parser.add_argument("--data", type=Path, required=True, help="one private data root shared by the game and Revival")
     parser.add_argument("--manifest", type=Path, default=MANIFEST)
+    parser.add_argument("--android-files", type=Path, help="the app-private Context.getFilesDir() root; share native files without copying")
     args = parser.parse_args(argv)
     data = args.data.expanduser().resolve()
+    if args.android_files is not None:
+        android_files_layout(data, args.android_files, create=False)
     manifest_path = args.manifest.expanduser().resolve()
     manifest, client = manifest_from(manifest_path)
     fetch_data.DATA = data
@@ -270,6 +326,8 @@ def main(argv: list[str] | None = None) -> int:
                   f"require {required / (1 << 30):.2f} GiB")
             return 2
         data.mkdir(parents=True, exist_ok=True)
+        if args.android_files is not None:
+            android_files_layout(data, args.android_files, create=True)
         # Downloading one pack at a time avoids keeping 14+ GB of compressed
         # archives alongside the final extracted files.
         if server:

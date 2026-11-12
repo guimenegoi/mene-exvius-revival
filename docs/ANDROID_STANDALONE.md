@@ -42,9 +42,12 @@ cliente. Os hashes de download e o inventário são conferidos antes de liberar
 o modo offline. Ver [instalador Android de dados](../android/data/README.md).
 
 O instalador separado já foi implementado e testado, mas a ligação ao cliente
-e ao runtime incorporado ainda não. A versão PC usa um overlay de filesystem;
-no Android ainda precisamos evitar que o cliente grave uma cópia redundante
-dos mesmos recursos após recebê-los do servidor local.
+e ao runtime incorporado ainda não. O Android original permite uma solução
+mais simples que o overlay do PC: instalar os arquivos nativos diretamente no
+diretório privado do jogo e expor ao servidor apenas cinco vínculos permitidos
+(`mst`, `localized_texts`, `common_lang`, `en`, `homeMarquee`).
+Os testes de layout provam que as duas visões usam os mesmos arquivos físicos;
+a integração e os testes de escrita em Android real continuam pendentes.
 
 ## Arquitetura-alvo
 

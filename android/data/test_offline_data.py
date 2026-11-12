@@ -139,6 +139,79 @@ class OfflineDataTests(unittest.TestCase):
             self.assertFalse((Path(tmp) / "untrusted").exists())
             self.assertNotIn("client-assets", offline_data.read_json(data / "installed.json"))
 
+    def test_android_private_game_files_are_shared_not_copied(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            unused, path, manifest = fixture(root)
+            client_files = root / "app-private" / "files"
+            data = client_files / "exvius" / "data"
+            arguments = ["--data", str(data), "--manifest", str(path),
+                         "--android-files", str(client_files)]
+            self.assertEqual(offline_data.main(["install", *arguments]), 0)
+            self.assertEqual(offline_data.main(["verify", *arguments]), 0)
+            self.assertTrue((data / "native").is_dir())
+            self.assertFalse((data / "native").is_symlink())
+            self.assertEqual(
+                sorted(p.name for p in (data / "native").iterdir()),
+                sorted(offline_data.fetch_data.NATIVE_TOPS),
+            )
+            for name in offline_data.fetch_data.NATIVE_TOPS:
+                self.assertTrue((data / "native" / name).is_symlink())
+                self.assertEqual((data / "native" / name).resolve(), client_files / name)
+            # The server's CDN_ROOT cannot browse exvius/data, saves or other
+            # app-private files through the native resource directory.
+            self.assertFalse((data / "native/exvius").exists())
+            self.assertTrue((client_files / "en/sd/area/Ver461_spdungeon1.cpk").is_file())
+            self.assertTrue((data / offline_data.ASSET_FILE).is_file())
+            self.assertTrue((data / "native/en/sd/area/Ver461_spdungeon1.cpk").samefile(
+                client_files / "en/sd/area/Ver461_spdungeon1.cpk"
+            ))
+            self.assertEqual(offline_data.verify(manifest, data), [])
+
+    def test_android_layout_never_replaces_existing_native_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            client_files = root / "files"
+            data = client_files / "exvius/data"
+            native = data / "native"
+            native.mkdir(parents=True)
+            existing = native / "keep-this.txt"
+            existing.write_text("preserve user files")
+            with self.assertRaisesRegex(ValueError, "Refusing unexpected native entries"):
+                offline_data.android_files_layout(data, client_files, create=True)
+            self.assertEqual(existing.read_text(), "preserve user files")
+
+    def test_android_layout_rejects_link_to_private_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = root / "files"
+            data = files / "exvius/data"
+            data.mkdir(parents=True)
+            (data / "native").symlink_to("../..", target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, "unsafe native root"):
+                offline_data.android_files_layout(data, files, create=True)
+
+    def test_android_layout_refuses_resource_symlink_outside_app(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = root / "app/files"
+            files.mkdir(parents=True)
+            outside = root / "other-data"
+            outside.mkdir()
+            (files / "mst").symlink_to(outside, target_is_directory=True)
+            data = files / "exvius/data"
+            with self.assertRaisesRegex(ValueError, "Refusing unsafe game resource path"):
+                offline_data.android_files_layout(data, files, create=True)
+            self.assertFalse((data / "native").exists())
+
+    def test_android_layout_rejects_path_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            wrong = root / "wrong"
+            with self.assertRaisesRegex(ValueError, "Expected --data"):
+                offline_data.android_files_layout(wrong, root / "app/files", create=True)
+            self.assertFalse(wrong.exists())
+
     def test_storage_guard_stops_download_before_mutating_data(self):
         with tempfile.TemporaryDirectory() as tmp:
             data, path, manifest = fixture(Path(tmp))
