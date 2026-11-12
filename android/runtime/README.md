@@ -127,6 +127,7 @@ python3 android/runtime/build_python_probe.py --abi arm64-v8a \
 python3 android/runtime/package_engine_probe.py --repo "$PWD" \
   --pyyaml-sdist "$PY_YAML_603_TARBALL" \
   --tzdata-wheel "$TZDATA_2026_6_WHEEL" \
+  --pillow-wheel "$PILLOW_13_CP314_ANDROID_ARM64_WHEEL" \
   --stdlib "$TMP/stdlib.zip" --out-stdlib "$TMP/stdlib-with-engine.zip" \
   --python-archive "$PYTHON_ARCHIVE" --python-prefix "$PYTHON_PREFIX" \
   --abi arm64-v8a --original-apk "$ORIGINAL_BASE_APK" \
@@ -140,13 +141,17 @@ A wheel universal `tzdata-2026.6-py2.py3-none-any.whl` tem SHA-256
 Ambos os pacotes são obtidos do PyPI e suas licenças são incorporadas.
 Não são incluídos dados de jogo de terceiros.
 Assine os dois APKs e use os demais splits de teste com o mesmo certificado.
-No Waydroid, o logcat deve registrar `PYTHON-REVIVAL-TZDATA-OK`.
+No Waydroid, com a wheel ARM64 de Pillow incorporada, o logcat deve registrar
+`PYTHON-REVIVAL-PILLOW-OK`.
 
-**Prova obtida:** 801 arquivos do Revival + PyYAML + `tzdata` importados
-no processo do FFBE, após extração com SHA-256. Incluem `yaml`, `tzdata`,
-`zoneinfo`, `serve` e `capture_server`. Foi validado o fuso
-`America/Sao_Paulo` usando os dados empacotados, sem a base do Android.
-A reabertura do jogo repetiu os imports. **Não houve**
+**Prova obtida:** **912 arquivos** do Revival + PyYAML + `tzdata` + Pillow
+ARM64, extraídos com SHA-256. Incluem `yaml`, `tzdata`, `zoneinfo`,
+`PIL.Image`, `serve` e `capture_server`. Foram validados o fuso
+`America/Sao_Paulo` e a criação, gravação e reabertura de PNG em memória
+no processo Android do FFBE. A segunda abertura repetiu os testes.
+A wheel de Pillow 13.0.0 foi compilada no [Actions do fork](https://github.com/guimenegoi/mene-exvius-revival/actions/runs/43233327397)
+com libjpeg-turbo 3.2.1 estática, e validada por tag/ELF. A licença do
+Pillow é incorporada ao pacote. **Não houve**
 chamada a `serve.main()`, HTTP em `18080` ou acesso aos saves.
 
 ## Limites e pendências reais
@@ -154,13 +159,14 @@ chamada a `serve.main()`, HTTP em `18080` ou acesso aos saves.
 - O Python **importa** os módulos de `ios-server/` e `source/server/`, mas
   **não inicia o servidor**, que ainda precisa ser integrado ao ciclo de vida.
   O listener Java 18081 continua sendo uma sonda, não o backend 18080.
-- A stdlib nativa, PyYAML e `tzdata` foram validados; `cryptography` e
-  `Pillow` exigem builds Android compatíveis com **CPython 3.14**. O índice
-  Chaquopy consultado em 12/11/2026 oferece wheels dessas bibliotecas para
-  CPython até 3.13, mas não 3.14; wheels Linux/3.13 não são substitutos.
+- A stdlib nativa, PyYAML, `tzdata` e **Pillow ARM64** foram validados.
+  `cryptography` ainda exige build Android compatível com **CPython 3.14**;
+  no primeiro cross-build, o Rust/CFFI não encontrou `Python.h` no include
+  do compilador. O índice Chaquopy consultado em 12/11/2026 oferece
+  wheels anteriores, mas não uma substituição cp314 válida.
 - A extração da stdlib e dos módulos `.so` ainda confere comprimento, **não
-  SHA-256** no dispositivo. Os 801 arquivos do motor e das dependências
-  puras têm SHA-256 e atualização atômica, mas a entrega final precisa
+  SHA-256** no dispositivo. Os **912 arquivos** do motor e das dependências
+  já empacotadas têm SHA-256 e atualização atômica, mas a entrega final precisa
   validar todos os assets e tratar falhas.
 - A inicialização/importação ocorre na thread da Activity e levou vários
   segundos, inclusive com timeout visual na primeira abertura. O backend real

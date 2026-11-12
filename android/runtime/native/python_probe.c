@@ -158,13 +158,14 @@ Java_com_mene_exvius_LocalPythonProbe_execute(JNIEnv *env, jclass unused,
     __android_log_print(ANDROID_LOG_INFO, TAG, "CPython 3.14.10: zlib ssl sqlite3 socket hashlib zipfile OK");
     int engine_status = PyRun_SimpleString(
         "import ffbe_engine_bootstrap\n"
-        "ffbe_engine_bootstrap.probe()\n"
+        "_result = ffbe_engine_bootstrap.probe()\n"
+        "assert 'PIL' in _result['imports']\n"
     );
     if (engine_status) {
         __android_log_print(ANDROID_LOG_ERROR, TAG, "Revival source import-only probe failed");
         return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-IMPORT-FAILED");
     }
     __android_log_print(ANDROID_LOG_INFO, TAG,
-                        "Revival imports: yaml tzdata/zoneinfo serve capture_server OK");
-    return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-TZDATA-OK");
+                        "Revival imports: yaml tzdata/zoneinfo Pillow PNG serve capture_server OK");
+    return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-PILLOW-OK");
 }

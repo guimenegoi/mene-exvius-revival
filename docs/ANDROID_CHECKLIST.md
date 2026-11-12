@@ -31,16 +31,19 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       do FFBE com 172 fontes/recursos do Git e PyYAML puro, SHA-256 validado.
 - [x] Incorporar `tzdata` 2026.6 e validar `zoneinfo` de
       `America/Sao_Paulo` **com dados internos do APK**, inclusive após reabrir.
-      Pacote atual: 801 arquivos (Revival + PyYAML + tzdata) com SHA-256.
+- [x] Compilar **Pillow 13.0.0** para CPython 3.14 / Android ARM64;
+      verificar wheel e ELF; incorporar ao APK e confirmar PNG gerado/reaberto
+      em memória no processo FFBE, inclusive após reinício. Pacote atual:
+      **912 arquivos** (Revival, PyYAML, tzdata e Pillow), com SHA-256.
       **Somente importação**: backend e runtime final ainda não iniciam.
 - [ ] Instalar/verificar os 19 pacotes **reais** no Android; confirmar os arquivos
       de tutorial, mapa, áudio e combate no armazenamento privado do cliente.
 - [ ] Verificar escrita, atualização e preservação de saves no layout real ARM64.
 - [ ] Empacotar runtime CPython incorporado, stdlib e dependências
       `cryptography`, `Pillow`, `PyYAML`, `tzdata` para x86_64 e ARM64.
-      **Já validados em ARM64:** CPython, stdlib, PyYAML puro e tzdata.
-      **Bloqueadores:** builds Android CPython 3.14 de `cryptography` e
-      `Pillow`, com verificação das bibliotecas nativas e import real.
+      **Já validados em ARM64:** CPython, stdlib, PyYAML, tzdata e Pillow.
+      **Bloqueadores:** build Android CPython 3.14 de `cryptography` e
+      execução da pilha inteira em x86_64 e Android ARM64 físico.
 - [ ] Integrar inicialização/desligamento do **motor Revival real** ao ciclo de
       vida do FFBE, com diagnóstico de readiness e falha segura.
 - [ ] Tirar extração/importações da thread principal da Activity; no teste
@@ -73,6 +76,43 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       depois do primeiro APK offline realmente jogável.
 
 ## Registro de execução
+
+### 2026-11-12 — build verificável de wheels nativas Android (em validação)
+
+- Criado workflow manual `.github/workflows/android-wheels.yml` no fork, com
+  escolha de dependência (`Pillow` ou `cryptography`) e arquitetura
+  (ARM64 ou x86_64). Fontes fixadas por versão e SHA-256; artefatos têm
+  retenção curta e não são publicados em releases.
+- Criado `android/runtime/verify_dependency_wheel.py`, que verifica tags
+  Android/CPython 3.14 ou `abi3`, arquitetura ELF da extensão nativa,
+  pacote esperado e nomes de membros sem traversal/duplicação.
+- **36 testes de runtime** aprovados, incluindo os contratos do
+  verificador de wheel e empacotamento nativo do Pillow. Importações ARM64
+  e processamento PNG foram validados **separadamente no Waydroid**.
+- **Pillow 13.0.0 ARM64 concluído:** cross-build cp314 aprovado após
+  diagnóstico do SDK, seleção ABI, zlib e libjpeg. `libjpeg-turbo 3.2.1`
+  compilada estaticamente com fonte SHA-256 fixado; wheel resultante
+  `pillow-13.0.0-cp314-cp314-android_24_arm64_v8a.whl` validada no CI e
+  na bancada (módulo `_imaging` e arquitetura ELF ARM64).
+- A wheel adiciona PIL ao empacotador e ao instalador privado existentes;
+  manifesto SHA-256 cobre **912 arquivos / 85,36 MB**. Os `.so` instalados
+  ficam somente leitura, e nenhum arquivo original do cliente foi alterado
+  fora dos DEX e assets previstos.
+- **Waydroid Android 13:** `PYTHON-REVIVAL-PILLOW-OK` comprovado no PID
+  do FFBE após `Image.new`, exportar PNG em `BytesIO`, abrir novamente e
+  verificar pixel/cor; a reabertura do app repetiu o teste.
+- [Build Pillow ARM64 aprovado no Actions](https://github.com/guimenegoi/mene-exvius-revival/actions/runs/43233327397),
+  artefato temporário no Actions (não publicado em release). Cliente
+  anterior restaurado no Waydroid sem limpar dados.
+- `cryptography 50.0.2`: cross-build Rust/CFFI foi iniciado em ARM64,
+  mas falhou porque `Python.h` não estava no include path do `cc-rs`;
+  diagnóstico disponível, sem wheel válida até aqui.
+- Execuções diagnósticas: [Pillow/zlib-JPEG](https://github.com/guimenegoi/mene-exvius-revival/actions/runs/43232233013),
+  [cryptography/Python.h](https://github.com/guimenegoi/mene-exvius-revival/actions/runs/43232294795).
+- **Critério restante:** wheel Android de `cryptography` com ABI e imports
+  testados no FFBE; repetir as dependências em x86_64, migrar inicialização
+  para thread própria e integrar servidor real. O sucesso de Pillow não
+  equivale a um jogo offline.
 
 ### 2026-11-12 — tzdata 2026.6 integrado e incompatibilidade de wheels mapeada
 

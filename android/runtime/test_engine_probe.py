@@ -111,6 +111,32 @@ class EngineBundleTests(unittest.TestCase):
                 5,
             )
 
+    def test_pillow_cp314_wheel_uses_existing_engine_bundle(self):
+        from test_python_probe import fake_elf
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            wheel = root / "pillow-13.0.0-cp314-cp314-android_24_arm64_v8a.whl"
+            with zipfile.ZipFile(wheel, "w") as zf:
+                zf.writestr("pillow-13.0.0.dist-info/WHEEL",
+                            "Wheel-Version: 1.0\nTag: cp314-cp314-android_24_arm64_v8a\n")
+                zf.writestr("pillow-13.0.0.dist-info/licenses/LICENSE", b"License")
+                zf.writestr("PIL/__init__.py", b"")
+                zf.writestr("PIL/Image.py", b"")
+                zf.writestr("PIL/_imaging.cpython-314-aarch64-linux-android.so",
+                            fake_elf(183))
+            bundled = package_engine_probe.native_pillow(wheel, "arm64-v8a")
+            self.assertEqual(len(bundled), 4)
+            self.assertEqual(bundled["vendor/LICENSE-pillow.txt"], b"License")
+            archive = root / "stdlib.zip"
+            make_archive(archive, bundled)
+            target = root / "engine"
+            self.assertEqual(embedded_engine.install(archive, target), len(bundled))
+            self.assertEqual(embedded_engine.install(archive, target), 0)
+            so = target / "vendor/PIL/_imaging.cpython-314-aarch64-linux-android.so"
+            self.assertEqual(so.stat().st_mode & 0o777, 0o400)
+            with self.assertRaisesRegex(ValueError, "Android wheel tag"):
+                package_engine_probe.native_pillow(wheel, "x86_64")
+
     def test_py_yaml_hash_guard(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "pyyaml-6.0.3.tar.gz"

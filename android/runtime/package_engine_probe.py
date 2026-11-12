@@ -17,6 +17,7 @@ import zipfile
 from pathlib import Path
 
 from build_python_probe import verify_archive
+from verify_dependency_wheel import check_wheel
 from embedded_engine import ROOT, MANIFEST, MAX_FILES, MAX_FILE_SIZE, MAX_TOTAL, validate_relative
 from package_stdlib_probe import embed_asset, native_assets, NATIVE_INDEX, NATIVE_PREFIX
 
@@ -118,15 +119,48 @@ def pure_tzdata(wheel: Path) -> dict[str, bytes]:
     return result
 
 
+def native_pillow(wheel: Path, abi: str) -> dict[str, bytes]:
+    """Bundle only the validated Android cp314 Pillow package and its license."""
+    check_wheel(wheel, "pillow", abi)
+    result = {}
+    with zipfile.ZipFile(wheel) as source:
+        for member in source.infolist():
+            if member.is_dir():
+                continue
+            if stat.S_IFMT(member.external_attr >> 16) == stat.S_IFLNK:
+                raise ValueError("Symlink in Pillow wheel")
+            if member.filename.startswith("PIL/"):
+                destination = "vendor/" + member.filename
+            elif member.filename == "pillow-13.0.0.dist-info/licenses/LICENSE":
+                destination = "vendor/LICENSE-pillow.txt"
+            else:
+                continue
+            validate_relative(destination)
+            if member.file_size > MAX_FILE_SIZE:
+                raise ValueError("Oversized Pillow wheel file")
+            result[destination] = source.read(member)
+    if not {"vendor/PIL/__init__.py", "vendor/PIL/Image.py",
+            "vendor/LICENSE-pillow.txt"}.issubset(result):
+        raise ValueError("Pillow package or license missing")
+    if not any(name.startswith("vendor/PIL/_imaging.") and name.endswith(".so")
+               for name in result):
+        raise ValueError("Pillow native image backend missing")
+    return result
+
+
 def package_engine(repository: Path, pyyaml_sdist: Path,
                    original_stdlib: Path, output: Path,
-                   tzdata_wheel: Path | None = None) -> dict[str, int]:
+                   tzdata_wheel: Path | None = None,
+                   pillow_wheel: Path | None = None,
+                   abi: str = "arm64-v8a") -> dict[str, int]:
     if output.exists():
         raise FileExistsError(output)
     data = git_tracked_engine(repository)
     data.update(pure_yaml(pyyaml_sdist))
     if tzdata_wheel is not None:
         data.update(pure_tzdata(tzdata_wheel))
+    if pillow_wheel is not None:
+        data.update(native_pillow(pillow_wheel, abi))
     if len(data) > MAX_FILES or sum(map(len, data.values())) > MAX_TOTAL:
         raise ValueError("Revival source bundle exceeds limits")
     manifest = {
@@ -173,6 +207,8 @@ def main() -> None:
     parser.add_argument("--pyyaml-sdist", type=Path, required=True)
     parser.add_argument("--tzdata-wheel", type=Path, required=True,
                         help="pinned tzdata 2026.6 pure-Python wheel")
+    parser.add_argument("--pillow-wheel", type=Path,
+                        help="validated Pillow 13.0.0 CPython 3.14 Android wheel")
     parser.add_argument("--stdlib", type=Path, required=True)
     parser.add_argument("--out-stdlib", type=Path, required=True)
     parser.add_argument("--python-archive", type=Path, required=True)
@@ -184,7 +220,8 @@ def main() -> None:
     args = parser.parse_args()
     verify_archive(args.python_archive, args.abi)
     result = package_engine(args.repo, args.pyyaml_sdist,
-                            args.stdlib, args.out_stdlib, args.tzdata_wheel)
+                            args.stdlib, args.out_stdlib, args.tzdata_wheel,
+                            args.pillow_wheel, args.abi)
     embed_asset(args.original_apk, args.dex_apk, args.out_apk,
                 args.out_stdlib, native_assets(args.python_prefix, args.abi))
     print("Tracked Revival files:", result["engine_files"],

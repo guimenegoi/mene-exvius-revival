@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib
+import io
 import json
 import os
 import sys
@@ -16,6 +17,7 @@ from pathlib import Path, PurePosixPath
 MANIFEST = "ffbe_engine_manifest.json"
 ROOT = "ffbe_engine/"
 ALLOWED = ("ios-server/", "source/server/", "vendor/yaml/", "vendor/tzdata/",
+           "vendor/PIL/", "vendor/LICENSE-pillow.txt",
            "vendor/LICENSE-pyyaml.txt", "vendor/LICENSE-tzdata.txt",
            "vendor/LICENSE-tzdata-apache.txt")
 MAX_FILES = 1000
@@ -93,7 +95,8 @@ def install(archive: Path, target_root: Path) -> int:
                     out.write(content)
                     out.flush()
                     os.fsync(out.fileno())
-                os.chmod(temporary, 0o600)
+                # Android native extensions must be read-only before dlopen.
+                os.chmod(temporary, 0o400 if target.suffix == '.so' else 0o600)
                 temporary.replace(target)
             finally:
                 temporary.unlink(missing_ok=True)
@@ -134,8 +137,18 @@ def probe(archive: Path | None = None, target_root: Path | None = None) -> dict:
         assert brazil.utcoffset(datetime(2026, 1, 1)) == timedelta(hours=-3)
     finally:
         zoneinfo.reset_tzpath(to=previous_tzpath)
+    # Only probe Pillow if a verified Android wheel was bundled.
+    imports = ["yaml", "tzdata"]
+    if (target_root / "vendor/PIL/__init__.py").is_file():
+        pil = importlib.import_module("PIL.Image")
+        stream = io.BytesIO()
+        pil.new("RGB", (2, 2), (16, 32, 64)).save(stream, format="PNG")
+        stream.seek(0)
+        with pil.open(stream) as image:
+            assert image.size == (2, 2) and image.getpixel((0, 0)) == (16, 32, 64)
+        imports.append("PIL")
     serve = importlib.import_module("serve")
     capture = importlib.import_module("capture_server")
     if not callable(serve.configure_engine) or not hasattr(capture, "Handler"):
         raise RuntimeError("Revival server module contract is incomplete")
-    return {"files": extracted, "imports": ("yaml", "tzdata", "serve", "capture_server")}
+    return {"files": extracted, "imports": (*imports, "serve", "capture_server")}
