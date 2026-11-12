@@ -144,6 +144,11 @@ jobs:
             test -f "$GITHUB_WORKSPACE/ffbe-deps/lib/libjpeg.a"
             # Pillow already reads JPEG_ROOT, C_INCLUDE_PATH and LIBRARY_PATH.
             export CIBW_ENVIRONMENT="JPEG_ROOT=$GITHUB_WORKSPACE/ffbe-deps C_INCLUDE_PATH=$SYSROOT/usr/include LIBRARY_PATH=$SYSROOT/usr/lib/$NDK_TRIPLE/24"
+          elif [ "$PACKAGE" = cryptography ]; then
+            # cibuildwheel provides PYO3_CROSS_LIB_DIR for this Android ABI.
+            # The CFFI-generated _openssl.c includes Python.h, which lives
+            # one level deeper than the default -I.../prefix/include.
+            export CIBW_ENVIRONMENT='C_INCLUDE_PATH=$PYO3_CROSS_LIB_DIR/../include/python3.14'
           fi
           python -m cibuildwheel --platform android --output-dir wheelhouse "source/$PACKAGE-$VERSION"
       - name: Validate Android wheel tags and ELF architecture
