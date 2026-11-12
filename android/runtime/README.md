@@ -199,6 +199,41 @@ após a prova; faltam inicialização e encerramento do motor real,
 readiness na porta 18080, controle da GIL, tratamento de reinício e
 dados completos do jogo.
 
+## HTTP Revival privado e bloqueado por inventário — 12/11/2026
+
+O ZIP Python agora contém `ffbe_local_http.py` e `ffbe_offline_manifest.json`
+(cópia versionada de `data/latest.json`). O JNI da thread verifica o
+inventário **antes** de importar os módulos de servidor para iniciá-lo.
+A raiz é `Context.getFilesDir()/exvius/data`, conforme o instalador
+já existente `android/data/offline_data.py`.
+
+O adaptador reutiliza `serve.configure_engine()`, `serve.start_engine()`
+e `serve.make_handler()`; utiliza `serve.Server` restrito a
+`127.0.0.1:18080`, **sem DNS, TLS, VPN nem outra aplicação**.
+A porta só abre depois da inicialização do motor. O worker chama
+`serve_forever()` enquanto o processo estiver vivo; parada limpa e
+readiness coordenada com o jogo ainda não estão implementadas.
+
+O preflight é somente leitura e exige os **19 recibos** da revisão
+empacotada, SHA-256 do APK de assets, arquivos essenciais MST/texto/CPK,
+links nativos para a pasta privada do próprio cliente e inventário mínimo.
+Uma instalação incompleta **não cria saves nem abre 18080**. Na ausência
+dos recursos, o JNI mantém apenas a prova de imports/AES já aprovada.
+O instalador verifica SHA-256 dos pacotes ao instalá-los; este preflight
+confere registros, arquivos essenciais e inventário, sem rehash de 15 GB
+na inicialização.
+
+**Prova Waydroid Android 13:** `REVIVAL-DATA-NOT-READY: private data
+root missing/unsafe`, sem listener em 18080, e
+`PYTHON-REVIVAL-CRYPTO-OK` na thread independente; repetido depois
+de `force-stop`. O APK de referência foi restaurado sem limpar dados.
+Um teste Linux com handler simulado comprovou a ligação HTTP e o
+isolamento em loopback, **não** as respostas reais do jogo.
+
+**Ainda pendente:** iniciar o backend com os 19 pacotes reais (~14,95 GB
+instalados), servir requisições de jogo e downloads, coordenar readiness,
+encerrar com segurança, validar saves e batalha sem conexão externa.
+
 ## Limites e pendências reais
 
 - O Python **importa** os módulos de `ios-server/` e `source/server/`, mas

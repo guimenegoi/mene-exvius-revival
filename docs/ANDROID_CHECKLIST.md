@@ -49,8 +49,13 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       tzdata, Pillow, cryptography, cffi e pycparser.
       **Pendentes:** build e execução da pilha em x86_64, testes em Android
       ARM64 físico e inicialização do servidor real.
-- [ ] Integrar inicialização/desligamento do **motor Revival real** ao ciclo de
-      vida do FFBE, com diagnóstico de readiness e falha segura.
+- [x] Criar entrada guardada do **handler HTTP real** em
+      `127.0.0.1:18080`: validar o manifesto fixado de 19 pacotes, recibos,
+      SHA-256 do cliente, links nativos e inventário antes de importar/iniciar
+      o servidor. Validar recusa sem dados no Waydroid, sem abrir `18080`.
+- [ ] Completar inicialização/desligamento do **motor Revival real** com os
+      19 pacotes instalados, readiness do cliente e ciclo de vida do FFBE.
+      O handler foi conectado, mas ainda não há prova de requisições reais.
 - [x] Tirar extração/importações da thread principal da Activity **na prova
       de laboratório**: worker Java `FFBE-Python`, usando o Context da
       aplicação e guarda de inicialização única; início e imports confirmados
@@ -84,6 +89,37 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       depois do primeiro APK offline realmente jogável.
 
 ## Registro de execução
+
+### 2026-11-12 — handler Revival loopback com bloqueio por inventário
+
+- `android/runtime/local_http.py` conecta `serve.configure_engine()`,
+  `serve.start_engine()`, `serve.make_handler()` e `serve.Server` **existentes**
+  ao listener `127.0.0.1:18080`, sem TLS, DNS nem serviço externo.
+  O servidor só escuta depois de validar o conjunto e inicializar o motor.
+- O manifesto `data/latest.json` da revisão de **19 pacotes** acompanha o
+  ZIP Python dentro do APK. A verificação privada exige registros dos
+  19 pacotes em `installed.json`, recibo e SHA-256 do cliente,
+  arquivos MST e texto, dados nativos compartilhados por symlinks corretos
+  e contagem mínima do inventário. A integridade integral dos pacotes foi
+  conferida pelo instalador no download; o preflight não rehash os 15 GB
+  em cada abertura. Falhas não criam saves nem listener.
+- JNI da thread `FFBE-Python` consulta o preflight **antes de importar o
+  servidor**. Sem recursos, mantém somente os imports/AES já validados;
+  com recursos, chama o motor real e permanece no `serve_forever()`.
+  O encerramento de produção e a sincronização de readiness com a UI ainda
+  precisam ser implementados e testados.
+- Testes de contrato: socket HTTP loopback com handler simulado, recusa de
+  pacotes incompletos, cliente adulterado, inventário insuficiente e
+  symlink indevido. **O handler simulado não comprova gameplay.**
+- **Waydroid, primeira abertura**: `REVIVAL-DATA-NOT-READY: private data
+  root missing/unsafe`; porta 18080 fechada; `PYTHON-REVIVAL-CRYPTO-OK`
+  apareceu na thread separada. **Segunda abertura** repetiu o resultado.
+  O APK anterior foi restaurado com `install-multiple -r`, sem limpar dados.
+- O cliente original conserva `libgame.so` e todas as demais entradas,
+  exceto os dois DEX aprovados e os assets Python acrescentados.
+- **Pendentes:** instalar os dados reais (≈14,95 GB extraídos), inicialização
+  do engine/HTTP real no Android, checagem de readiness na UI e gameplay
+  sem rede. Não marcar esses itens como concluídos.
 
 ### 2026-11-12 — inicialização CPython fora da thread da Activity
 

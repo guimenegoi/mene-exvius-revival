@@ -156,6 +156,40 @@ Java_com_mene_exvius_LocalPythonProbe_execute(JNIEnv *env, jclass unused,
         return (*env)->NewStringUTF(env, "Python evaluation failed");
     }
     __android_log_print(ANDROID_LOG_INFO, TAG, "CPython 3.14.10: zlib ssl sqlite3 socket hashlib zipfile OK");
+    int check = PyRun_SimpleString(
+        "import ffbe_local_http\n"
+        "_http_ready, _http_reason = ffbe_local_http.preflight()\n"
+    );
+    if (check) {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Revival data preflight failed");
+        return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-PREFLIGHT-FAILED");
+    }
+    PyObject *main_module = PyImport_AddModule("__main__");
+    PyObject *flag = main_module ? PyObject_GetAttrString(main_module, "_http_ready") : NULL;
+    int ready = flag ? PyObject_IsTrue(flag) : -1;
+    Py_XDECREF(flag);
+    if (ready < 0) {
+        PyErr_Print();
+        return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-PREFLIGHT-FAILED");
+    }
+    if (ready) {
+        __android_log_print(ANDROID_LOG_INFO, TAG,
+                            "19 packs verified: starting real Revival on 127.0.0.1:18080");
+        /* This blocks on the dedicated FFBE-Python Java worker until the
+         * process is stopped. serve_forever releases the GIL while polling.
+         * This is not the final Android service lifecycle. */
+        if (PyRun_SimpleString("ffbe_local_http.run()\n")) {
+            __android_log_print(ANDROID_LOG_ERROR, TAG, "Real Revival HTTP failed");
+            return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-HTTP-FAILED");
+        }
+        return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-HTTP-STOPPED");
+    }
+    PyObject *reason = PyObject_GetAttrString(main_module, "_http_reason");
+    __android_log_print(ANDROID_LOG_WARN, TAG, "REVIVAL-DATA-NOT-READY: %s",
+                        reason ? PyUnicode_AsUTF8(reason) : "unknown");
+    Py_XDECREF(reason);
+    /* No resources: preserve the proven import/AES probe but NEVER claim a
+     * running backend or open a fake listener at 18080. */
     int engine_status = PyRun_SimpleString(
         "import ffbe_engine_bootstrap\n"
         "_result = ffbe_engine_bootstrap.probe()\n"
@@ -163,7 +197,7 @@ Java_com_mene_exvius_LocalPythonProbe_execute(JNIEnv *env, jclass unused,
         "assert 'cryptography' in _result['imports']\n"
     );
     if (engine_status) {
-        __android_log_print(ANDROID_LOG_ERROR, TAG, "Revival source import-only probe failed");
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Revival import/AES probe failed");
         return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-IMPORT-FAILED");
     }
     __android_log_print(ANDROID_LOG_INFO, TAG,

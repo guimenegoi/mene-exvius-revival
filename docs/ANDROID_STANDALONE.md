@@ -12,7 +12,7 @@ A fase de desenvolvimento pode usar Termux/Waydroid como bancada de testes.
 O runner `android/ffbe-termux` continua disponível apenas para testes e não integra
 a experiência ou a lista de requisitos da versão final.
 
-**Status em 12/11/2026: transporte Java, instalador de dados e CPython 3.14.10 ARM64 com Revival, PyYAML, tzdata, Pillow, cryptography, cffi e pycparser dentro do FFBE comprovados (PNG e AES-CBC do FFBE). Inicialização Python fora da thread principal **validada apenas em laboratório**; lifecycle de produção, geração de certificados, servidor Revival local, testes x86_64/ARM64 físico e APK offline independente ainda NÃO concluídos.**
+**Status em 12/11/2026: transporte Java, instalador de dados e CPython 3.14.10 ARM64 com Revival, PyYAML, tzdata, Pillow, cryptography, cffi e pycparser dentro do FFBE comprovados (PNG e AES-CBC do FFBE). Inicialização Python fora da thread principal **validada apenas em laboratório**; lifecycle de produção, geração de certificados, entrada HTTP Revival guardada por inventário de 19 pacotes (falha segura comprovada no Waydroid); servidor **real** ainda não iniciado com dados completos, testes x86_64/ARM64 físico e APK offline independente ainda NÃO concluídos.**
 O pacote `mene-exvius-revival-termux-5a1afdc9.tar.gz` é um artefato de desenvolvimento,
 não é o instalador offline prometido.
 

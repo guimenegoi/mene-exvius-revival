@@ -87,6 +87,15 @@ class EngineBundleTests(unittest.TestCase):
                 zf.writestr("encodings/__init__.py", b"")
                 zf.writestr("json/__init__.py", b"")
             path = root / "result.zip"
+            (root / "data").mkdir()
+            (root / "data/latest.json").write_text(json.dumps({
+                "schema": 1, "files": 1,
+                "packs": [
+                    {"id": "client-assets" if i == 0 else f"data-{i:03}",
+                     "sha256": f"{i + 1:064x}"}
+                    for i in range(19)
+                ],
+            }))
             source = {
                 "ios-server/serve.py": b"def configure_engine(): pass\n",
                 "ios-server/certs.py": b"x=1\n",

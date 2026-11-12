@@ -32,6 +32,8 @@ TZDATA_LICENSES = {
         "vendor/LICENSE-tzdata-apache.txt",
 }
 BOOTSTRAP = Path(__file__).with_name("embedded_engine.py")
+HTTP_LAUNCHER = Path(__file__).with_name("local_http.py")
+OFFLINE_MANIFEST = "ffbe_offline_manifest.json"
 
 
 def git_tracked_engine(repository: Path) -> dict[str, bytes]:
@@ -299,7 +301,8 @@ def package_engine(repository: Path, pyyaml_sdist: Path,
     }
     with zipfile.ZipFile(original_stdlib) as original:
         names = original.namelist()
-        if MANIFEST in names or "ffbe_engine_bootstrap.py" in names or any(
+        if any(name in names for name in (MANIFEST, "ffbe_engine_bootstrap.py",
+                                              "ffbe_local_http.py", OFFLINE_MANIFEST)) or any(
             name.startswith(ROOT) for name in names
         ):
             raise ValueError("Engine already present in stdlib ZIP")
@@ -310,8 +313,16 @@ def package_engine(repository: Path, pyyaml_sdist: Path,
         with zipfile.ZipFile(output, "w", allowZip64=True) as dst:
             for info in original.infolist():
                 dst.writestr(info, original.read(info.filename))
+            offline_manifest = (repository / "data/latest.json").read_bytes()
+            offline_metadata = json.loads(offline_manifest)
+            if (offline_metadata.get("schema") != 1
+                    or len(offline_metadata.get("packs", [])) != 19
+                    or offline_metadata.get("files", 0) < 1):
+                raise ValueError("Expected pinned 19-pack offline data manifest")
             extra = {
                 "ffbe_engine_bootstrap.py": BOOTSTRAP.read_bytes(),
+                "ffbe_local_http.py": HTTP_LAUNCHER.read_bytes(),
+                OFFLINE_MANIFEST: offline_manifest,
                 MANIFEST: json.dumps(manifest, sort_keys=True,
                                      separators=(",", ":")).encode("utf-8"),
             }
@@ -364,7 +375,7 @@ def main() -> None:
                 args.out_stdlib, native_assets(args.python_prefix, args.abi))
     print("Tracked Revival files:", result["engine_files"],
           "bytes:", result["engine_bytes"])
-    print("Lab only: import-only probe, not game backend startup")
+    print("Lab only: guarded Revival HTTP path; requires all 19 verified data packs")
 
 
 if __name__ == "__main__":
