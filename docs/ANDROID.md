@@ -21,7 +21,8 @@ O fork deve evitar divergências desnecessárias do upstream: ajustes específic
 | Tabelas de recompensas da wiki | **Compatibilidade pendente** | `EXVIUS_WIKI_REWARDS=0` no ambiente de referência |
 | Python dentro do Android | **Validado** | Python 3.14.10 no Termux x86_64 (Waydroid) |
 | Servidor HTTP Python dentro do Android | **Validado** | `python -m http.server 18443`, acessado por outro dispositivo com HTTP 200 |
-| Motor Revival completo dentro do Android | **Pendente** | Dependências, dados, certificados e inicialização não validados |
+| Imports do backend Revival no Android | **Validados** | Código compactado (7,5 MB), conferido por SHA-256, compilado no Python 3.14 e imports de `serve`, `certs`, `capture_server`, `cryptography`, `PyYAML`, `Pillow` e `tzdata` sem erros |
+| Motor Revival completo dentro do Android | **Pendente** | Dados, certificados, inicialização e atendimento ao cliente ainda não validados |
 | Jogo usando o backend local e sem internet | **Pendente** | Portas, DNS/encaminhamento e execução em segundo plano por resolver |
 
 **Cuidado:** executar um servidor Python de demonstração **não** significa que o jogo esteja offline. O backend funcional permanece no servidor Linux de referência.
@@ -97,7 +98,8 @@ O `update` aceita alterações de código por fast-forward, cria backup consiste
 - [x] Clonar o fork e configurar os remotos `origin` e `upstream`.
 - [x] Validar batalha, recompensas e persistência no backend Linux.
 - [x] Instalar Termux e Python; servir uma página HTTP em porta alta no Android.
-- [ ] Testar as dependências reais de `ios-server/` e `source/server/` no Android/Termux, com dados mínimos e sem alterar o servidor de referência.
+- [x] Testar compilação e imports de `ios-server/` e `source/server/` no Termux, sem copiar dados ou saves.
+- [ ] Validar a inicialização do motor com dados mínimos, sem alterar o servidor de referência.
 - [ ] Iniciar uma instância independente do motor Revival no Android, usando portas altas e estado de teste descartável.
 - [ ] Medir uso de RAM, CPU, armazenamento, estabilidade e operação com tela apagada; testar também Android ARM64 físico.
 - [ ] Resolver o mapeamento do cliente para o servidor local e a confiança TLS sem exigir root.
