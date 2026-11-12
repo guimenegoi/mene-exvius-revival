@@ -40,7 +40,8 @@ A URL do manifesto do instalador foi fixada no commit upstream
 `game-assets.apk`, depois reutiliza `offline_data.android_files_layout()`
 para criar somente os cinco links nativos e o recibo do cliente. Não
 modifica `installed.json` nem saves. Os testes de contrato com dados
-sintéticos passaram; a instalação completa **não foi executada no Android**.
+sintéticos passaram. Posteriormente, os **19 pacotes reais foram instalados**
+no Waydroid com download a partir do LXC e preflight positivo.
 
 A prova JNI do APK integrado confirmou `PYTHON-REVIVAL-CRYPTO-OK` em worker,
 com `REVIVAL-DATA-NOT-READY` e porta 18080 fechada quando faltam dados.
@@ -67,21 +68,25 @@ instalador ainda em primeiro plano e a mensagem de timeout, sem listener
 na porta 18080 e sem abrir `Lapis`. O APK de distribuição mantém o prazo
 normal (240 consultas) e não contém o bypass de teste.
 
-**Ainda não comprovado:** download/extração dos 19 pacotes no Android,
-resposta positiva do servidor real, entrada em `Lapis`, batalha e saves
-offline. O ciclo de vida/start-stop do motor também continua pendente.
+**Comprovado posteriormente:** extração de 19 pacotes reais, readiness
+positiva do servidor, entrada em `Lapis`, tela de título e requisições
+GameSetting/Initialize/GetUserInfo. **Pendente:** download complementar
+de `F_BANNER_MST` (404), tela principal, batalha, save e modo avião.
+O ciclo de vida/start-stop do motor também continua pendente.
+Ver [auditoria de 12/11](ANDROID_AUDIT_2026-11-12.md).
 
-## Diferenças que devem ser conciliadas ANTES da integração
+## Diferenças de arquitetura e suas validações
 
 1. **Adaptado e testado sinteticamente:** `DataUpdates.java` escreve
    `installed.json` com lista `packs: [{id,sha256,unpackedSize}]`;
    `local_http.py` agora aceita essa lista e o antigo dicionário `{id:sha}`.
    A reconciliação gera apenas `offline-client-assets.json`, mantendo o
    inventário original, após validar a revisão e os hashes.
-2. **Adaptado em testes sintéticos:** `DataPack.java` grava os arquivos
-   em `getFilesDir()/{mst,en,common_lang,...}` e o adaptador reutiliza
+2. **Integrado:** `DataPack.java` grava os arquivos em
+   `getFilesDir()/{mst,en,common_lang,...}` e o adaptador reutiliza
    `android_files_layout()` para criar os cinco links autorizados em
-   `getFilesDir()/exvius/data/native`. Falta testar após download real.
+   `getFilesDir()/exvius/data/native`. O servidor iniciou com dados reais;
+   falta auditar uma tabela nativa que retornou 404.
 3. O `client-assets` contém `static/client/game-assets.apk`: antes de
    abrir `Lapis`, é necessário anexá-lo ao `AssetManager` pelo mecanismo
    `GameAssets.attach()`. Isso não é opcional para telas e mídia originais.
@@ -96,14 +101,16 @@ offline. O ciclo de vida/start-stop do motor também continua pendente.
 
 - [x] Abrir tela de configuração no Waydroid sem congelar a Activity.
 - [ ] Validar espaço livre (recomendação atual: **22 GiB**) e conexão.
-- [ ] Baixar sequencialmente os 19 pacotes (~14,65 GB), com progresso,
-      retomada, checksum SHA-256 e exclusão dos ZIPs após instalação.
-- [ ] Instalar dados compartilhados sem duplicação e sem mexer em saves.
-- [ ] Anexar `game-assets.apk`, concluir recibos e iniciar o servidor real.
+- [x] Instalar os 19 pacotes reais (~14,65 GB) no Waydroid com o
+      instalador upstream e recibos SHA-256, usando cache local em laboratório.
+- [ ] Confirmar retomada após interrupção real e limpeza de temporários.
+- [x] Instalar dados com recibos válidos e sem limpar os saves no Waydroid.
+- [ ] Auditar a disponibilidade individual de `F_BANNER_MST` no CDN.
+- [x] Anexar `game-assets.apk`, concluir recibos e iniciar o servidor real.
 - [x] Implementar espera assíncrona de `18080/__exvius/hello`, com prazo
       limitado e falha segura, e confirmar a recusa no Waydroid sem dados.
-- [ ] Com os 19 pacotes reais instalados, provar transição por readiness
-      positiva do servidor Revival para `Lapis`.
+- [x] Com os 19 pacotes reais instalados, provar transição por readiness
+      positiva do servidor Revival para `Lapis` e título original.
 - [ ] Reiniciar sem redownload; verificar download interrompido e reparação.
 - [ ] Desligar internet e testar login, batalha, recompensa e save/reabertura.
 

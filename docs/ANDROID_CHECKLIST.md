@@ -20,6 +20,10 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
 
 ## P0 — APK offline autossuficiente
 
+Estado de laboratório e bloqueadores em
+[Auditoria Android — 12/11](ANDROID_AUDIT_2026-11-12.md).
+
+
 - [x] Implementar instalador de manifesto (19 pacotes, retomada, SHA-256,
       reserva de espaço e verificação local sem rede) em `android/data`.
 - [x] Testar layout de compartilhamento nativo/servidor sem duplicações em Linux.
@@ -38,9 +42,10 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       `127.0.0.1:18080/__exvius/hello`, com worker, prazo limitado e tela
       de erro. Falha segura comprovada no Waydroid, inclusive JNI/AES
       inicializados **antes** de `Lapis.onCreate`, sem downloads ou saves.
-- [ ] Instalar/extrair os 19 pacotes reais no Android, anexar
-      `game-assets.apk`, comprovar readiness **positiva** e entrada no jogo;
-      o gate de falha já existe, mas o fluxo completo segue pendente.
+- [x] Instalar/extrair os 19 pacotes reais no Waydroid, anexar
+      `game-assets.apk`, obter readiness **positiva** em `18080`, entrar em
+      `Lapis` e chegar ao título, sem re-download dos 14,65 GB em reinício.
+      **Pendente:** download complementar de MST, tela principal e gameplay.
 - [x] Executar código Python 3.14.10 ARM64 dentro do processo FFBE em laboratório:
       JNI, stdlib privada, `Py_InitializeFromConfig` e `PYTHON-EXECUTED-42`.
 - [x] Importar extensões oficiais nativas (67 módulos do CPython) no FFBE:
@@ -58,32 +63,33 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       X.509 **no processo FFBE, também após reabrir**. Pacote atual:
       **1.065 arquivos** na variante com instalador (Revival, dependências
       e integração de dados), com SHA-256.
-      **Servidor e jogo offline ainda não iniciados.**
-- [ ] Instalar/verificar os 19 pacotes **reais** no Android; confirmar os arquivos
-      de tutorial, mapa, áudio e combate no armazenamento privado do cliente.
+      **Servidor real iniciado no Android; jogo offline ainda não validado.**
+- [x] Instalar e verificar os recibos dos 19 pacotes **reais** no Waydroid.
+- [ ] Validar individualmente os recursos exigidos em gameplay; `F_BANNER_MST`
+      (Ver595_oB0YVw67.dat) retornou 404 apesar de estar em data-010.zip.
 - [ ] Verificar escrita, atualização e preservação de saves no layout real ARM64.
 - [ ] Empacotar runtime CPython incorporado, stdlib e dependências
       `cryptography`, `Pillow`, `PyYAML`, `tzdata` para x86_64 e ARM64.
       **Já validados em ARM64 no Waydroid:** CPython, stdlib, PyYAML,
       tzdata, Pillow, cryptography, cffi e pycparser.
-      **Pendentes:** build e execução da pilha em x86_64, testes em Android
-      ARM64 físico e inicialização do servidor real.
+      **Pendentes:** build e execução nativa x86_64, Android ARM64 físico
+      e validação completa da partida. Servidor real já iniciou no Waydroid.
 - [x] Criar entrada guardada do **handler HTTP real** em
       `127.0.0.1:18080`: validar o manifesto fixado de 19 pacotes, recibos,
       SHA-256 do cliente, links nativos e inventário antes de importar/iniciar
       o servidor. Validar recusa sem dados no Waydroid, sem abrir `18080`.
-- [ ] Completar inicialização/desligamento do **motor Revival real** com os
-      19 pacotes instalados, readiness do cliente e ciclo de vida do FFBE.
-      O handler foi conectado, mas ainda não há prova de requisições reais.
+- [x] Iniciar o **motor Revival real** com 19 pacotes no Waydroid e
+      atender GameSetting, Initialize, GetUserInfo e recursos CDN via HTTP.
+- [ ] Completar parada limpa/ciclo de vida e comprovar gameplay offline.
 - [x] Tirar extração/importações da thread principal da Activity **na prova
       de laboratório**: worker Java `FFBE-Python`, usando o Context da
       aplicação e guarda de inicialização única; início e imports confirmados
       em TID diferente da UI, incluindo AES após reiniciar, sem timeout no log.
-      **Pendente para produção:** serviço, readiness, stop e servidor real.
-- [ ] Integrar o instalador de dados ao mesmo APK (sem acesso ao armazenamento
-      privado por outro app).
-- [ ] Produzir APK assinado para testes com cliente, runtime e instalador
-      integrados, usando patch mínimo e reprodutível.
+      **Pendente para produção:** ciclo de vida/stop e estabilidade.
+- [x] Integrar o instalador ao mesmo APK: primeiro uso real instalou os
+      19 pacotes no Waydroid usando cache privado somente em laboratório.
+- [x] Produzir APK de laboratório assinado com cliente, runtime,
+      instalador e gate HTTP integrados, com diff verificado. Ainda não é release.
 - [ ] Passar pelo menos uma batalha, receber recompensa e persistir save com
       Wi-Fi/dados desligados e sem servidor externo; reabrir o jogo e conferir save.
 

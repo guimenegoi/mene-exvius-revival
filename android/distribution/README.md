@@ -22,6 +22,30 @@ explica que o servidor não iniciou, o JNI/AES funciona e `Lapis` não é
 aberto. A transição positiva após instalação dos 19 pacotes reais ainda
 não foi comprovada. Ambas as variantes são de laboratório, não releases.
 
+## Ensaio de instalação usando o cache privado do LXC
+
+O laboratório pode testar **a Activity e o instalador Android reais** sem
+baixar novamente os 14,65 GB do GitHub. O script
+`android/distribution/local_cache_server.py` publica apenas o manifesto
+fixado e os 19 ZIPs existentes, com suporte a HTTP Range para retomada.
+A origem local é **exclusiva do laboratório**:
+`127.0.0.1:18082` no LXC, encaminhada por SSH para o desktop e de lá
+por `adb reverse tcp:18082 tcp:18082` para o Waydroid.
+
+`build_local_install_lab.py` valida o SHA-256 do APK unsigned aprovado e
+recompila **somente classes4.dex**: a URL do manifesto e o prefixo dos ZIPs
+passam a `127.0.0.1:18082`. Para contornar a indisponibilidade do
+DownloadManager do Waydroid nessa origem, a consulta pequena do manifesto
+reutiliza `DataUpdates.resumableDownload()` já utilizado pelos ZIPs.
+Todos os demais arquivos do APK são comparados byte por byte. O resultado
+não é um APK de distribuição, depende do túnel ADB/SSH e **jamais deve ser
+publicado** com URL de laboratório.
+
+Essa variante **não altera os 19 hashes**, o inventário, os saves nem
+os arquivos ZIP originais; o instalador Android continua responsável
+por verificar SHA-256, extrair, fazer journaling e remover os temporários.
+É um teste da instalação automática original, não um segundo instalador.
+
 ## Estrutura
 
 - `apk/`: cinco splits Android **assinados com certificado de teste**, da
@@ -47,16 +71,17 @@ O script reutiliza o downloader de `ios-server/fetch_data.py`, com retomada
 por HTTP Range; os 19 ZIPs totalizam aproximadamente **14,65 GB**.
 Downloads incompletos permanecem como `.part` para retomada.
 
-**Importante:** esse cache do HD externo serve como backup/distribuição de
-laboratório. O APK experimental atual **não instala os dados automaticamente
-na primeira execução**; ele evita iniciar o servidor enquanto os 19 pacotes
-não estão presentes no seu armazenamento privado. Para concluir a experiência
-de primeiro uso ainda são necessários a UI Android, o instalador interno
-de recursos e o gerenciamento de prontidão. O cache no LXC não é acessível
-automaticamente pelo Android.
+**Estado verificado em 12/11:** o APK experimental **instalou os 19 pacotes
+reais automaticamente no Waydroid**, usando o cache do LXC por um túnel
+**exclusivo de laboratório**. O motor Revival entrou em `127.0.0.1:18080`
+e abriu o título. Ainda falha um download complementar da tabela
+`F_BANNER_MST`; portanto, o APK **não é uma release jogável**.
+A variante com URL `127.0.0.1:18082` não deve sair do laboratório;
+para distribuição, usar os endereços upstream fixados e validar em Android
+ARM64 real. Ver [auditoria](../../docs/ANDROID_AUDIT_2026-11-12.md).
 
-O código original `android/data/offline_data.py` é a implementação de
-instalação e verificação que será reutilizada no primeiro uso do APK.
+O código `android/data/offline_data.py` permanece como verificador e
+adaptador de recibos; o próprio `DataUpdates` upstream faz a instalação.
 A instalação exige **pelo menos 22 GiB livres** no dispositivo, conforme
 estimativa conservadora do projeto.
 
