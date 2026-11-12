@@ -13,7 +13,7 @@ Usar o mesmo motor de jogo `source/server/` do Revival no Android (FFBE Global),
 
 O fork deve evitar divergências desnecessárias do upstream: ajustes específicos Android devem ficar isolados; correções genéricas devem ser propostas ao projeto original.
 
-## Estado verificado — 11 de novembro de 2026
+## Estado verificado — 12 de novembro de 2026
 
 | Verificação | Estado | Evidência / restrição |
 | --- | --- | --- |
@@ -29,10 +29,14 @@ O fork deve evitar divergências desnecessárias do upstream: ajustes específic
 | Imports do backend Revival no Android | **Validados** | Código compactado (7,5 MB), conferido por SHA-256, compilado no Python 3.14 e imports de `serve`, `certs`, `capture_server`, `cryptography`, `PyYAML`, `Pillow` e `tzdata` sem erros |
 | Runner Termux `android/ffbe-termux` | **Prévia validada** | Diagnóstico e bloqueio de execução sem dados testados no Waydroid; [comandos e limites](../android/README.md) |
 | Motor Revival no Termux (teste) | **Validado com dados parciais** | `ios-server/serve.py` iniciou, HTTPS 200 com CA própria, GET MST 200 e serviço ativo ao abrir o FFBE |
-| Aplicativo independente (sem apps auxiliares) | **Pendente** | Python nativo incorporado, patch de endpoint e jogabilidade offline ainda não implementados |
-| Jogo usando o backend local e sem internet | **Pendente** | Portas, DNS/encaminhamento e execução em segundo plano por resolver |
+| Transporte Java para localhost (teste) | **API e CRI validados** | APK 9.1.0 com somente dois DEX substituídos; chamada de API e downloads chegam a HTTP local na porta 18080; [detalhes](../android/network/README.md) |
+| Recursos completos no Android | **Pendente** | A cópia reduzida causou 404 em localized_texts (depois corrigido) e en/sd/area/Ver461_spdungeon1.cpk |
+| Aplicativo independente (sem apps auxiliares) | **Pendente** | Python nativo incorporado, recursos compartilhados e jogabilidade offline ainda não implementados |
+| Jogo completamente offline | **Pendente** | Testar funcionamento sem Termux, Proxmox ou internet, com saves locais |
 
-**Cuidado:** executar um servidor Python de demonstração **não** significa que o jogo esteja offline. O backend funcional permanece no servidor Linux de referência.
+**Cuidado:** a prova de transporte usou Termux somente como laboratório. O
+jogo ainda NÃO está offline; só a referência Linux tem todos os dados e o
+cliente Android não concluiu a inicialização com o conjunto parcial.
 
 ## Arquitetura
 
@@ -107,10 +111,12 @@ O `update` aceita alterações de código por fast-forward, cria backup consiste
 - [x] Instalar Termux e Python; servir uma página HTTP em porta alta no Android.
 - [x] Testar compilação e imports de `ios-server/` e `source/server/` no Termux, sem copiar dados ou saves.
 - [x] Disponibilizar CLI Termux com `setup`, `doctor`, `verify`, `fetch-data`, `start`, `stop` e `status`; testar proteção contra dados ausentes.
-- [ ] Validar a inicialização do motor com dados mínimos, sem alterar o servidor de referência.
-- [ ] Iniciar uma instância independente do motor Revival no Android, usando portas altas e estado de teste descartável.
+- [x] Inicializar o motor no Android/Termux com dados mínimos e save independente, sem alterar o servidor de referência.
+- [x] Validar comunicação Java de API e CriFsWebInstaller do FFBE com o Revival em localhost usando APK de teste.
+- [ ] Instalar dados completos uma única vez e compartilhar com o cliente sem duplicações.
 - [ ] Medir uso de RAM, CPU, armazenamento, estabilidade e operação com tela apagada; testar também Android ARM64 físico.
-- [ ] Resolver o mapeamento do cliente para o servidor local e a confiança TLS sem exigir root.
+- [x] Provar mapeamento HTTP local dos principais métodos de rede Java, sem root, VPN, DNS ou patch na biblioteca nativa.
+- [ ] Incorporar o servidor e seu ciclo de vida ao mesmo aplicativo Android; validar os outros dois mecanismos de download.
 - [ ] Passar uma batalha e persistir o save **sem nenhuma requisição ao Proxmox nem à internet**.
 - [ ] Verificar exploração/encontros aleatórios, summons, inventário e demais telas essenciais.
 - [ ] Investigar objetivamente a incompatibilidade das tabelas `EXVIUS_WIKI_REWARDS=1` e recuperar as funcionalidades sem quebrar Android.

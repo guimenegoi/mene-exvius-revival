@@ -10,7 +10,7 @@ A fase de desenvolvimento pode usar Termux/Waydroid como bancada de testes.
 O runner `android/ffbe-termux` continua disponível apenas para testes e não integra
 a experiência ou a lista de requisitos da versão final.
 
-**Status em 11/11/2026: arquitetura definida; APK único ainda NÃO construído.**
+**Status em 12/11/2026: transporte local Java validado parcialmente; APK único ainda NÃO construído.**
 O pacote `mene-exvius-revival-termux-5a1afdc9.tar.gz` é um artefato de desenvolvimento,
 não é o instalador offline prometido.
 
@@ -24,8 +24,12 @@ não é o instalador offline prometido.
   sem copiar todos os recursos de áudio, gerou certificados e respondeu HTTP 200,
   HTTPS 200 validado contra CA local e GET de arquivo MST.
 - O motor continuou respondendo após 72 segundos com o cliente de jogo em primeiro plano.
-- Nenhuma dessas provas valida integração cliente → servidor local nem uso com tela
-  efetivamente desligada.
+- O patch em [android/network](../android/network/README.md) foi compilado em duas DEX,
+  instalado no Waydroid isolado e recebeu API e downloads do CriFsWebInstaller
+  em HTTP local (127.0.0.1:18080), sem tocar em libgame.so.
+- Os dados locais incompletos causaram 404, primeiro em localized_texts e depois
+  em en/sd/area/Ver461_spdungeon1.cpk. O arquivo CPK existe na referência Linux.
+- **Ainda não** há integração completa, jogo offline ou teste com a tela apagada.
 - O fork tem backend Python, mas **não** possui fontes Android originais, módulo Gradle ou
   `AndroidManifest.xml` do cliente, portanto adicionar um `Service` via Gradle não é
   uma operação direta no aplicativo existente.
