@@ -1,5 +1,9 @@
 # mene-exvius-revival — runtime experimental para Android
 
+> **Somente laboratório:** a entrega final será um único aplicativo FFBE, sem
+> instalação de Termux, VPN ou servidor auxiliar. O alvo e os critérios estão em
+> [ANDROID_STANDALONE.md](../docs/ANDROID_STANDALONE.md).
+
 Esta pasta contém o **runner de desenvolvimento para Termux**. Ainda **não** é um APK nem uma versão do FFBE jogável sem rede. O propósito é iniciar o servidor Python original no Android com estado e dados próprios, sem root e sem alterar o backend do Proxmox.
 
 ## Requisitos

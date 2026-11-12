@@ -4,6 +4,11 @@ Este documento descreve **o fork experimental [mene-exvius-revival](https://gith
 
 ## Objetivo
 
+**Requisito de entrega:** um único aplicativo Android FFBE, sem depender de Termux,
+sing-box, VPN de terceiros, servidor externo ou aplicativos auxiliares. O runner
+Termux existente é somente bancada de desenvolvimento. Consulte a
+[arquitetura do APK independente](ANDROID_STANDALONE.md) e seus critérios de aceite.
+
 Usar o mesmo motor de jogo `source/server/` do Revival no Android (FFBE Global), inicialmente com um servidor externo de referência e depois **inteiramente no aparelho**, sem depender do Proxmox ou de conexão à internet para jogar.
 
 O fork deve evitar divergências desnecessárias do upstream: ajustes específicos Android devem ficar isolados; correções genéricas devem ser propostas ao projeto original.
@@ -23,7 +28,8 @@ O fork deve evitar divergências desnecessárias do upstream: ajustes específic
 | Servidor HTTP Python dentro do Android | **Validado** | `python -m http.server 18443`, acessado por outro dispositivo com HTTP 200 |
 | Imports do backend Revival no Android | **Validados** | Código compactado (7,5 MB), conferido por SHA-256, compilado no Python 3.14 e imports de `serve`, `certs`, `capture_server`, `cryptography`, `PyYAML`, `Pillow` e `tzdata` sem erros |
 | Runner Termux `android/ffbe-termux` | **Prévia validada** | Diagnóstico e bloqueio de execução sem dados testados no Waydroid; [comandos e limites](../android/README.md) |
-| Motor Revival completo dentro do Android | **Pendente** | Dados, certificados, inicialização e atendimento ao cliente ainda não validados |
+| Motor Revival no Termux (teste) | **Validado com dados parciais** | `ios-server/serve.py` iniciou, HTTPS 200 com CA própria, GET MST 200 e serviço ativo ao abrir o FFBE |
+| Aplicativo independente (sem apps auxiliares) | **Pendente** | Python nativo incorporado, patch de endpoint e jogabilidade offline ainda não implementados |
 | Jogo usando o backend local e sem internet | **Pendente** | Portas, DNS/encaminhamento e execução em segundo plano por resolver |
 
 **Cuidado:** executar um servidor Python de demonstração **não** significa que o jogo esteja offline. O backend funcional permanece no servidor Linux de referência.
