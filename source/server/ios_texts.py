@@ -111,7 +111,8 @@ TICKET_LONG = " The summon appears on the Summon screen while you hold this tick
 # 7 = event exchanges' product names (2026-11-09, content/event_exchanges.json),
 # 8 = Orbonne Monastery Vaults' exchange added to them (2026-11-10),
 # 9 = the two exchange-store name tables added (2026-11-10, WEEKLY).
-GENERATION = 9
+# 10 = Kira's ability names (content/restored_unit_text.json, 2026-11-12).
+GENERATION = 10
 
 _CACHE: dict = {}
 _JAPANESE = re.compile("[\u3040-\u30ff\u3400-\u9fff]")
@@ -239,6 +240,10 @@ def _hook_texts(out: dict) -> None:
         _fill(out, "F_TEXT_ABILITY_NAME", "MST_ABILITY_NAME_" + aid, row.get("name"))
         for prefix in ("MST_ABILITY_SHORTDESCRIPTION_", "MST_ABILITY_EXPLAIN_SHORT_", "MST_ABILITY_LONGDESCRIPTION_"):
             _fill(out, "F_TEXT_ABILITY_EXPLAIN_SHORT", prefix + aid, row.get("description"))
+    # Abilities of units restored with hand-written English (Kira) that the restore missed (2026-11-12).
+    for aid, row in ((_load("content/restored_unit_text.json") or {}).get("abilities") or {}).items():
+        _fill(out, "F_TEXT_ABILITY_NAME", "MST_ABILITY_NAME_" + aid, row.get("name"))
+        _fill(out, "F_TEXT_ABILITY_EXPLAIN_SHORT", "MST_ABILITY_SHORTDESCRIPTION_" + aid, row.get("description"))
     # Monster and monster-skill names of the reconstructed battles and the Colosseum.
     battle = _load("battle_names.json") or {}
     colosseum = _load("colosseum_names.json") or {}

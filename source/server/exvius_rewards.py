@@ -33,6 +33,27 @@ def _substitutes():
     return _SUBSTITUTES
 
 
+def card_text(text: str) -> str:
+    """A reward string with every Vision Card entry (kind 27) in Global's full form, `27:id:count:100:level`.
+
+    Global's tables write card rewards that way 3,447 times (F_MEDAL_EXCHANGE_MST, F_NV_EX_CLASS_UP_MST, ...).
+    The short `27:id:count` left the level empty, and viewing such a card (the VIP Shop's Metal Gigantuar's
+    Here!, 2026-11-12) crashed the phone: a card at level 0 makes it look up its level row at index -1
+    (`VisionCardGrowMst::getGrowthRate`, see `PlayerState.vision_card_rows`)."""
+    out = []
+    for entry in str(text or "").split(","):
+        fields = entry.split(":")
+        if len(fields) >= 3 and fields[0].strip() == "27" and len(fields) < 5:
+            fields = fields[:3] + ["100", "1"] if len(fields) == 3 else fields[:4] + ["1"]
+        out.append(":".join(fields))
+    return ",".join(out)
+
+
+def reward_text(rows) -> str:
+    """`kind:id:count` per reward row, comma-joined, Vision Cards in the full form (card_text)."""
+    return card_text(",".join(f"{r['kind']}:{r['id']}:{r['count']}" for r in rows))
+
+
 def parse(raw, exchange=False):
     """Reward tuples `kind:id:count[:rate[:...]]`. A rate other than 100 is refused, except for an exchange
     (`exchange=True`): a purchase always pays, and four F_MEDAL_EXCHANGE_MST rows carry other values there

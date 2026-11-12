@@ -154,6 +154,7 @@ def weekly_events(rows=None, now=None):
     dates = summons['dates']
     number = gacha_rotation.week(now)[0]
     import replay
+    import history_runs
     win = replay.window(now) if replay.enabled() else None
     if win and win['finished']:
         win = None
@@ -182,10 +183,24 @@ def weekly_events(rows=None, now=None):
                 released.append(date.fromisoformat(str(text or '')))
             except ValueError:
                 pass
-        if not released:
-            extra.append(row)
+        full_runs = bool(win and history_runs.enabled())
+        if not released and not (full_runs and history_runs.event_runs(row)):
+            extra.append(row)        # undated: the random weekly few (content/event_runs.json dates some)
             continue
         holiday = holiday_of_run[id(row)]
+        if full_runs:
+            # EXVIUS_REPLAY_FULL_RUNS: open in every week one of its Global runs overlaps (history_runs.py);
+            # holiday runs keep the holiday weeks.
+            def holiday_name(start):
+                return next((name for day, name in holiday.items() if abs((day - start).days) <= 3), None)
+            opened = [start for start, last in history_runs.event_runs(row)
+                      if (summons['holiday'] == holiday_name(start) and start.isoformat()[:4] in summons['years']
+                          if holiday_name(start) else history_runs.overlaps((start, last), earliest, win['to']))]
+            if opened:
+                run = max(opened).isoformat()
+                kept.append(row if run == row.get('release') else
+                            dict(row, release=run, first_release=row.get('release')))
+            continue
         opened = [run for run in released
                   if (summons['holiday'] == holiday[run] and run.isoformat()[:4] in summons['years']
                       if run in holiday else

@@ -69,7 +69,10 @@ def end_date() -> date:
     if 'end' not in _CACHE:
         dates = unit_dates().values()
         last = max((date.fromisoformat(d) for d in dates), default=date(2024, 8, 22))
-        _CACHE['end'] = max(last, date(2024, 8, 22)) + timedelta(days=1)
+        import history_runs
+        # With full runs the late banners and events stay up until the end of service (2024-10-30).
+        floor = date(2024, 10, 30) if history_runs.enabled() else date(2024, 8, 22)
+        _CACHE['end'] = max(last, floor) + timedelta(days=1)
     return _CACHE['end']
 
 
@@ -163,7 +166,32 @@ def unit_dates() -> dict[str, str]:
         for unit, day in global_release_fixes().items():
             if unit in _CACHE['units'] and day < _CACHE['units'][unit]:
                 _CACHE['units'][unit] = day
+        # And the units unit_release.json dates EARLIER than Global did (2026-11-12: Silent Knight Charlotte dated
+        # 2022-07-07, out on Global on 2022-12-29): Global's date wins both ways (research/UNIT_RELEASE_CHECK.md).
+        for unit, day in global_release_earlier().items():
+            if unit in _CACHE['units'] and day > _CACHE['units'][unit]:
+                _CACHE['units'][unit] = day
     return _CACHE['units']
+
+
+def global_release_earlier() -> dict[str, str]:
+    """Unit -> Global's release date, for the units unit_release.json dates before Global did
+    (content/unit_release_global.json `units`, the wiki's Global update history)."""
+    if 'earlier' not in _CACHE:
+        out = {}
+        try:
+            with open(UNITS_FILE, encoding='utf-8') as fh:
+                ours = {str(k): str(v) for k, v in json.load(fh)['units'].items()}
+            with open(os.path.join(_HERE, 'content', 'unit_release_global.json'), encoding='utf-8') as fh:
+                found = json.load(fh).get('units') or {}
+            for unit, row in found.items():
+                day = str((row or {}).get('global') or '') if isinstance(row, dict) else ''
+                if day and unit in ours and ours[unit] < day:
+                    out[str(unit)] = day
+        except (OSError, ValueError, KeyError):
+            pass
+        _CACHE['earlier'] = out
+    return _CACHE['earlier']
 
 
 def released_by(unit_id, cutoff: date) -> bool:

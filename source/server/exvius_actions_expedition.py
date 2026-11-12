@@ -153,7 +153,7 @@ def _expedition_rewards(text):
 
 
 def _reward_csv(rewards):
-    return ','.join(f"{r['kind']}:{r['id']}:{r['count']}" for r in rewards)
+    return __import__('exvius_rewards').reward_text(rewards)
 
 
 # --- offers --------------------------------------------------------------------------------------------

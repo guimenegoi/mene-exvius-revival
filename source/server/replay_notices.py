@@ -361,8 +361,12 @@ def _week_summary(index: int) -> dict | None:
 
 
 def _caption(summary: dict) -> str:
-    names = [name.replace(' Featured Summon', '') for entry in summary['summons'] for name in entry['names']]
-    names += [deal['name'] for deal in summary.get('deals') or []]
+    # With full runs (history_runs.py) long banners stay up for weeks; the caption names what is new this week.
+    first = summary['from'].isoformat()
+    new = lambda released: str(released) >= first  # noqa: E731
+    names = [name.replace(' Featured Summon', '') for entry in summary['summons'] if new(entry['released'])
+             for name in entry['names']]
+    names += [deal['name'] for deal in summary.get('deals') or [] if new(deal['released'])]
     names += [bundle['name'] for bundle in summary.get('bundles') or []]
     names += [mail['title'] for mail in summary.get('mails') or []]
     head = f"{summary['start']:%b} {summary['start'].day}: "

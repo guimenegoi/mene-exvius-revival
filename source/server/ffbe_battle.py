@@ -17,7 +17,7 @@ import copy, json, os, random, re
 from ffbe_config import *          # noqa: F401,F403 -- constants; the table has no behaviour
 import ffbe_state as st           # the REBOUND runtime state; see ffbe_state's docstring
 from ffbe_state import State, _note
-from player_state import (credit_exp, mission_open_switch, mission_wave_count, story_beast_for_mission, story_beast_stats,
+from player_state import (credit_exp, need_unit_exp, mission_open_switch, mission_wave_count, story_beast_for_mission, story_beast_stats,
                           switch_position, unit_stats, _load_ndjson)
 
 
@@ -314,7 +314,7 @@ def mission_id_from(plaintext: str | None) -> str | None:
                     if v:
                         return str(v)
     return None
-def _lv_half(level, exp, stats, lb_level, lb_exp, trust=0) -> str:
+def _lv_half(level, exp, stats, lb_level, lb_exp, trust=0, earned=0) -> str:
     """One 15-field `Qic38SuC` half — `Lv:LimitExLvNum:Exp:HP:MP:ATK:DEF:MAG:SPR:f9:LbLv:LbExp:a12:0:a14`.
 
     Format read end to end in `docs/notes/result_scene_selection.md` §7 (`UserUnitLvInfo::init`): 15 colon
@@ -330,16 +330,25 @@ def _lv_half(level, exp, stats, lb_level, lb_exp, trust=0) -> str:
     appear and driving the level it displays. **A request-side literal is not evidence about a reply-side
     reader** (RE_VERIFICATION_IDIOMS). One run settles the remaining question -- whether the screen counts
     up from the BEFORE half's value to the AFTER half's.
+
+    **Settled 2026-11-12: `a[12]` is the EXP EARNED, not the unit's EXP.** `ResultUnitExpScene::setLayoutUnitDeck`
+    (GL 0x2454374) hands the AFTER half's `a[12]` (param 30) to `MissionResultUnitInfo::init` as the amount to
+    add, and the unit copy it animates starts from the BEFORE half (`setupUserUnitInfo`: level, residual EXP,
+    trust). Sending the residual EXP there animated EXP the unit already had and showed level-ups that never
+    happened (player report: Charlotte 36 -> 37 on screen, still 36 in the party). Field 2 stays the residual
+    EXP; `earned` (default 0, the BEFORE half) goes in `a[12]`. The other readers of param 30 are the same
+    kind of screen (`MissionResultGetUnitExpScene`, `TowerMissionResultUnitExpScene`); fusion and EX
+    awakening don't read it.
     """
     fields = [str(level), "0", str(exp)]
     fields += [f"{int(s)}-0-0-0" for s in stats]          # HP, MP, ATK, DEF, MAG, SPR
     # f9 is the unit's TRUST points (client param 27): `MissionResultUnitInfo::init` sets the result copy's
     # trust from the BEFORE half and `ResultUnitExpScene::setTrustExp` animates AFTER minus BEFORE
     # (2026-11-07, quest_trust.py). It was "0", which only zeroed the result copy's trust for the screen.
-    fields += [str(int(trust or 0)), str(lb_level), str(lb_exp), str(exp), "0", "0"]   # f9, LbLv, LbExp, a12=EXP, a13, a14
+    fields += [str(int(trust or 0)), str(lb_level), str(lb_exp), str(int(earned or 0)), "0", "0"]   # f9, LbLv, LbExp, a12=earned, a13, a14
     assert len(fields) == 15, len(fields)
     return ":".join(fields)
-def mission_lv_info(player, exp_gain: int, trust: dict | None = None) -> str:
+def mission_lv_info(player, exp_gain: int, trust: dict | None = None, lb: dict | None = None) -> str:
     """The `Qic38SuC` value: one row per party member, `KEY@BEFORE_AFTER`.
 
     WHY THE KEY IS THE WHOLE POINT: `UserUnitLvInfo::init` stores the part before `@` as the LOOKUP KEY, and
@@ -351,6 +360,7 @@ def mission_lv_info(player, exp_gain: int, trust: dict | None = None) -> str:
     `quest_trust.roll`; a unit not in it shows its current trust in both halves (no change animated).
     """
     trust = trust or {}
+    lb = lb or {}       # instance id -> (lb level, lb exp before, after) from lb_exp.plan
     rows = []
     for iid in player.party_instance_ids():
         u = player.roster_row(iid)
@@ -365,10 +375,20 @@ def mission_lv_info(player, exp_gain: int, trust: dict | None = None) -> str:
         now = (list(u.get("affinity_points") or [""]) + [""])[0]
         now = int(now) if str(now).isdigit() else 0
         t_before, t_after = trust.get(str(iid), (now, now))
+        lbl, lbe, lbl_after, lbe_after = lb.get(str(iid), (lbl, lbe, lbl, lbe))
         before = _lv_half(lv, ex, unit_stats(u["master_id"], lv), lbl, lbe, t_before)
-        after = _lv_half(new_lv, new_ex, unit_stats(u["master_id"], new_lv), lbl, lbe, t_after)
+        after = _lv_half(new_lv, new_ex, unit_stats(u["master_id"], new_lv), lbl_after, lbe_after, t_after,
+                         exp_absorbed(u["master_id"], lv, ex, new_lv, new_ex))
         rows.append(f"{iid}@{before}_{after}")
     return ",".join(rows)
+def exp_absorbed(master_id, level, exp, new_level, new_exp) -> int:
+    """The EXP a unit really took going from (`level`, residual `exp`) to (`new_level`, `new_exp`), walking the
+    same steps as `credit_exp`: what the results screen adds to the BEFORE half to land on the AFTER half
+    (0 at the level cap, where the credit is discarded)."""
+    total = int(new_exp) - int(exp)
+    for lv in range(int(level), int(new_level)):
+        total += need_unit_exp(master_id, lv + 1)
+    return max(0, total)
 def per_unit_exp(total_exp) -> tuple[int, int, int]:
     """`S4U09svH` is a PARTY TOTAL; each member's share is `total // n`. Returns `(per_unit, n, remainder)`.
 
@@ -565,7 +585,22 @@ def _credit_mission_rewards(plaintext: str | None, spec=None):
             score_daily('trust_up', len(gains))
         for reward in trust.get('_rewards', []):
             paid.append(f"trust-master {reward['kind']}:{reward['id']}x{reward['count']}")
+    # LB EXP from the quest's stamina/orb cost (lb_exp.py), on a clear only. Planned from the current state so
+    # `Qic38SuC` shows the before/after halves, then written.
+    lb_gains = {}
+    if mission_result_from(plaintext).get('cleared') is True:
+        import lb_exp
+        lb_gains = lb_exp.plan(State.player, mission_id_from(plaintext))
+        lb_exp.apply(State.player, lb_gains)
+        if lb_gains:
+            paid.append('lb ' + ' '.join(f"{k}:{a}/{b}->{c}/{d}" for k, (a, b, c, d) in lb_gains.items()))
     uexp = src.get("S4U09svH")
+    if (lb_gains and isinstance(spec, dict)
+            and not (uexp is not None and str(uexp).isdigit() and int(uexp) > 0)):
+        lv_info = mission_lv_info(State.player, 0, trust, lb_gains)
+        for r in spec.get("09HRWXDf", []):
+            if isinstance(r, dict) and lv_info:
+                r["Qic38SuC"] = lv_info
     if uexp is not None and str(uexp).isdigit() and int(uexp) > 0 and isinstance(spec, dict):
         gain, n_members, remainder = per_unit_exp(uexp)
         # The party's TOTAL is logged alongside the share, so a run's exp can be re-derived from the log
@@ -573,7 +608,7 @@ def _credit_mission_rewards(plaintext: str | None, spec=None):
         # than only in the roster's levels.
         print(f"unit-exp: party total {int(uexp)} over {n_members} member(s) -> {gain} each"
               + (f" (remainder {remainder}, floored)" if remainder else ""), flush=True)
-        lv_info = mission_lv_info(State.player, gain, trust) if gain > 0 else ""
+        lv_info = mission_lv_info(State.player, gain, trust, lb_gains) if gain > 0 or lb_gains else ""
         levels = 0
         for iid in State.player.party_instance_ids():
             was = int((State.player.roster_row(iid) or {}).get("level", 1))

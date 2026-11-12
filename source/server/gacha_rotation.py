@@ -357,8 +357,20 @@ def plan(banners: list, now: datetime | None = None, record: bool = False, first
 def _replay_plan(number, start, nxt, fixed, special, featured, by_id, holiday_sets, win) -> dict:
     """The replay's week: every set released in this week's slice of history, plus holiday sets."""
     import replay
+    import history_runs
     begin, end = win['from'].isoformat(), win['to'].isoformat()
-    sets = sorted(entry for entry in special + featured if begin <= entry[0] < end)
+    if history_runs.enabled():
+        # EXVIUS_REPLAY_FULL_RUNS: every banner whose Global run overlaps this week's slice (history_runs.py);
+        # a set shows with those of its banners that are still running.
+        sets = []
+        for key, ids in sorted(special + featured):
+            running = [bid for bid in ids
+                       if (run := history_runs.banner_run(by_id[bid])) and history_runs.overlaps(
+                           run, win['from'], win['to'])]
+            if running:
+                sets.append((key, running))
+    else:
+        sets = sorted(entry for entry in special + featured if begin <= entry[0] < end)
     holiday = _holiday_this_week(start, nxt) if holiday_sets else None
     shown_holiday = None
     if holiday and holiday[0] in holiday_sets:

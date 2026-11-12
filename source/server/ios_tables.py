@@ -107,10 +107,13 @@ STAND_IN_SCENES = {"390001201": "211020111.cpk (the Crest scene)",
 # Tables advertised one step higher so the phone downloads them again, served as shipped (`_cdn_fetch` maps any
 # `Ver<N>_<token>.dat` back to the one shipped file). F_SACRIFICE_MST (2026-11-11): a player's game error log showed
 # "Failed to load MST. REASON=File does not exist. MSTNAME=F_SACRIFICE_MST MSTFILE=w5JFGPh3" 42 times (unit menus,
-# Convert). The server advertises and serves it (sandbox), so the phone holds the version without the table: it loads
-# this table through a row index it builds after the download (`mst/w5JFGPh3.i`, GL 0x1c4cfa8) and never built it.
-# A new version makes it download the table and build the index again. `EXVIUS_REFETCH_TABLES=0` turns it off.
+# Convert). The server advertises and serves it (sandbox), so the phone held a version whose file it didn't have
+# (GL 0x1c4cfa8 checks `Ver<version>_w5JFGPh3.dat`; the row index `mst/w5JFGPh3.i` it builds itself, and rebuilds when
+# the version changes, 2026-11-12). A new version makes it download the file. `EXVIUS_REFETCH_TABLES=0` turns it off.
 REFETCH = {"F_SACRIFICE_MST": "w5JFGPh3"}
+# Ability descriptions (`T7aEx3Mj`) of restored units still in Japanese (content/restored_unit_text.json; Kira's
+# variants, 2026-11-12). Token/key from libgame.
+ABILITY_EXPLAIN = ("F_ABILITY_EXPLAIN_MST", "7FGj2bCh", "B2Ka3kft")
 URL_KEY_FIELD = "gu8McTA6"
 # The host the Drop Rates page is opened on. NOT v900 (the notice host): `WebViewCommon::showWebView`
 # (GL 0x258bbf8) skips the page's posted fields (`gacha_id`) when the address contains the game setting
@@ -276,6 +279,10 @@ def table_bump(spec, *roots) -> int:
         return 1000 + captain_menu.table_bump()   # the menu's revision changes with the pack, and only goes up
     if spec == VISION_CARD:
         return 1000 + zlib.crc32(b"vision-search-english-v1") % 1000 if english_search() else 0
+    if spec == ABILITY_EXPLAIN:
+        import ios_texts
+        return 1000 + zlib.crc32(json.dumps(restored_ability_text(), sort_keys=True).encode()) % 1000 \
+            if ios_texts.enabled() and restored_ability_text() else 0
     if spec == MAP_EXT:
         # Off still serves the table (the shipped rows) one version higher, so a phone that got the fixed rows
         # goes back to the shipped ones.
@@ -296,7 +303,7 @@ def version_bumps() -> dict[str, int]:
     import ios_texts
     out = {RESOURCE[0]: version_bump(), ios_texts.INDEX[0]: ios_texts.index_bump()}
     for spec in (RESOURCE_VERSION, RESOURCE_MAP_VERSION, RESOURCE_CHECKSUM, QUEST, URL, CHALLENGE, MISSION, UNIT, AREA,
-                 MAP_CHECKSUM, SELECT_UNIT, VISION_CARD, MAP_EXT):
+                 MAP_CHECKSUM, SELECT_UNIT, VISION_CARD, MAP_EXT, ABILITY_EXPLAIN):
         out[spec[0]] = table_bump(spec)
     if refetch_tables():
         for name in REFETCH:
@@ -323,7 +330,7 @@ def _which(rel: str):
     if version_bump() and _path(RESOURCE[1]).search(rel):
         return RESOURCE
     for spec in (RESOURCE_VERSION, RESOURCE_MAP_VERSION, RESOURCE_CHECKSUM, QUEST, URL, CHALLENGE, MISSION, UNIT, AREA,
-                 MAP_CHECKSUM, SELECT_UNIT, VISION_CARD, MAP_EXT):
+                 MAP_CHECKSUM, SELECT_UNIT, VISION_CARD, MAP_EXT, ABILITY_EXPLAIN):
         if _path(spec[1]).search(rel) and table_bump(spec):
             return spec
     return None
@@ -460,6 +467,31 @@ def patch_vision_search(raw: bytes) -> tuple[bytes, int]:
 def farplane_scenes() -> bool:
     """EXVIUS_FARPLANE_SCENES (default on; 0 = off): leave out the Farplane scenes in STAND_IN_SCENES."""
     return os.environ.get("EXVIUS_FARPLANE_SCENES", "1").strip().lower() not in ("0", "off", "false", "no")
+
+
+def restored_ability_text() -> dict:
+    """{ability id: description} from content/restored_unit_text.json."""
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "content", "restored_unit_text.json"),
+                  encoding="utf-8") as fh:
+            rows = json.load(fh).get("abilities") or {}
+    except (OSError, ValueError):
+        return {}
+    return {aid: row["description"] for aid, row in rows.items() if row.get("description")}
+
+
+def patch_ability_explain(raw: bytes) -> tuple[bytes, int]:
+    """`F_ABILITY_EXPLAIN_MST` with restored abilities' Japanese descriptions replaced by English."""
+    english = restored_ability_text()
+    out, changed = [], 0
+    for line, row, double in _rows(raw, ABILITY_EXPLAIN[2]):
+        text = english.get(str(row.get("Ga5V42LZ")))
+        shipped = str(row.get("T7aEx3Mj") or "")
+        if text and (re.search("[\u3040-\u30ff\u3400-\u9fff]", shipped) or shipped in ("", "Test Data")):
+            line = _encrypt(ABILITY_EXPLAIN[2], dict(row, T7aEx3Mj=text), double)
+            changed += 1
+        out.append(line)
+    return ("\n".join(out) + "\n").encode("ascii"), changed
 
 
 def patch_map_ext(raw: bytes) -> tuple[bytes, int]:
@@ -609,6 +641,9 @@ def serve(rel: str, *roots: str | None) -> tuple[bytes | None, str | None]:
         if spec == VISION_CARD:
             data, changed = patch_vision_search(open(src, "rb").read())
             return data, f"{os.path.basename(src)}, {changed} Vision Card search name(s) set to English"
+        if spec == ABILITY_EXPLAIN:
+            data, changed = patch_ability_explain(open(src, "rb").read())
+            return data, f"{os.path.basename(src)}, {changed} restored ability description(s) in English"
         if spec == MAP_EXT:
             if not farplane_scenes():
                 return open(src, "rb").read(), f"{os.path.basename(src)}, shipped rows (EXVIUS_FARPLANE_SCENES=0)"

@@ -6,133 +6,133 @@
   "packs": [
     {
       "id": "client-assets",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.1/exvius-client-assets.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.1/exvius-client-assets.zip",
       "size": 71997300,
       "unpackedSize": 71997144,
       "sha256": "eb70867cc2a97251f01873d31b87702ca90e5612eb8a2f18257ed74cd7d36224"
     },
     {
       "id": "data-001",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.0/exvius-data-001.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.0/exvius-data-001.zip",
       "size": 1215128698,
       "unpackedSize": 1458655297,
       "sha256": "6063469eb90e52d3512e9176c5fdb9435db322004130d989e0d587a0b58d170c"
     },
     {
       "id": "data-002",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.0/exvius-data-002.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.0/exvius-data-002.zip",
       "size": 1461366379,
       "unpackedSize": 1460778051,
       "sha256": "2a4e6f19d285cf9ea408c120b445a0a899d46a7080d4f3bab074d059c480efef"
     },
     {
       "id": "data-003",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.0/exvius-data-003.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.0/exvius-data-003.zip",
       "size": 1458598428,
       "unpackedSize": 1458407264,
       "sha256": "f7b0b84082827f80e106ecaa0f197b0fd5a1a4c7c853f75cd9fcd136d5b1035c"
     },
     {
       "id": "data-004",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.0/exvius-data-004.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.0/exvius-data-004.zip",
       "size": 1461737065,
       "unpackedSize": 1461680191,
       "sha256": "5becc95cffbb37cce94aa6495888c0462be8916a23adfc95e52fbbee6e4f54c9"
     },
     {
       "id": "data-005",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.0/exvius-data-005.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.0/exvius-data-005.zip",
       "size": 1462323274,
       "unpackedSize": 1462269064,
       "sha256": "cbb27daae0284190cb5a4ccd08f441d62425805d1e0a60653ebed110990d64b8"
     },
     {
       "id": "data-006",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.0/exvius-data-006.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.0/exvius-data-006.zip",
       "size": 1452236957,
       "unpackedSize": 1452210037,
       "sha256": "c71bdb3c539a2654f3ac9c59268935edf5447402a287741df7c342a5c3a713d9"
     },
     {
       "id": "data-007",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.0/exvius-data-007.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.0/exvius-data-007.zip",
       "size": 1454004696,
       "unpackedSize": 1453991192,
       "sha256": "c98c348fa95978beffbc5efff1749d532288d9dc3ee1c255af70689ffbd1ce8e"
     },
     {
       "id": "data-008",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.0/exvius-data-008.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.0/exvius-data-008.zip",
       "size": 1462913449,
       "unpackedSize": 1462861757,
       "sha256": "b8aed747faab4f6565bb62dce14ee013f95c35ae8426b5c990b929f577415480"
     },
     {
       "id": "data-009",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.0/exvius-data-009.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.0/exvius-data-009.zip",
       "size": 1462867356,
       "unpackedSize": 1462753792,
       "sha256": "629153e99f1268fb005d4367dd692dc8e5e242994bc7569021a4e081c41ac5c8"
     },
     {
       "id": "data-010",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.0/exvius-data-010.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.0/exvius-data-010.zip",
       "size": 1456323327,
       "unpackedSize": 1456072919,
       "sha256": "a787dfa06e6cf9ffa1216970b6fc6674a93b80e7dbb3675ec482eefd5983d94a"
     },
     {
       "id": "data-011",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.0/exvius-data-011.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.0/exvius-data-011.zip",
       "size": 94280406,
       "unpackedSize": 94273880,
       "sha256": "0d4f5ab31b686e8690b5f8d04e7249efe3f0938ed3db66783723bef4c1b01a18"
     },
     {
       "id": "story-movies-003",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.5/exvius-story-movies-revision3.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/v0.1.5/exvius-story-movies-revision3.zip",
       "size": 96505060,
       "unpackedSize": 101886463,
       "sha256": "704fd85eea44531863a3f7508ac4cf230d8527f112f2e3ca9a0cfdf625788657"
     },
     {
       "id": "mitra-arrival",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/data-r4/exvius-mitra-arrival-r4.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/data-r4/exvius-mitra-arrival-r4.zip",
       "size": 3716,
       "unpackedSize": 61440,
       "sha256": "0aaa60065e41a05005be0dd477182287e78f3c2b4f8960bc64dd061c6b074e8c"
     },
     {
       "id": "nv-fragment-table",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/data-r5/exvius-nv-fragments-r5.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/data-r5/exvius-nv-fragments-r5.zip",
       "size": 183848,
       "unpackedSize": 268703,
       "sha256": "56d58602aa0d1f9ee1b846e55485684c4eef463fd32ded2fdf16bf3ad409ce2c"
     },
     {
       "id": "quest-rewards-and-shop-text",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/data-r6/exvius-quest-rewards-r6.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/data-r6/exvius-quest-rewards-r6.zip",
       "size": 252885,
       "unpackedSize": 666543,
       "sha256": "84d8672efa7a60d62ab12494eadf1075cc261ff19f0005f4642f017cb0c7b52c"
     },
     {
       "id": "kira-event",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/data-r7/exvius-kira-r7.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/data-r7/exvius-kira-r7.zip",
       "size": 37141645,
       "unpackedSize": 89734912,
       "sha256": "587bff9091a99360d21ac63595ae7deb2a7765fa1d9ab307af8e79b7e4fbd965"
     },
     {
       "id": "mitra-forge",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/data-r8/exvius-mitra-forge-r8.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/data-r8/exvius-mitra-forge-r8.zip",
       "size": 3717,
       "unpackedSize": 61440,
       "sha256": "cc3950fb7887e2b4e78917bbb6560823277743418a2437f8125361db06f979bc"
     },
     {
       "id": "mitra-story-followup",
-      "url": "https://github.com/Elvlin/exvius-offline/releases/download/data-r9/exvius-mitra-story-r9.zip",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/data-r9/exvius-mitra-story-r9.zip",
       "size": 3713,
       "unpackedSize": 61440,
       "sha256": "f2d59c981f3ad1d3d511e872314c74eec5bb1fd12473a9b820f76b87ee3bf854"
@@ -140,13 +140,5 @@
   ],
   "downloadBytes": 14647871919,
   "installedBytes": 14948691529,
-  "files": 12487,
-  "app": {
-    "version": "0.1.18",
-    "versionName": "9.0.0-offline.19",
-    "versionCode": 9019,
-    "url": "https://github.com/Elvlin/exvius-offline/releases/download/v0.1.18/exvius-offline-v0.1.18.apk",
-    "size": 74287842,
-    "sha256": "56df8fde5addeb4ebc8018dd7cb12c547759cbcf8c77f17ec0df1fafe060f43f"
-  }
+  "files": 12487
 }

@@ -6,6 +6,8 @@
     rotation [N]     show this week's summon rotation (and the next N-1 weeks)
     status           show the save's status (asks the running server)
     new-game         reset the save and start over (asks the running server; keeps a backup)
+    convert-test     add one duplicate of each kind the Convert screens treat differently (keeps a backup);
+                     convert-test --undo puts that backup back
 """
 import json
 import os
@@ -65,6 +67,10 @@ def main(argv: list[str]) -> int:
                     shutil.copy2(item, backup / item.name)
             print(f'saved a copy of the current save in {backup}')
         print(json.dumps(_local('/__exvius/new-game', b'{"confirm": true}'), indent=1))
+        return 0
+    if command == 'convert-test':
+        path = '/__exvius/convert-test-undo' if '--undo' in rest else '/__exvius/convert-test'
+        print(json.dumps(_local(path, b'{"confirm": true}'), indent=1, ensure_ascii=False))
         return 0
     print(__doc__)
     return 2

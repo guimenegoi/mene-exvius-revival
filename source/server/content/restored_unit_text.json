@@ -1,0 +1,13 @@
+{
+ "_provenance": "English for abilities of units restored from Japan's data with hand-written text (Kira, source/exvius/restore_kira.py) that the kira-event pack left without English (player report 2026-11-12: Kira's skill shows no name in battle). Found by walking every ability his unit, LB, Trust/Super Trust rewards and their abilities refer to (HANDOFF 2026-11-12). Variants keep their base ability's name (Japan names them the same); 1442000-1442020 are named as Sword King's Command upgrades (+1..+3, the Vacuum Fang pattern; Japan's own description reads 'Test Data'). Served by ios_texts (F_TEXT_ABILITY_NAME, F_TEXT_ABILITY_EXPLAIN_SHORT) and ios_tables (F_ABILITY_EXPLAIN_MST), only where the shipped text is missing or Japanese.",
+ "abilities": {
+  "1190001": {"name": "Attack", "description": "Deals physical damage to one enemy and fills the caster’s LB gauge."},
+  "1190011": {"name": "Triple Ability", "description": "Casts certain abilities three times."},
+  "1190091": {"name": "Heh… Time to Cut Loose!", "description": "Boosts the caster’s dark damage, ATK, LB damage, and the power of specific LBs. Available once every four turns."},
+  "1442000": {"name": "Sword King’s Command +1", "description": "Increases physical and magic damage against beastmen for all allies."},
+  "1442010": {"name": "Sword King’s Command +2", "description": "Increases physical and magic damage against beastmen for all allies."},
+  "1442020": {"name": "Sword King’s Command +3", "description": "Increases physical and magic damage against beastmen for all allies."},
+  "244184": {"name": "Mightiest Armor of the Sword King’s Village", "description": "Increases physical and magic damage against beasts by 75%."},
+  "244185": {"name": "Breathe Fire, Caesar!", "description": "Deals fire magic damage to all enemies."}
+ }
+}

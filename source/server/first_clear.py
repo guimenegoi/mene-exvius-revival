@@ -100,8 +100,9 @@ def _succeeded(player, mid, plaintext) -> bool:
 def shown(rows) -> str:
     """The result screen's `p1K5NecV` text: `kind:id:count` per row, Lapis as credited (multiplier applied)."""
     from lapis_economy import earned
-    return ",".join(f"{r['kind']}:{r['id']}:{earned(r['count']) if r['kind'] == 50 else r['count']}"
-                    for r in rows)
+    from exvius_rewards import card_text
+    return card_text(",".join(f"{r['kind']}:{r['id']}:{earned(r['count']) if r['kind'] == 50 else r['count']}"
+                              for r in rows))
 
 
 def grant(player, rows) -> tuple[list, list]:

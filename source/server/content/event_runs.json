@@ -1,0 +1,5245 @@
+{
+ "_provenance": "Global run periods of Vortex events for the historic replay (history_runs.event_runs). Starts: event_archive.json release plus event_history.json runs (and added events). Ends: the 'Event Period' (PST, last day inclusive) on the event's Brave Exvius wiki page (exvius.fandom.com; saved pages in ios-server/research/wiki, others fetched live and read 2026-11-12), matched to a start when the period starts within 4 days of it or contains it; claim/summon/exchange periods are ignored. A run keeps its schedule start; its end is the wiki's. Periods on an event's own page that no start matched are added as runs (reruns the schedule missed). Runs with no period get default_days: the median length of the matched runs of their kind group (story, exchange, raid, exploration, challenge, daily, equipment, other; 'all' for the rest), source 'default N days'. Undated areas dated from their parent event page are in newly_dated. bad_starts: archive/schedule starts that are a one-year typo of the wiki period (the consumer should ignore them). Built by ios-server/devtools/build_event_runs.py; report in ios-server/research/EVENT_RUNS.md.",
+ "default_days": {
+  "all": 14,
+  "Chrono Cross - Exploration Event": 7,
+  "Dangerous Ariana - Exploration Event": 7,
+  "FF TYPE-0 - Exploration Event": 7,
+  "FFBE - Exploration Event": 7,
+  "FFBE - Exploration Event (Rerun)": 7,
+  "FFI - Exploration Event": 7,
+  "FFII - Exploration Event": 7,
+  "FFIII - Exploration Event": 7,
+  "FFIV - Exploration Event": 7,
+  "FFIX - Exploration Event": 7,
+  "FFV - Exploration Event": 7,
+  "FFVI - Exploration Event": 7,
+  "FFVII - Exploration Event": 7,
+  "FFVII REMAKE - Exploration Event": 7,
+  "FFVII: AC - Exploration Event": 7,
+  "FFVIII - Exploration Event": 7,
+  "FFX - Exploration Event": 7,
+  "FFXI - Exploration Event": 7,
+  "FFXII - Exploration Event": 7,
+  "FFXIII - Exploration Event": 7,
+  "FFXIII-2 - Exploration Event": 7,
+  "FFXV - Exploration Event": 7,
+  "Final Fantasy II - Exploration Event (Rerun)": 7,
+  "Final Fantasy III - Exploration Event (Rerun)<br>New missions have been added to this event!": 7,
+  "Final Fantasy IV - Exploration Event (Rerun)<br>New missions have been added to this event!": 7,
+  "Final Fantasy V - Exploration Event (Rerun)": 7,
+  "Final Fantasy VII - Exploration Event": 7,
+  "Final Fantasy X - Exploration Event": 7,
+  "Final Fantasy XV - Exploration Event": 7,
+  "LR: FFXIII - Exploration Event": 7
+ },
+ "runs": {
+  "221": [
+   {
+    "start": "2017-12-29",
+    "end": "2018-01-11",
+    "source": "default 14 days"
+   }
+  ],
+  "222": [
+   {
+    "start": "2017-05-12",
+    "end": "2017-05-25",
+    "source": "Vision of Bahamut"
+   },
+   {
+    "start": "2018-05-04",
+    "end": "2018-05-17",
+    "source": "Vision of Bahamut"
+   }
+  ],
+  "301": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-12",
+    "source": "default 14 days"
+   }
+  ],
+  "302": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-12",
+    "source": "default 14 days"
+   }
+  ],
+  "308": [
+   {
+    "start": "2020-06-29",
+    "end": "2020-07-08",
+    "source": "FFBE 4th Anniversary Next Era - Equipment Exchange Quest"
+   }
+  ],
+  "402": [
+   {
+    "start": "2018-07-06",
+    "end": "2018-07-19",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-08-08",
+    "end": "2019-08-21",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2020-06-25",
+    "end": "2020-07-08",
+    "source": "default 14 days"
+   }
+  ],
+  "703": [
+   {
+    "start": "2016-09-30",
+    "end": "2016-10-19",
+    "source": "Orbonne Monastery Vaults"
+   },
+   {
+    "start": "2018-07-20",
+    "end": "2018-08-09",
+    "source": "Orbonne Monastery Vaults"
+   }
+  ],
+  "704": [
+   {
+    "start": "2016-12-02",
+    "end": "2016-12-16",
+    "source": "The Hanging Edge"
+   },
+   {
+    "start": "2018-08-17",
+    "end": "2018-08-30",
+    "source": "The Hanging Edge"
+   }
+  ],
+  "705": [
+   {
+    "start": "2016-10-14",
+    "end": "2016-10-28",
+    "source": "The Giant of Babel"
+   },
+   {
+    "start": "2017-06-05",
+    "end": "2017-06-15",
+    "source": "The Giant of Babel"
+   }
+  ],
+  "706": [
+   {
+    "start": "2017-01-13",
+    "end": "2017-01-26",
+    "source": "Akademeia"
+   },
+   {
+    "start": "2018-11-30",
+    "end": "2018-12-13",
+    "source": "Akademeia"
+   }
+  ],
+  "707": [
+   {
+    "start": "2016-11-04",
+    "end": "2016-11-17",
+    "source": "The Crystal Tower"
+   },
+   {
+    "start": "2017-05-22",
+    "end": "2017-05-31",
+    "source": "The Crystal Tower"
+   }
+  ],
+  "708": [
+   {
+    "start": "2017-02-03",
+    "end": "2017-02-16",
+    "source": "Mana Mystery"
+   }
+  ],
+  "709": [
+   {
+    "start": "2016-11-24",
+    "end": "2016-12-09",
+    "source": "The Big Bridge"
+   },
+   {
+    "start": "2017-06-19",
+    "end": "2017-06-29",
+    "source": "The Big Bridge"
+   }
+  ],
+  "710": [
+   {
+    "start": "2017-03-03",
+    "end": "2017-03-16",
+    "source": "Operation MA Demolition"
+   },
+   {
+    "start": "2019-01-25",
+    "end": "2019-02-14",
+    "source": "Operation MA Demolition"
+   }
+  ],
+  "711": [
+   {
+    "start": "2017-01-06",
+    "end": "2017-01-18",
+    "source": "Memories from the Aquapolis"
+   },
+   {
+    "start": "2017-01-24",
+    "end": "2017-02-02",
+    "source": "Memories from the Aquapolis"
+   },
+   {
+    "start": "2017-07-14",
+    "end": "2017-07-27",
+    "source": "Memories from the Aquapolis"
+   }
+  ],
+  "712": [
+   {
+    "start": "2017-03-24",
+    "end": "2017-04-05",
+    "source": "The Auracite Chosen"
+   },
+   {
+    "start": "2019-03-22",
+    "end": "2019-04-11",
+    "source": "The Auracite Chosen"
+   }
+  ],
+  "713": [
+   {
+    "start": "2017-02-17",
+    "end": "2017-03-02",
+    "source": "The Dreadnought"
+   },
+   {
+    "start": "2017-08-07",
+    "end": "2017-08-16",
+    "source": "The Dreadnought"
+   }
+  ],
+  "714": [
+   {
+    "start": "2018-04-27",
+    "end": "2018-05-10",
+    "source": "Monster Carnival"
+   },
+   {
+    "start": "2018-09-07",
+    "end": "2018-09-20",
+    "source": "Monster Carnival"
+   }
+  ],
+  "715": [
+   {
+    "start": "2018-05-04",
+    "end": "2018-05-10",
+    "source": "Dragonlord s Challenge"
+   },
+   {
+    "start": "2018-09-07",
+    "end": "2018-09-20",
+    "source": "Dragonlord s Challenge"
+   }
+  ],
+  "717": [
+   {
+    "start": "2017-05-05",
+    "end": "2017-05-18",
+    "source": "Shadow of the Empire"
+   },
+   {
+    "start": "2017-09-22",
+    "end": "2017-10-01",
+    "source": "Shadow of the Empire"
+   }
+  ],
+  "718": [
+   {
+    "start": "2017-05-19",
+    "end": "2017-06-01",
+    "source": "The Battle of Judecca"
+   },
+   {
+    "start": "2019-04-19",
+    "end": "2019-05-09",
+    "source": "The Battle of Judecca"
+   }
+  ],
+  "719": [
+   {
+    "start": "2017-05-26",
+    "end": "2017-06-08",
+    "source": "The Empire of Light and Dark"
+   }
+  ],
+  "720": [
+   {
+    "start": "2017-06-16",
+    "end": "2017-06-29",
+    "source": "Grand Gaia Chronicles  Update "
+   }
+  ],
+  "721": [
+   {
+    "start": "2016-11-18",
+    "end": "2016-11-24",
+    "source": "Grand Gaia Chronicles"
+   },
+   {
+    "start": "2017-06-23",
+    "end": "2017-06-29",
+    "source": "Grand Gaia Chronicles  Update "
+   }
+  ],
+  "722": [
+   {
+    "start": "2017-03-17",
+    "end": "2017-03-30",
+    "source": "March on Ifrit"
+   }
+  ],
+  "723": [
+   {
+    "start": "2017-04-20",
+    "end": "2017-05-04",
+    "source": "The Floating Continent"
+   },
+   {
+    "start": "2019-05-17",
+    "end": "2019-06-06",
+    "source": "The Floating Continent"
+   }
+  ],
+  "724": [
+   {
+    "start": "2017-04-27",
+    "end": "2017-05-04",
+    "source": "The Psycho Clown"
+   }
+  ],
+  "725": [
+   {
+    "start": "2017-06-09",
+    "end": "2017-06-22",
+    "source": "The Gathering"
+   }
+  ],
+  "726": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-13",
+    "source": "Macalania Woods"
+   },
+   {
+    "start": "2018-03-29",
+    "end": "2018-04-13",
+    "source": "Macalania Woods"
+   }
+  ],
+  "727": [
+   {
+    "start": "2017-07-07",
+    "end": "2017-07-20",
+    "source": "Henne Mines"
+   },
+   {
+    "start": "2019-06-12",
+    "end": "2019-07-04",
+    "source": "Henne Mines"
+   }
+  ],
+  "728": [
+   {
+    "start": "2017-07-14",
+    "end": "2017-07-27",
+    "source": "default 14 days"
+   }
+  ],
+  "729": [
+   {
+    "start": "2017-07-14",
+    "end": "2017-07-27",
+    "source": "A Promise Beyond Time"
+   }
+  ],
+  "730": [
+   {
+    "start": "2017-09-15",
+    "end": "2017-09-29",
+    "source": "The Shadow Lord Invades"
+   }
+  ],
+  "731": [
+   {
+    "start": "2017-07-28",
+    "end": "2017-08-10",
+    "source": "In the Name of Love"
+   },
+   {
+    "start": "2019-07-19",
+    "end": "2019-08-08",
+    "source": "In the Name of Love"
+   }
+  ],
+  "732": [
+   {
+    "start": "2017-08-04",
+    "end": "2017-08-10",
+    "source": "The High Seraph"
+   }
+  ],
+  "733": [
+   {
+    "start": "2017-08-04",
+    "end": "2017-08-17",
+    "source": "Time for Revenge"
+   }
+  ],
+  "734": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-13",
+    "source": "One Year Anniversary Kupo"
+   }
+  ],
+  "735": [
+   {
+    "start": "2017-09-01",
+    "end": "2017-09-14",
+    "source": "Castle Hein"
+   }
+  ],
+  "736": [
+   {
+    "start": "2017-09-08",
+    "end": "2017-09-14",
+    "source": "Castle Hein"
+   }
+  ],
+  "737": [
+   {
+    "start": "2017-08-25",
+    "end": "2017-09-07",
+    "source": "Memories from the Battlefield"
+   }
+  ],
+  "739": [
+   {
+    "start": "2017-10-13",
+    "end": "2017-10-26",
+    "source": "Battle at the Borders"
+   }
+  ],
+  "740": [
+   {
+    "start": "2017-10-20",
+    "end": "2017-10-26",
+    "source": "The Wicked Beast Cerberus"
+   }
+  ],
+  "741": [
+   {
+    "start": "2017-10-06",
+    "end": "2017-10-19",
+    "source": "In Search of True Strength"
+   }
+  ],
+  "743": [
+   {
+    "start": "2017-01-19",
+    "end": "2017-02-02",
+    "source": "Dangerous Woman Tour"
+   },
+   {
+    "start": "2017-04-14",
+    "end": "2017-04-20",
+    "source": "Dangerous Woman Tour"
+   }
+  ],
+  "744": [
+   {
+    "start": "2017-12-15",
+    "end": "2017-12-29",
+    "source": "Destroy the Reactor"
+   },
+   {
+    "start": "2018-05-25",
+    "end": "2018-06-07",
+    "source": "Destroy the Reactor"
+   }
+  ],
+  "745": [
+   {
+    "start": "2017-12-22",
+    "end": "2017-12-29",
+    "source": "Destroy the Reactor - Exploration"
+   },
+   {
+    "start": "2018-06-01",
+    "end": "2018-06-07",
+    "source": "Destroy the Reactor - Exploration"
+   }
+  ],
+  "746": [
+   {
+    "start": "2017-11-03",
+    "end": "2017-11-16",
+    "source": "Guardian of the Order"
+   }
+  ],
+  "747": [
+   {
+    "start": "2017-12-08",
+    "end": "2017-12-21",
+    "source": "King of Darkness"
+   }
+  ],
+  "748": [
+   {
+    "start": "2017-11-24",
+    "end": "2017-12-07",
+    "source": "The Frozen Cavern"
+   }
+  ],
+  "749": [
+   {
+    "start": "2017-12-01",
+    "end": "2017-12-07",
+    "source": "The Web-Weaving Princess"
+   }
+  ],
+  "750": [
+   {
+    "start": "2017-12-01",
+    "end": "2017-12-14",
+    "source": "Fate of the Dragoon"
+   }
+  ],
+  "751": [
+   {
+    "start": "2017-06-02",
+    "end": "2017-06-15",
+    "source": "March on Titan"
+   }
+  ],
+  "752": [
+   {
+    "start": "2017-06-02",
+    "end": "2017-06-15",
+    "source": "March on Titan"
+   }
+  ],
+  "753": [
+   {
+    "start": "2018-03-02",
+    "end": "2018-03-15",
+    "source": "Alexandria Castle"
+   }
+  ],
+  "754": [
+   {
+    "start": "2018-03-09",
+    "end": "2018-03-15",
+    "source": "Escape from Alexandria Castle"
+   }
+  ],
+  "755": [
+   {
+    "start": "2018-01-12",
+    "end": "2018-01-26",
+    "source": "Way of the Warrior"
+   }
+  ],
+  "757": [
+   {
+    "start": "2017-08-11",
+    "end": "2017-08-24",
+    "source": "Destroy the Machine Lifeform"
+   }
+  ],
+  "758": [
+   {
+    "start": "2018-04-06",
+    "end": "2018-04-19",
+    "source": "Gagazet"
+   }
+  ],
+  "759": [
+   {
+    "start": "2018-04-13",
+    "end": "2018-04-19",
+    "source": "Mt. Gagazet - Exploration"
+   }
+  ],
+  "760": [
+   {
+    "start": "2018-02-02",
+    "end": "2018-02-15",
+    "source": "The White Sage and the Magic Cane"
+   }
+  ],
+  "761": [
+   {
+    "start": "2018-04-20",
+    "end": "2018-05-03",
+    "source": "March on Garuda"
+   }
+  ],
+  "762": [
+   {
+    "start": "2018-04-27",
+    "end": "2018-05-03",
+    "source": "The True Garuda"
+   }
+  ],
+  "763": [
+   {
+    "start": "2021-11-11",
+    "end": "2021-11-24",
+    "source": "Dark Castle"
+   }
+  ],
+  "765": [
+   {
+    "start": "2018-03-23",
+    "end": "2018-04-05",
+    "source": "Pride of Gungan"
+   }
+  ],
+  "766": [
+   {
+    "start": "2018-02-23",
+    "end": "2018-03-08",
+    "source": "Imperial Infiltration"
+   }
+  ],
+  "767": [
+   {
+    "start": "2018-03-02",
+    "end": "2018-03-08",
+    "source": "Fort Vaullerey - Battle with Aranea"
+   }
+  ],
+  "768": [
+   {
+    "start": "2018-01-19",
+    "end": "2018-02-01",
+    "source": "Yensa Sandsea"
+   }
+  ],
+  "769": [
+   {
+    "start": "2018-01-26",
+    "end": "2018-02-01",
+    "source": "Nam-Yensa Sandsea - Exploration"
+   }
+  ],
+  "770": [
+   {
+    "start": "2018-04-13",
+    "end": "2018-04-26",
+    "source": "Conspiracy to the Throne"
+   }
+  ],
+  "773": [
+   {
+    "start": "2018-06-08",
+    "end": "2018-06-21",
+    "source": "Fabul Castle Guard"
+   }
+  ],
+  "774": [
+   {
+    "start": "2018-06-15",
+    "end": "2018-06-21",
+    "source": "Crystal Chamber - Battle with Kain"
+   }
+  ],
+  "775": [
+   {
+    "start": "2018-05-18",
+    "end": "2018-05-31",
+    "source": "The Phantom Blueprint"
+   }
+  ],
+  "778": [
+   {
+    "start": "2018-05-11",
+    "end": "2018-05-24",
+    "source": "Nibelheim"
+   }
+  ],
+  "779": [
+   {
+    "start": "2018-05-18",
+    "end": "2018-05-24",
+    "source": "Mt. Nibel - Exploration"
+   }
+  ],
+  "780": [
+   {
+    "start": "2018-06-15",
+    "end": "2018-06-28",
+    "source": "Where Destinies Intersect"
+   }
+  ],
+  "781": [
+   {
+    "start": "2018-07-27",
+    "end": "2018-08-09",
+    "source": "Vanquish Jie Revorse"
+   },
+   {
+    "start": "2019-01-25",
+    "end": "2019-02-07",
+    "source": "Vanquish Jie Revorse"
+   }
+  ],
+  "782": [
+   {
+    "start": "2018-08-03",
+    "end": "2018-08-09",
+    "source": "Defeat Jie Revorse - GOD"
+   },
+   {
+    "start": "2019-02-01",
+    "end": "2019-02-07",
+    "source": "Defeat Jie Revorse - GOD"
+   }
+  ],
+  "783": [
+   {
+    "start": "2018-07-06",
+    "end": "2018-07-19",
+    "source": "Join the Grandshelt Knights"
+   }
+  ],
+  "784": [
+   {
+    "start": "2018-07-13",
+    "end": "2018-07-19",
+    "source": "Latius Woods - Past"
+   }
+  ],
+  "785": [
+   {
+    "start": "2018-07-13",
+    "end": "2018-07-26",
+    "source": "The Ballad of Grandshelt"
+   }
+  ],
+  "789": [
+   {
+    "start": "2018-08-03",
+    "end": "2018-08-16",
+    "source": "SeeD Field Exam"
+   }
+  ],
+  "790": [
+   {
+    "start": "2018-08-10",
+    "end": "2018-08-16",
+    "source": "Dollet - Exploration"
+   }
+  ],
+  "791": [
+   {
+    "start": "2018-08-10",
+    "end": "2018-08-23",
+    "source": "Domain for Two"
+   }
+  ],
+  "792": [
+   {
+    "start": "2018-09-07",
+    "end": "2018-09-20",
+    "source": "Estark s Challenge"
+   }
+  ],
+  "793": [
+   {
+    "start": "2018-09-14",
+    "end": "2018-09-20",
+    "source": "March on the Lord of the Underworld"
+   }
+  ],
+  "794": [
+   {
+    "start": "2018-08-31",
+    "end": "2018-09-13",
+    "source": "Shrine of Ru Avitau"
+   }
+  ],
+  "795": [
+   {
+    "start": "2018-09-07",
+    "end": "2018-09-13",
+    "source": "Shrine of Ru Avitau - Exploration"
+   }
+  ],
+  "796": [
+   {
+    "start": "2018-09-14",
+    "end": "2018-09-27",
+    "source": "The Color of Heartlessness"
+   }
+  ],
+  "797": [
+   {
+    "start": "2018-05-25",
+    "end": "2018-06-07",
+    "source": "Dracotaur Lancer"
+   }
+  ],
+  "798": [
+   {
+    "start": "2018-06-01",
+    "end": "2018-06-07",
+    "source": "Rats from the Gutters"
+   }
+  ],
+  "799": [
+   {
+    "start": "2018-10-05",
+    "end": "2018-10-18",
+    "source": "The Heart of a King"
+   }
+  ],
+  "800": [
+   {
+    "start": "2018-10-12",
+    "end": "2018-10-18",
+    "source": "Fodina Caestino - Exploration"
+   }
+  ],
+  "801": [
+   {
+    "start": "2018-10-12",
+    "end": "2018-10-25",
+    "source": "Piercing Light"
+   }
+  ],
+  "802": [
+   {
+    "start": "2018-10-26",
+    "end": "2018-11-08",
+    "source": "Lost City of Dipan"
+   }
+  ],
+  "803": [
+   {
+    "start": "2018-11-02",
+    "end": "2018-11-08",
+    "source": "Tower of Lezard Valeth"
+   }
+  ],
+  "804": [
+   {
+    "start": "2019-01-11",
+    "end": "2019-01-24",
+    "source": "Gaea s Cliff"
+   }
+  ],
+  "805": [
+   {
+    "start": "2019-01-18",
+    "end": "2019-01-24",
+    "source": "Gaea s Cliff - Exploration"
+   }
+  ],
+  "806": [
+   {
+    "start": "2018-11-09",
+    "end": "2018-11-22",
+    "source": "Lion of the Mysterious Woods"
+   }
+  ],
+  "807": [
+   {
+    "start": "2019-06-21",
+    "end": "2019-07-04",
+    "source": "The Mana Beast"
+   }
+  ],
+  "808": [
+   {
+    "start": "2019-06-28",
+    "end": "2019-07-04",
+    "source": "The Dreaded Lost Continent"
+   }
+  ],
+  "809": [
+   {
+    "start": "2018-03-22",
+    "end": "2018-03-31",
+    "source": "30 Million Downloads Raffle"
+   }
+  ],
+  "810": [
+   {
+    "start": "2018-11-02",
+    "end": "2018-11-15",
+    "source": "The Clash on Big Bridge"
+   }
+  ],
+  "811": [
+   {
+    "start": "2018-11-09",
+    "end": "2018-11-15",
+    "source": "Big Bridge - Exploration"
+   }
+  ],
+  "812": [
+   {
+    "start": "2018-12-07",
+    "end": "2018-12-20",
+    "source": "Sieghard  The Magnificent"
+   }
+  ],
+  "813": [
+   {
+    "start": "2018-03-09",
+    "end": "2018-03-22",
+    "source": "Tomb of the Silversmith"
+   }
+  ],
+  "814": [
+   {
+    "start": "2018-03-16",
+    "end": "2018-03-22",
+    "source": "God of Chaos"
+   }
+  ],
+  "815": [
+   {
+    "start": "2019-03-08",
+    "end": "2019-03-21",
+    "source": "Cave of Shadows"
+   }
+  ],
+  "817": [
+   {
+    "start": "2019-01-18",
+    "end": "2019-01-31",
+    "source": "Priestess of the Crystalline Waters"
+   }
+  ],
+  "818": [
+   {
+    "start": "2019-02-01",
+    "end": "2019-02-14",
+    "source": "default 14 days"
+   }
+  ],
+  "819": [
+   {
+    "start": "2019-03-29",
+    "end": "2019-04-11",
+    "source": "Elements Formation"
+   }
+  ],
+  "820": [
+   {
+    "start": "2019-04-05",
+    "end": "2019-04-11",
+    "source": "Desert Despair"
+   }
+  ],
+  "821": [
+   {
+    "start": "2019-02-01",
+    "end": "2019-02-14",
+    "source": "Zanarkand Ruins"
+   }
+  ],
+  "822": [
+   {
+    "start": "2019-02-08",
+    "end": "2019-02-14",
+    "source": "Dome - Exploration"
+   }
+  ],
+  "823": [
+   {
+    "start": "2019-02-15",
+    "end": "2019-03-07",
+    "source": "Blacksmith of the Flame"
+   }
+  ],
+  "824": [
+   {
+    "start": "2019-04-26",
+    "end": "2019-05-09",
+    "source": "First and Last"
+   }
+  ],
+  "825": [
+   {
+    "start": "2019-05-03",
+    "end": "2019-05-09",
+    "source": "The Crimson Gear"
+   }
+  ],
+  "826": [
+   {
+    "start": "2019-04-05",
+    "end": "2019-04-18",
+    "source": "Nelveska Temple"
+   }
+  ],
+  "827": [
+   {
+    "start": "2019-04-12",
+    "end": "2019-04-19",
+    "source": "March on Tiamat"
+   }
+  ],
+  "828": [
+   {
+    "start": "2019-03-15",
+    "end": "2019-03-28",
+    "source": "Taking to the Skies"
+   }
+  ],
+  "829": [
+   {
+    "start": "2019-05-17",
+    "end": "2019-05-30",
+    "source": "The Orders and the Magitek Ruins"
+   }
+  ],
+  "830": [
+   {
+    "start": "2019-05-24",
+    "end": "2019-05-30",
+    "source": "Magitek Ruins - Central Area"
+   }
+  ],
+  "831": [
+   {
+    "start": "2019-05-03",
+    "end": "2019-05-16",
+    "source": "Tower of Zot"
+   }
+  ],
+  "833": [
+   {
+    "start": "2019-05-10",
+    "end": "2019-05-23",
+    "source": "Out for Vengeance"
+   }
+  ],
+  "834": [
+   {
+    "start": "2019-08-23",
+    "end": "2019-09-05",
+    "source": "Brigands Den"
+   }
+  ],
+  "835": [
+   {
+    "start": "2019-08-30",
+    "end": "2019-09-05",
+    "source": "Cave of Rhiyo"
+   }
+  ],
+  "836": [
+   {
+    "start": "2019-06-12",
+    "end": "2019-06-27",
+    "source": "Temple of the Ancients"
+   }
+  ],
+  "837": [
+   {
+    "start": "2019-06-21",
+    "end": "2019-06-27",
+    "source": "To the Forgotten Capital - Exploration"
+   }
+  ],
+  "838": [
+   {
+    "start": "2019-04-12",
+    "end": "2019-04-25",
+    "source": "The Day the Spark was Lit"
+   }
+  ],
+  "839": [
+   {
+    "start": "2019-07-12",
+    "end": "2019-07-25",
+    "source": "Da-chao Statue"
+   }
+  ],
+  "840": [
+   {
+    "start": "2019-07-19",
+    "end": "2019-07-25",
+    "source": "The Will of the Planet"
+   }
+  ],
+  "841": [
+   {
+    "start": "2019-05-24",
+    "end": "2019-06-06",
+    "source": "Figaro Castle"
+   }
+  ],
+  "842": [
+   {
+    "start": "2019-05-31",
+    "end": "2019-06-06",
+    "source": "Figaro Castle - Exploration"
+   }
+  ],
+  "843": [
+   {
+    "start": "2017-08-11",
+    "end": "2017-08-24",
+    "source": "Destroy the Machine Lifeform"
+   }
+  ],
+  "844": [
+   {
+    "start": "2018-11-30",
+    "end": "2018-12-06",
+    "source": "The Formidable Engels"
+   }
+  ],
+  "845": [
+   {
+    "start": "2019-06-07",
+    "end": "2019-06-20",
+    "source": "Memories of an Automaton"
+   }
+  ],
+  "847": [
+   {
+    "start": "2019-06-28",
+    "end": "2019-07-11",
+    "source": "Farplane de Chocobo"
+   }
+  ],
+  "848": [
+   {
+    "start": "2019-07-05",
+    "end": "2019-07-11",
+    "source": "Chocobo Forest - Exploration"
+   }
+  ],
+  "849": [
+   {
+    "start": "2019-07-05",
+    "end": "2019-07-18",
+    "source": "A World United"
+   }
+  ],
+  "851": [
+   {
+    "start": "2019-07-26",
+    "end": "2019-08-01",
+    "source": "Golden Bomb Rush"
+   }
+  ],
+  "852": [
+   {
+    "start": "2019-07-29",
+    "end": "2019-08-01",
+    "source": "Golden Bomb Battle"
+   }
+  ],
+  "853": [
+   {
+    "start": "2019-07-31",
+    "end": "2019-08-15",
+    "source": "The Gapra Whitewood"
+   }
+  ],
+  "854": [
+   {
+    "start": "2019-08-09",
+    "end": "2019-08-15",
+    "source": "The Gapra Whitewood - Exploration"
+   }
+  ],
+  "855": [
+   {
+    "start": "2019-09-13",
+    "end": "2019-09-26",
+    "source": "Afterglow"
+   }
+  ],
+  "857": [
+   {
+    "start": "2019-10-11",
+    "end": "2019-10-24",
+    "source": "Barrier Tower"
+   }
+  ],
+  "858": [
+   {
+    "start": "2019-10-18",
+    "end": "2019-10-24",
+    "source": "Fork Tower - Black Tower"
+   }
+  ],
+  "859": [
+   {
+    "start": "2019-08-30",
+    "end": "2019-09-12",
+    "source": "Castle Exdeath"
+   }
+  ],
+  "860": [
+   {
+    "start": "2019-09-06",
+    "end": "2019-09-12",
+    "source": "Castle Exdeath - Exploration"
+   }
+  ],
+  "861": [
+   {
+    "start": "2019-12-05",
+    "end": "2019-12-18",
+    "source": "Fun With Physalis"
+   }
+  ],
+  "862": [
+   {
+    "start": "2018-12-28",
+    "end": "2019-01-10",
+    "source": "Heartless Guard Armor"
+   }
+  ],
+  "863": [
+   {
+    "start": "2019-01-04",
+    "end": "2019-01-10",
+    "source": "Heartless Darkside"
+   }
+  ],
+  "864": [
+   {
+    "start": "2019-11-14",
+    "end": "2019-11-27",
+    "source": "Narshe"
+   }
+  ],
+  "865": [
+   {
+    "start": "2019-11-21",
+    "end": "2019-11-27",
+    "source": "Narshe - Exploration"
+   }
+  ],
+  "868": [
+   {
+    "start": "2019-10-31",
+    "end": "2019-11-13",
+    "source": "Floating Continent Skies"
+   }
+  ],
+  "869": [
+   {
+    "start": "2019-11-07",
+    "end": "2019-11-13",
+    "source": "Floating Continent Ultima Weapon Battle"
+   }
+  ],
+  "870": [
+   {
+    "start": "2019-10-04",
+    "end": "2019-10-17",
+    "source": "The Cyclone"
+   }
+  ],
+  "871": [
+   {
+    "start": "2019-10-11",
+    "end": "2019-10-17",
+    "source": "Castle Palamecia - Exploration"
+   }
+  ],
+  "872": [
+   {
+    "start": "2019-12-26",
+    "end": "2020-01-08",
+    "source": "White Lily Bouquet"
+   }
+  ],
+  "876": [
+   {
+    "start": "2020-01-02",
+    "end": "2020-01-15",
+    "source": "Mirage Tower"
+   }
+  ],
+  "877": [
+   {
+    "start": "2020-01-09",
+    "end": "2020-01-15",
+    "source": "Flying Fortress - Exploration"
+   }
+  ],
+  "878": [
+   {
+    "start": "2019-11-07",
+    "end": "2019-11-20",
+    "source": "Running Through Daybreak"
+   }
+  ],
+  "881": [
+   {
+    "start": "2020-02-20",
+    "end": "2020-03-04",
+    "source": "Cave of Tides"
+   }
+  ],
+  "882": [
+   {
+    "start": "2020-02-27",
+    "end": "2020-03-04",
+    "source": "Goldor Manor - Exploration"
+   }
+  ],
+  "883": [
+   {
+    "start": "2020-01-16",
+    "end": "2020-01-29",
+    "source": "A Prayer for Hess"
+   }
+  ],
+  "886": [
+   {
+    "start": "2019-12-12",
+    "end": "2019-12-25",
+    "source": "Steyliff Grove"
+   }
+  ],
+  "887": [
+   {
+    "start": "2019-12-19",
+    "end": "2019-12-25",
+    "source": "Altissia City on the Sea - Exploration"
+   }
+  ],
+  "888": [
+   {
+    "start": "2020-02-27",
+    "end": "2020-03-11",
+    "source": "Edel the Mole"
+   }
+  ],
+  "889": [
+   {
+    "start": "2020-01-09",
+    "end": "2020-01-22",
+    "source": "Homecoming"
+   }
+  ],
+  "890": [
+   {
+    "start": "2020-01-16",
+    "end": "2020-01-22",
+    "source": "The Treacherous Infernian"
+   }
+  ],
+  "891": [
+   {
+    "start": "2020-02-06",
+    "end": "2020-02-19",
+    "source": "Mount Ordeals"
+   }
+  ],
+  "892": [
+   {
+    "start": "2020-02-13",
+    "end": "2020-02-19",
+    "source": "Tower of Zot - Exploration"
+   }
+  ],
+  "906": [
+   {
+    "start": "2016-12-30",
+    "end": "2017-01-12",
+    "source": "default 14 days"
+   }
+  ],
+  "911": [
+   {
+    "start": "2017-04-06",
+    "end": "2017-04-19",
+    "source": "The Egg Seekers"
+   }
+  ],
+  "912": [
+   {
+    "start": "2017-05-12",
+    "end": "2017-05-25",
+    "source": "Vision of Bahamut"
+   }
+  ],
+  "913": [
+   {
+    "start": "2017-06-16",
+    "end": "2017-06-29",
+    "source": "Grand Gaia Chronicles  Update "
+   }
+  ],
+  "915": [
+   {
+    "start": "2017-08-18",
+    "end": "2017-08-31",
+    "source": "A Musical Showdown"
+   }
+  ],
+  "916": [
+   {
+    "start": "2019-05-03",
+    "end": "2019-05-16",
+    "source": "Tower of Zot"
+   }
+  ],
+  "917": [
+   {
+    "start": "2017-11-17",
+    "end": "2017-11-23",
+    "source": "The Man in Black"
+   }
+  ],
+  "919": [
+   {
+    "start": "2017-10-20",
+    "end": "2017-11-04",
+    "source": "Return to the Halloween Castle"
+   },
+   {
+    "start": "2018-10-26",
+    "end": "2018-11-03",
+    "source": "Return to the Halloween Castle"
+   }
+  ],
+  "921": [
+   {
+    "start": "2017-10-20",
+    "end": "2017-11-04",
+    "source": "Return to the Halloween Castle"
+   },
+   {
+    "start": "2018-10-26",
+    "end": "2018-11-03",
+    "source": "Return to the Halloween Castle"
+   }
+  ],
+  "937": [
+   {
+    "start": "2018-08-31",
+    "end": "2018-09-05",
+    "source": "Stopping Marchenko"
+   }
+  ],
+  "943": [
+   {
+    "start": "2021-11-04",
+    "end": "2021-11-17",
+    "source": "Battle with the Benevodons"
+   }
+  ],
+  "947": [
+   {
+    "start": "2018-11-23",
+    "end": "2018-11-29",
+    "source": "Trial of Vengeance"
+   }
+  ],
+  "948": [
+   {
+    "start": "2018-12-08",
+    "end": "2018-12-09",
+    "source": "Fan Festa 2018 Raid"
+   }
+  ],
+  "951": [
+   {
+    "start": "2022-02-10",
+    "end": "2022-02-23",
+    "source": "Celestial Machinery"
+   }
+  ],
+  "952": [
+   {
+    "start": "2018-12-28",
+    "end": "2019-01-03",
+    "source": "Season of Mayhem"
+   }
+  ],
+  "954": [
+   {
+    "start": "2022-04-07",
+    "end": "2022-04-20",
+    "source": "Battle at Visectrum s Peak"
+   }
+  ],
+  "956": [
+   {
+    "start": "2019-02-15",
+    "end": "2019-02-21",
+    "source": "Lord of the Beasts"
+   },
+   {
+    "start": "2020-02-06",
+    "end": "2020-02-12",
+    "source": "Lord of the Beasts"
+   }
+  ],
+  "957": [
+   {
+    "start": "2022-06-09",
+    "end": "2022-06-22",
+    "source": "DRAGON QUEST The Adventure of Dai"
+   }
+  ],
+  "960": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-12",
+    "source": "default 14 days"
+   }
+  ],
+  "961": [
+   {
+    "start": "2022-09-01",
+    "end": "2022-09-14",
+    "source": "Footsteps of the High Summoner"
+   }
+  ],
+  "962": [
+   {
+    "start": "2019-04-26",
+    "end": "2019-05-02",
+    "source": "Armeggeddon"
+   }
+  ],
+  "964": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-12",
+    "source": "default 14 days"
+   }
+  ],
+  "966": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-12",
+    "source": "default 14 days"
+   }
+  ],
+  "967": [
+   {
+    "start": "2019-06-12",
+    "end": "2019-09-30",
+    "source": "Pop Hits"
+   }
+  ],
+  "968": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-12",
+    "source": "default 14 days"
+   }
+  ],
+  "970": [
+   {
+    "start": "2019-07-19",
+    "end": "2019-08-01",
+    "source": "Fundamental Forces"
+   }
+  ],
+  "971": [
+   {
+    "start": "2019-07-26",
+    "end": "2019-08-01",
+    "source": "The Empress of Virtue"
+   }
+  ],
+  "972": [
+   {
+    "start": "2019-06-29",
+    "end": "2019-06-29",
+    "source": "The Fighting Pits"
+   }
+  ],
+  "975": [
+   {
+    "start": "2019-08-09",
+    "end": "2019-08-15",
+    "source": "Road Through Hell"
+   }
+  ],
+  "979": [
+   {
+    "start": "2019-08-16",
+    "end": "2019-08-29",
+    "source": "Demon Parade"
+   }
+  ],
+  "980": [
+   {
+    "start": "2019-08-23",
+    "end": "2019-08-30",
+    "source": "March of the Demons"
+   }
+  ],
+  "981": [
+   {
+    "start": "2019-09-06",
+    "end": "2019-09-12",
+    "source": "The Road Less Traveled"
+   }
+  ],
+  "982": [
+   {
+    "start": "2019-11-28",
+    "end": "2019-12-11",
+    "source": "The Quest for the Chest"
+   }
+  ],
+  "983": [
+   {
+    "start": "2019-10-24",
+    "end": "2019-11-06",
+    "source": "Grave Hexvius"
+   }
+  ],
+  "984": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-12",
+    "source": "default 14 days"
+   }
+  ],
+  "985": [
+   {
+    "start": "2019-10-17",
+    "end": "2019-10-23",
+    "source": "Holiday Road"
+   }
+  ],
+  "986": [
+   {
+    "start": "2019-10-31",
+    "end": "2019-11-06",
+    "source": "Mean Ghouls"
+   }
+  ],
+  "988": [
+   {
+    "start": "2019-11-15",
+    "end": "2019-11-16",
+    "source": "FFBE NYC Livestream - Raid"
+   }
+  ],
+  "989": [
+   {
+    "start": "2019-11-04",
+    "end": "2019-11-13",
+    "source": "NYC Livestream Lapis Giveaway"
+   }
+  ],
+  "991": [
+   {
+    "start": "2019-12-05",
+    "end": "2019-12-11",
+    "source": "Moles in Black"
+   }
+  ],
+  "992": [
+   {
+    "start": "2019-12-19",
+    "end": "2020-01-01",
+    "source": "Save Your Elf"
+   }
+  ],
+  "993": [
+   {
+    "start": "2019-12-26",
+    "end": "2020-01-01",
+    "source": "Sleigh the Grinch"
+   }
+  ],
+  "994": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-12",
+    "source": "default 14 days"
+   }
+  ],
+  "995": [
+   {
+    "start": "2019-12-12",
+    "end": "2019-12-25",
+    "source": "Unit Popularity Contest  2019 "
+   }
+  ],
+  "996": [
+   {
+    "start": "2020-01-02",
+    "end": "2020-03-04",
+    "source": "Defiance of Fate - The Lightning Tyrant"
+   }
+  ],
+  "1001": [
+   {
+    "start": "2020-01-23",
+    "end": "2020-02-05",
+    "source": "I Smell a Rat"
+   }
+  ],
+  "1002": [
+   {
+    "start": "2020-01-30",
+    "end": "2020-02-12",
+    "source": "default 14 days"
+   }
+  ],
+  "1004": [
+   {
+    "start": "2020-02-13",
+    "end": "2020-02-26",
+    "source": "No Bed of Roses"
+   }
+  ],
+  "1005": [
+   {
+    "start": "2020-02-20",
+    "end": "2020-02-26",
+    "source": "Broken Hearts and Bones"
+   }
+  ],
+  "1006": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-12",
+    "source": "default 14 days"
+   }
+  ],
+  "1007": [
+   {
+    "start": "2020-09-17",
+    "end": "2020-09-30",
+    "source": "Fundamental Forces Shinobi Arc"
+   }
+  ],
+  "1008": [
+   {
+    "start": "2020-05-21",
+    "end": "2020-06-03",
+    "source": "default 14 days"
+   }
+  ],
+  "1009": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-12",
+    "source": "default 14 days"
+   }
+  ],
+  "1010": [
+   {
+    "start": "2020-06-11",
+    "end": "2020-06-24",
+    "source": "Collaboration Festival"
+   }
+  ],
+  "1011": [
+   {
+    "start": "2019-04-05",
+    "end": "2019-04-11",
+    "source": "Desert Despair"
+   }
+  ],
+  "1012": [
+   {
+    "start": "2019-05-03",
+    "end": "2019-05-09",
+    "source": "The Crimson Gear"
+   }
+  ],
+  "1013": [
+   {
+    "start": "2018-06-29",
+    "end": "2018-07-05",
+    "source": "Strike of the URGA Mstitel"
+   }
+  ],
+  "1014": [
+   {
+    "start": "2018-11-02",
+    "end": "2018-11-08",
+    "source": "Tower of Lezard Valeth"
+   }
+  ],
+  "1015": [
+   {
+    "start": "2018-11-30",
+    "end": "2018-12-06",
+    "source": "The Formidable Engels"
+   }
+  ],
+  "1016": [
+   {
+    "start": "2018-08-03",
+    "end": "2018-08-09",
+    "source": "Defeat Jie Revorse - GOD"
+   },
+   {
+    "start": "2019-02-01",
+    "end": "2019-02-07",
+    "source": "Defeat Jie Revorse - GOD"
+   }
+  ],
+  "1017": [
+   {
+    "start": "2018-08-31",
+    "end": "2018-09-05",
+    "source": "Stopping Marchenko"
+   }
+  ],
+  "1018": [
+   {
+    "start": "2020-09-24",
+    "end": "2020-10-07",
+    "source": "Training with Elena"
+   }
+  ],
+  "1019": [
+   {
+    "start": "2020-10-01",
+    "end": "2020-10-07",
+    "source": "Elena s Final Test"
+   }
+  ],
+  "1020": [
+   {
+    "start": "2020-07-02",
+    "end": "2020-07-10",
+    "source": "FF EXVIUS Universe Campaign Daily Quest"
+   }
+  ],
+  "1021": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-12",
+    "source": "default 14 days"
+   }
+  ],
+  "1029": [
+   {
+    "start": "2020-09-17",
+    "end": "2020-09-30",
+    "source": "Fundamental Forces Shinobi Arc"
+   }
+  ],
+  "1030": [
+   {
+    "start": "2020-09-17",
+    "end": "2020-09-30",
+    "source": "Fundamental Forces Shinobi Arc"
+   }
+  ],
+  "1031": [
+   {
+    "start": "2020-09-17",
+    "end": "2020-09-30",
+    "source": "Fundamental Forces Shinobi Arc"
+   }
+  ],
+  "1033": [
+   {
+    "start": "2020-10-22",
+    "end": "2020-11-04",
+    "source": "Curse of the Tree Demon"
+   },
+   {
+    "start": "2021-10-21",
+    "end": "2021-11-03",
+    "source": "default 14 days"
+   }
+  ],
+  "1034": [
+   {
+    "start": "2020-10-29",
+    "end": "2020-11-04",
+    "source": "Ill Fortune Awaits"
+   },
+   {
+    "start": "2021-10-28",
+    "end": "2021-11-10",
+    "source": "default 14 days"
+   }
+  ],
+  "1039": [
+   {
+    "start": "2020-12-24",
+    "end": "2021-01-13",
+    "source": "An Icy Reception"
+   }
+  ],
+  "1040": [
+   {
+    "start": "2020-12-31",
+    "end": "2021-01-13",
+    "source": "Vanquishing the Beast"
+   }
+  ],
+  "1042": [
+   {
+    "start": "2020-11-12",
+    "end": "2020-11-18",
+    "source": "On the Road Again"
+   }
+  ],
+  "1043": [
+   {
+    "start": "2021-01-07",
+    "end": "2021-01-20",
+    "source": "New Year s Equipment Enhancement Event"
+   }
+  ],
+  "1044": [
+   {
+    "start": "2020-12-03",
+    "end": "2020-12-16",
+    "source": "default 14 days"
+   }
+  ],
+  "1046": [
+   {
+    "start": "2021-02-11",
+    "end": "2021-02-24",
+    "source": "Cattle-clysmic Beginnings"
+   }
+  ],
+  "1047": [
+   {
+    "start": "2021-02-18",
+    "end": "2021-02-24",
+    "source": "An Udder Cow-tastrophe"
+   }
+  ],
+  "1048": [
+   {
+    "start": "2021-03-11",
+    "end": "2021-04-08",
+    "source": "Sprouts of Devouring"
+   }
+  ],
+  "1050": [
+   {
+    "start": "2020-04-13",
+    "end": "2020-04-26",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2020-07-02",
+    "end": "2020-07-15",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2021-03-26",
+    "end": "2021-04-07",
+    "source": "WOTV FFBE Equipment Enhancement Event"
+   }
+  ],
+  "1055": [
+   {
+    "start": "2021-04-22",
+    "end": "2021-05-05",
+    "source": "Brawler From Below the Depths"
+   }
+  ],
+  "1056": [
+   {
+    "start": "2021-04-01",
+    "end": "2021-04-14",
+    "source": "Bad Hare Day"
+   }
+  ],
+  "1057": [
+   {
+    "start": "2021-04-08",
+    "end": "2021-04-14",
+    "source": "Hare-Raising Horror"
+   }
+  ],
+  "1058": [
+   {
+    "start": "2021-05-06",
+    "end": "2021-05-19",
+    "source": "Spring Equipment Enhancement Event"
+   }
+  ],
+  "1059": [
+   {
+    "start": "2021-04-22",
+    "end": "2021-05-05",
+    "source": "Brawler Unbound"
+   }
+  ],
+  "1062": [
+   {
+    "start": "2021-05-27",
+    "end": "2021-06-09",
+    "source": "Gluttonous Consumer of the Cosmos"
+   }
+  ],
+  "1063": [
+   {
+    "start": "2021-05-27",
+    "end": "2021-06-09",
+    "source": "Celestial Nova"
+   }
+  ],
+  "1064": [
+   {
+    "start": "2021-06-03",
+    "end": "2021-06-16",
+    "source": "June Equipment Enhancement Event"
+   }
+  ],
+  "1066": [
+   {
+    "start": "2021-07-01",
+    "end": "2021-07-14",
+    "source": "Fundamental Forces Researcher Arc"
+   }
+  ],
+  "1067": [
+   {
+    "start": "2021-06-26",
+    "end": "2021-06-26",
+    "source": "FFBE 5th Anniversary Livestream"
+   }
+  ],
+  "1068": [
+   {
+    "start": "2021-06-26",
+    "end": "2021-06-26",
+    "source": "FFBE 5th Anniversary Livestream"
+   }
+  ],
+  "1069": [
+   {
+    "start": "2021-07-15",
+    "end": "2021-08-04",
+    "source": "July Equipment Enhancement Event"
+   }
+  ],
+  "1070": [
+   {
+    "start": "2020-10-08",
+    "end": "2020-10-21",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2021-07-29",
+    "end": "2021-08-11",
+    "source": "Elemental Turn Challenge"
+   }
+  ],
+  "1076": [
+   {
+    "start": "2021-08-12",
+    "end": "2021-08-25",
+    "source": "August Equipment Enhancement Event"
+   }
+  ],
+  "1077": [
+   {
+    "start": "2021-09-02",
+    "end": "2021-09-22",
+    "source": "September Equipment Enhancement Event"
+   }
+  ],
+  "1081": [
+   {
+    "start": "2021-10-28",
+    "end": "2021-11-10",
+    "source": "Hallowed Eve"
+   }
+  ],
+  "1082": [
+   {
+    "start": "2021-10-28",
+    "end": "2021-11-10",
+    "source": "Hallowed Eve Holy Knight"
+   }
+  ],
+  "1083": [
+   {
+    "start": "2021-09-30",
+    "end": "2021-10-20",
+    "source": "Tomb Raider Lost Valley"
+   }
+  ],
+  "1085": [
+   {
+    "start": "2021-10-07",
+    "end": "2021-10-20",
+    "source": "Tomb Raider The Great Pyramid"
+   }
+  ],
+  "1086": [
+   {
+    "start": "2021-10-14",
+    "end": "2021-10-27",
+    "source": "October Equipment Enhancement Event"
+   }
+  ],
+  "1087": [
+   {
+    "start": "2021-11-18",
+    "end": "2021-11-27",
+    "source": "November Equipment Enhancement Event"
+   }
+  ],
+  "1088": [
+   {
+    "start": "2021-12-30",
+    "end": "2022-01-05",
+    "source": "Joychu the World"
+   }
+  ],
+  "1092": [
+   {
+    "start": "2022-01-27",
+    "end": "2022-02-09",
+    "source": "The Grrreat Tiger Spirit"
+   }
+  ],
+  "1093": [
+   {
+    "start": "2022-01-27",
+    "end": "2022-02-09",
+    "source": "Hu What When Where"
+   }
+  ],
+  "1094": [
+   {
+    "start": "2021-12-30",
+    "end": "2022-01-19",
+    "source": "December Equipment Enhancement Event"
+   }
+  ],
+  "1095": [
+   {
+    "start": "2022-02-24",
+    "end": "2022-03-16",
+    "source": "A Tough Egg to Crack"
+   }
+  ],
+  "1096": [
+   {
+    "start": "2022-02-24",
+    "end": "2022-03-16",
+    "source": "A Tough Egg to Crack"
+   }
+  ],
+  "1097": [
+   {
+    "start": "2022-03-03",
+    "end": "2022-03-16",
+    "source": "Eggs Over Hard"
+   }
+  ],
+  "1098": [
+   {
+    "start": "2021-12-23",
+    "end": "2022-01-05",
+    "source": "Ochunenbaum"
+   }
+  ],
+  "1099": [
+   {
+    "start": "2022-02-03",
+    "end": "2022-02-16",
+    "source": "February Equipment Enhancement Event"
+   }
+  ],
+  "1101": [
+   {
+    "start": "2022-03-24",
+    "end": "2022-04-06",
+    "source": "March Equipment Enhancement Event"
+   }
+  ],
+  "1102": [
+   {
+    "start": "2022-04-21",
+    "end": "2022-05-04",
+    "source": "April Equipment Enhancement Event"
+   }
+  ],
+  "1103": [
+   {
+    "start": "2022-05-26",
+    "end": "2022-06-08",
+    "source": "May Equipment Enhancement Event"
+   }
+  ],
+  "1104": [
+   {
+    "start": "2022-06-30",
+    "end": "2022-08-03",
+    "source": "Fundamental Forces Dragon Arc"
+   }
+  ],
+  "1106": [
+   {
+    "start": "2022-07-07",
+    "end": "2022-08-03",
+    "source": "Malefic Red-Eyes Dark Dragon"
+   }
+  ],
+  "1108": [
+   {
+    "start": "2019-02-08",
+    "end": "2019-02-21",
+    "source": "Yearning For Peace"
+   },
+   {
+    "start": "2020-01-30",
+    "end": "2020-02-12",
+    "source": "Yearning For Peace"
+   }
+  ],
+  "1109": [
+   {
+    "start": "2022-06-30",
+    "end": "2022-07-13",
+    "source": "6th Anniversary Equipment Enhancement Event"
+   }
+  ],
+  "1110": [
+   {
+    "start": "2017-06-29",
+    "end": "2017-07-12",
+    "source": "default 14 days"
+   }
+  ],
+  "1199": [
+   {
+    "start": "2023-04-06",
+    "end": "2023-04-19",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2023-05-04",
+    "end": "2023-05-17",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2023-07-13",
+    "end": "2023-07-26",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2024-08-15",
+    "end": "2024-08-28",
+    "source": "default 14 days"
+   }
+  ],
+  "1899": [
+   {
+    "start": "2021-10-28",
+    "end": "2021-11-10",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2022-01-13",
+    "end": "2022-01-26",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2022-02-17",
+    "end": "2022-03-02",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2022-06-23",
+    "end": "2022-07-06",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2022-07-14",
+    "end": "2022-07-27",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2022-08-12",
+    "end": "2022-08-25",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2022-09-08",
+    "end": "2022-09-21",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2022-10-20",
+    "end": "2022-11-02",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2022-11-10",
+    "end": "2022-11-23",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2022-12-08",
+    "end": "2022-12-21",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2023-01-12",
+    "end": "2023-01-25",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2023-02-09",
+    "end": "2023-02-22",
+    "source": "default 14 days"
+   }
+  ],
+  "3005": [
+   {
+    "start": "2020-04-02",
+    "end": "2020-04-15",
+    "source": "Iifa Tree"
+   }
+  ],
+  "3006": [
+   {
+    "start": "2020-04-09",
+    "end": "2020-04-15",
+    "source": "Pandemonium - Exploration"
+   }
+  ],
+  "3008": [
+   {
+    "start": "2020-04-09",
+    "end": "2020-04-22",
+    "source": "Aldore Five-O"
+   }
+  ],
+  "3014": [
+   {
+    "start": "2020-04-30",
+    "end": "2020-05-13",
+    "source": "Asgard Hill"
+   }
+  ],
+  "3015": [
+   {
+    "start": "2020-05-07",
+    "end": "2020-05-13",
+    "source": "Brahms Castle"
+   }
+  ],
+  "3019": [
+   {
+    "start": "2020-03-12",
+    "end": "2020-03-25",
+    "source": "Zanarkand Dome"
+   }
+  ],
+  "3021": [
+   {
+    "start": "2020-03-19",
+    "end": "2020-04-01",
+    "source": "Kilika Woods - Exploration"
+   },
+   {
+    "start": "2020-08-19",
+    "end": "2020-09-01",
+    "source": "default 14 days"
+   }
+  ],
+  "3022": [
+   {
+    "start": "2019-09-20",
+    "end": "2019-10-03",
+    "source": "Heartless Large Body"
+   }
+  ],
+  "3023": [
+   {
+    "start": "2019-09-27",
+    "end": "2019-10-03",
+    "source": "Heartless Behemoth"
+   }
+  ],
+  "3024": [
+   {
+    "start": "2020-05-14",
+    "end": "2020-05-27",
+    "source": "The Aery"
+   }
+  ],
+  "3025": [
+   {
+    "start": "2019-09-27",
+    "end": "2019-10-10",
+    "source": "Vs. Malicious Monsters"
+   }
+  ],
+  "3026": [
+   {
+    "start": "2019-10-04",
+    "end": "2019-10-10",
+    "source": "Vs. Raid Forces of Darkness"
+   }
+  ],
+  "3027": [
+   {
+    "start": "2019-10-04",
+    "end": "2019-10-10",
+    "source": "Vs. Indignus"
+   }
+  ],
+  "3028": [
+   {
+    "start": "2019-10-04",
+    "end": "2019-10-10",
+    "source": "Vs. Calasmos"
+   }
+  ],
+  "3031": [
+   {
+    "start": "2019-09-27",
+    "end": "2019-10-10",
+    "source": "DQ XI S Character Battle"
+   }
+  ],
+  "3034": [
+   {
+    "start": "2020-03-05",
+    "end": "2020-03-18",
+    "source": "Vanquish Lady Lilith"
+   }
+  ],
+  "3035": [
+   {
+    "start": "2020-03-12",
+    "end": "2020-03-18",
+    "source": "Distorter of Time Atomos"
+   }
+  ],
+  "3040": [
+   {
+    "start": "2020-05-14",
+    "end": "2020-05-27",
+    "source": "Genesis of Chaos -DARK VISIONS-"
+   }
+  ],
+  "3041": [
+   {
+    "start": "2020-04-16",
+    "end": "2020-04-29",
+    "source": "Harbinger of Chaos -DARK VISIONS-"
+   }
+  ],
+  "3042": [
+   {
+    "start": "2020-04-23",
+    "end": "2020-04-29",
+    "source": "Siren s Tower - Exploration"
+   }
+  ],
+  "3045": [
+   {
+    "start": "2019-11-21",
+    "end": "2019-12-04",
+    "source": "Vs. Mordegon"
+   }
+  ],
+  "3046": [
+   {
+    "start": "2019-11-28",
+    "end": "2019-12-04",
+    "source": "Vs. Lord of Shadows"
+   }
+  ],
+  "3047": [
+   {
+    "start": "2020-05-21",
+    "end": "2020-06-03",
+    "source": "default 14 days"
+   }
+  ],
+  "3054": [
+   {
+    "start": "2019-09-27",
+    "end": "2019-10-10",
+    "source": "DQ XI S Character Battle"
+   }
+  ],
+  "3060": [
+   {
+    "start": "2020-05-07",
+    "end": "2020-05-20",
+    "source": "Midgar s Edge"
+   }
+  ],
+  "3061": [
+   {
+    "start": "2020-05-14",
+    "end": "2020-05-20",
+    "source": "The Forgotten City - Exploration"
+   }
+  ],
+  "3067": [
+   {
+    "start": "2020-03-26",
+    "end": "2020-04-08",
+    "source": "The First Homunculus"
+   }
+  ],
+  "3068": [
+   {
+    "start": "2020-04-02",
+    "end": "2020-04-08",
+    "source": "Fuhrer King Bradley"
+   }
+  ],
+  "3069": [
+   {
+    "start": "2020-06-04",
+    "end": "2020-06-17",
+    "source": "Bresha Ruins -005 AF-"
+   }
+  ],
+  "3070": [
+   {
+    "start": "2020-06-11",
+    "end": "2020-06-17",
+    "source": "Academia -400 AF- Exploration"
+   }
+  ],
+  "3076": [
+   {
+    "start": "2020-04-13",
+    "end": "2020-04-26",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2020-07-02",
+    "end": "2020-07-15",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2021-03-26",
+    "end": "2021-04-07",
+    "source": "WOTV FFBE Equipment Enhancement Event"
+   }
+  ],
+  "3078": [
+   {
+    "start": "2020-05-28",
+    "end": "2020-06-10",
+    "source": "Guiding Hands"
+   }
+  ],
+  "3079": [
+   {
+    "start": "2020-06-04",
+    "end": "2020-06-10",
+    "source": "The Fifth Ark"
+   }
+  ],
+  "3083": [
+   {
+    "start": "2020-06-18",
+    "end": "2020-07-01",
+    "source": "Lunatic Pandora"
+   }
+  ],
+  "3087": [
+   {
+    "start": "2020-06-25",
+    "end": "2020-07-01",
+    "source": "Lunatic Pandora - Exploration"
+   }
+  ],
+  "3095": [
+   {
+    "start": "2020-06-25",
+    "end": "2020-07-08",
+    "source": "Deling City Gateway"
+   }
+  ],
+  "3096": [
+   {
+    "start": "2020-07-02",
+    "end": "2020-07-08",
+    "source": "Sorceress Edea"
+   }
+  ],
+  "3103": [
+   {
+    "start": "2020-07-09",
+    "end": "2020-07-22",
+    "source": "Escaping the Imperial Capital"
+   }
+  ],
+  "3108": [
+   {
+    "start": "2020-07-16",
+    "end": "2020-07-22",
+    "source": "Pand monium - Exploration"
+   }
+  ],
+  "3111": [
+   {
+    "start": "2020-07-16",
+    "end": "2020-07-29",
+    "source": "Battle with the Vision of Dark Bahamut"
+   }
+  ],
+  "3117": [
+   {
+    "start": "2020-07-23",
+    "end": "2020-08-05",
+    "source": "The Salikawood"
+   }
+  ],
+  "3121": [
+   {
+    "start": "2020-07-30",
+    "end": "2020-08-05",
+    "source": "The Phon Coast - Exploration"
+   }
+  ],
+  "3122": [
+   {
+    "start": "2020-07-30",
+    "end": "2020-08-12",
+    "source": "Boss Rush Survival"
+   }
+  ],
+  "3123": [
+   {
+    "start": "2020-07-30",
+    "end": "2020-08-12",
+    "source": "Boss Rush Survival"
+   }
+  ],
+  "3124": [
+   {
+    "start": "2020-07-30",
+    "end": "2020-08-12",
+    "source": "Boss Rush Survival"
+   }
+  ],
+  "3125": [
+   {
+    "start": "2020-07-02",
+    "end": "2020-07-15",
+    "source": "Fated Prince  Event "
+   },
+   {
+    "start": "2021-03-26",
+    "end": "2021-04-08",
+    "source": "default 14 days"
+   }
+  ],
+  "3126": [
+   {
+    "start": "2020-07-02",
+    "end": "2020-07-15",
+    "source": "Night-Blooming Flower  Event "
+   },
+   {
+    "start": "2021-03-26",
+    "end": "2021-04-08",
+    "source": "default 14 days"
+   }
+  ],
+  "3127": [
+   {
+    "start": "2020-04-13",
+    "end": "2020-04-26",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2020-07-02",
+    "end": "2020-07-15",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2021-03-26",
+    "end": "2021-04-07",
+    "source": "WOTV FFBE Equipment Enhancement Event"
+   }
+  ],
+  "3128": [
+   {
+    "start": "2020-08-13",
+    "end": "2020-08-26",
+    "source": "Sochen Cave Palace"
+   }
+  ],
+  "3129": [
+   {
+    "start": "2020-08-20",
+    "end": "2020-08-26",
+    "source": "Hall of the Wroth God"
+   }
+  ],
+  "3130": [
+   {
+    "start": "2020-08-06",
+    "end": "2020-08-19",
+    "source": "Silver Dragon"
+   }
+  ],
+  "3134": [
+   {
+    "start": "2020-08-13",
+    "end": "2020-08-19",
+    "source": "Memoria - Exploration"
+   }
+  ],
+  "3140": [
+   {
+    "start": "2021-02-18",
+    "end": "2021-03-03",
+    "source": "Boss Rush Survival 2"
+   }
+  ],
+  "3141": [
+   {
+    "start": "2021-02-18",
+    "end": "2021-03-03",
+    "source": "Boss Rush Survival 2"
+   }
+  ],
+  "3142": [
+   {
+    "start": "2021-02-18",
+    "end": "2021-03-03",
+    "source": "Boss Rush Survival 2"
+   }
+  ],
+  "3143": [
+   {
+    "start": "2021-11-11",
+    "end": "2021-11-24",
+    "source": "Dark Castle"
+   }
+  ],
+  "3144": [
+   {
+    "start": "2021-11-11",
+    "end": "2021-11-24",
+    "source": "Nemesis Battle with Zehnoa"
+   }
+  ],
+  "3145": [
+   {
+    "start": "2021-11-11",
+    "end": "2021-11-24",
+    "source": "Nemesis Battle with Harcypete"
+   }
+  ],
+  "3146": [
+   {
+    "start": "2021-11-11",
+    "end": "2021-11-24",
+    "source": "Nemesis Battle with Belladonna"
+   }
+  ],
+  "3148": [
+   {
+    "start": "2020-08-20",
+    "end": "2020-09-02",
+    "source": "Shinra Building 68th Floor"
+   }
+  ],
+  "3151": [
+   {
+    "start": "2020-08-20",
+    "end": "2020-09-02",
+    "source": "Shinra Building 69th Floor - Exploration"
+   }
+  ],
+  "3154": [
+   {
+    "start": "2020-08-27",
+    "end": "2020-09-09",
+    "source": "A Blue Prelude"
+   }
+  ],
+  "3157": [
+   {
+    "start": "2020-05-21",
+    "end": "2020-06-03",
+    "source": "default 14 days"
+   }
+  ],
+  "3158": [
+   {
+    "start": "2020-08-27",
+    "end": "2020-09-09",
+    "source": "A Blue Prelude"
+   }
+  ],
+  "3163": [
+   {
+    "start": "2020-11-05",
+    "end": "2020-11-18",
+    "source": "The Curse of Betrayal"
+   }
+  ],
+  "3166": [
+   {
+    "start": "2020-05-21",
+    "end": "2020-06-03",
+    "source": "default 14 days"
+   }
+  ],
+  "3167": [
+   {
+    "start": "2020-11-05",
+    "end": "2020-11-18",
+    "source": "The Curse of Betrayal"
+   }
+  ],
+  "3171": [
+   {
+    "start": "2020-09-03",
+    "end": "2020-09-16",
+    "source": "High-Speed Aerial Weapon The Valkyrie"
+   }
+  ],
+  "3172": [
+   {
+    "start": "2020-09-03",
+    "end": "2020-09-16",
+    "source": "Rufus Shinra - EXT"
+   }
+  ],
+  "3175": [
+   {
+    "start": "2020-09-10",
+    "end": "2020-09-23",
+    "source": "Learning the Mirror of Equity"
+   }
+  ],
+  "3177": [
+   {
+    "start": "2020-09-17",
+    "end": "2020-09-23",
+    "source": "Mystic Den - Exploration"
+   }
+  ],
+  "3187": [
+   {
+    "start": "2020-10-01",
+    "end": "2020-10-14",
+    "source": "The Great Crystal"
+   }
+  ],
+  "3188": [
+   {
+    "start": "2020-10-01",
+    "end": "2020-10-14",
+    "source": "Ancient Weapon Omega Mark XII - EXT"
+   }
+  ],
+  "3191": [
+   {
+    "start": "2020-10-08",
+    "end": "2020-10-21",
+    "source": "Leviathan  Event "
+   }
+  ],
+  "3193": [
+   {
+    "start": "2020-10-15",
+    "end": "2020-10-21",
+    "source": "Mysidian Tower - Exploration"
+   }
+  ],
+  "3199": [
+   {
+    "start": "2020-12-03",
+    "end": "2020-12-16",
+    "source": "A New Era of Knights"
+   }
+  ],
+  "3200": [
+   {
+    "start": "2020-12-03",
+    "end": "2020-12-16",
+    "source": "A New Era of Knights"
+   }
+  ],
+  "3201": [
+   {
+    "start": "2020-05-21",
+    "end": "2020-06-03",
+    "source": "default 14 days"
+   }
+  ],
+  "3202": [
+   {
+    "start": "2020-10-15",
+    "end": "2020-10-28",
+    "source": "Morze s Soiree and the Fountain of Power"
+   }
+  ],
+  "3203": [
+   {
+    "start": "2020-10-15",
+    "end": "2020-10-28",
+    "source": "Blue Practice Robot - EXT"
+   }
+  ],
+  "3205": [
+   {
+    "start": "2020-11-26",
+    "end": "2020-12-09",
+    "source": "Scala ad Caelum"
+   }
+  ],
+  "3210": [
+   {
+    "start": "2020-11-19",
+    "end": "2020-12-02",
+    "source": "Eternal Wind Event"
+   }
+  ],
+  "3211": [
+   {
+    "start": "2020-11-19",
+    "end": "2020-12-02",
+    "source": "Nepto Dragon - EXT"
+   }
+  ],
+  "3212": [
+   {
+    "start": "2021-01-14",
+    "end": "2021-01-27",
+    "source": "After the Rain"
+   }
+  ],
+  "3213": [
+   {
+    "start": "2021-01-14",
+    "end": "2021-01-27",
+    "source": "After the Rain"
+   }
+  ],
+  "3214": [
+   {
+    "start": "2020-05-21",
+    "end": "2020-06-03",
+    "source": "default 14 days"
+   }
+  ],
+  "3215": [
+   {
+    "start": "2020-12-10",
+    "end": "2020-12-23",
+    "source": "A Girl and Her Grandfather"
+   }
+  ],
+  "3216": [
+   {
+    "start": "2020-12-10",
+    "end": "2020-12-23",
+    "source": "VS Ultros Typhon - EXT"
+   }
+  ],
+  "3217": [
+   {
+    "start": "2020-12-17",
+    "end": "2020-12-23",
+    "source": "Esper Caves - Exploration"
+   }
+  ],
+  "3219": [
+   {
+    "start": "2021-02-04",
+    "end": "2021-02-17",
+    "source": "The Festival of Visions"
+   }
+  ],
+  "3222": [
+   {
+    "start": "2020-12-17",
+    "end": "2020-12-30",
+    "source": "Resurrection of the Eight Legendary Dragons"
+   }
+  ],
+  "3223": [
+   {
+    "start": "2020-12-17",
+    "end": "2020-12-30",
+    "source": "VS Blue Dragon - EXT"
+   }
+  ],
+  "3225": [
+   {
+    "start": "2021-01-21",
+    "end": "2021-02-03",
+    "source": "The Visions of the Farplane"
+   }
+  ],
+  "3226": [
+   {
+    "start": "2021-01-21",
+    "end": "2021-02-03",
+    "source": "FFBE 2021 Celebration Event - EXT"
+   }
+  ],
+  "3227": [
+   {
+    "start": "2021-01-28",
+    "end": "2021-02-03",
+    "source": "Farplane Grotto - Exploration"
+   }
+  ],
+  "3231": [
+   {
+    "start": "2021-01-28",
+    "end": "2021-02-10",
+    "source": "Battle with Bahamut Asura"
+   }
+  ],
+  "3232": [
+   {
+    "start": "2021-01-28",
+    "end": "2021-02-10",
+    "source": "Battle with the Visions of Bahamut Asura"
+   }
+  ],
+  "3233": [
+   {
+    "start": "2021-03-04",
+    "end": "2021-03-17",
+    "source": "A Friend Like You"
+   }
+  ],
+  "3236": [
+   {
+    "start": "2021-02-25",
+    "end": "2021-03-10",
+    "source": "The Song of the Savior"
+   }
+  ],
+  "3237": [
+   {
+    "start": "2021-02-25",
+    "end": "2021-03-10",
+    "source": "Snow Villiers  Event "
+   }
+  ],
+  "3238": [
+   {
+    "start": "2021-03-04",
+    "end": "2021-03-10",
+    "source": "The Patron s Palace - Exploration"
+   }
+  ],
+  "3242": [
+   {
+    "start": "2021-03-11",
+    "end": "2021-03-24",
+    "source": "Grand Chaos"
+   }
+  ],
+  "3243": [
+   {
+    "start": "2021-03-11",
+    "end": "2021-03-24",
+    "source": "Caius Ballad"
+   }
+  ],
+  "3244": [
+   {
+    "start": "2021-04-08",
+    "end": "2021-04-21",
+    "source": "A Hero s Return"
+   }
+  ],
+  "3246": [
+   {
+    "start": "2021-03-18",
+    "end": "2021-03-31",
+    "source": "The Surgate Fleet Diversionary Tactics"
+   }
+  ],
+  "3247": [
+   {
+    "start": "2021-03-18",
+    "end": "2021-03-31",
+    "source": "Exdeath s Elite Guard"
+   }
+  ],
+  "3248": [
+   {
+    "start": "2021-03-25",
+    "end": "2021-03-31",
+    "source": "Barrier Tower - Exploration"
+   }
+  ],
+  "3249": [
+   {
+    "start": "2021-05-13",
+    "end": "2021-06-02",
+    "source": "The Promised Day"
+   }
+  ],
+  "3250": [
+   {
+    "start": "2021-05-13",
+    "end": "2021-06-02",
+    "source": "Emissary of Darkness"
+   }
+  ],
+  "3264": [
+   {
+    "start": "2022-03-17",
+    "end": "2022-03-30",
+    "source": "default 14 days"
+   }
+  ],
+  "3279": [
+   {
+    "start": "2023-03-23",
+    "end": "2023-04-05",
+    "source": "default 14 days"
+   }
+  ],
+  "3282": [
+   {
+    "start": "2024-02-29",
+    "end": "2024-03-13",
+    "source": "default 14 days"
+   }
+  ],
+  "4000": [
+   {
+    "start": "2021-04-15",
+    "end": "2021-04-28",
+    "source": "End of Days"
+   }
+  ],
+  "4001": [
+   {
+    "start": "2021-04-15",
+    "end": "2021-04-28",
+    "source": "Ravus  Event "
+   }
+  ],
+  "4002": [
+   {
+    "start": "2021-02-22",
+    "end": "2021-02-28",
+    "source": "default 7 days"
+   },
+   {
+    "start": "2021-04-22",
+    "end": "2021-04-28",
+    "source": "Zegnautus Keep - Exploration"
+   }
+  ],
+  "4010": [
+   {
+    "start": "2021-05-20",
+    "end": "2021-06-02",
+    "source": "Something to Protect"
+   }
+  ],
+  "4011": [
+   {
+    "start": "2021-05-20",
+    "end": "2021-06-02",
+    "source": "Lurking Devil of the Library"
+   }
+  ],
+  "4020": [
+   {
+    "start": "2021-07-08",
+    "end": "2021-07-21",
+    "source": "Unbound Offensive"
+   }
+  ],
+  "4021": [
+   {
+    "start": "2021-07-08",
+    "end": "2021-07-21",
+    "source": "The Awakened Emperor"
+   }
+  ],
+  "4030": [
+   {
+    "start": "2021-07-22",
+    "end": "2021-08-18",
+    "source": "The Town That Never Sleeps"
+   }
+  ],
+  "4031": [
+   {
+    "start": "2021-07-22",
+    "end": "2021-08-18",
+    "source": "Lord of the Sewers"
+   }
+  ],
+  "4040": [
+   {
+    "start": "2021-08-19",
+    "end": "2021-09-08",
+    "source": "Zozo"
+   }
+  ],
+  "4041": [
+   {
+    "start": "2021-08-19",
+    "end": "2021-09-08",
+    "source": "Opera House - Stage"
+   }
+  ],
+  "4050": [
+   {
+    "start": "2021-10-07",
+    "end": "2021-10-20",
+    "source": "A Journey Filled with Love"
+   }
+  ],
+  "4051": [
+   {
+    "start": "2021-10-07",
+    "end": "2021-10-20",
+    "source": "Rainbow Tower Zenith"
+   }
+  ],
+  "4060": [
+   {
+    "start": "2021-11-25",
+    "end": "2021-12-08",
+    "source": "Journey From Besaid"
+   }
+  ],
+  "4061": [
+   {
+    "start": "2021-12-02",
+    "end": "2021-12-08",
+    "source": "A Spring of Memories"
+   }
+  ],
+  "4062": [
+   {
+    "start": "2021-12-02",
+    "end": "2021-12-08",
+    "source": "Mechanical Guardian of the Ruins"
+   }
+  ],
+  "4070": [
+   {
+    "start": "2022-01-06",
+    "end": "2022-01-19",
+    "source": "A Destined Duty"
+   }
+  ],
+  "4071": [
+   {
+    "start": "2022-01-06",
+    "end": "2022-01-19",
+    "source": "Omega Spawn Rush"
+   }
+  ],
+  "4080": [
+   {
+    "start": "2022-02-17",
+    "end": "2022-03-02",
+    "source": "The Last Crystal"
+   }
+  ],
+  "4081": [
+   {
+    "start": "2022-02-17",
+    "end": "2022-03-02",
+    "source": "default 14 days"
+   }
+  ],
+  "4090": [
+   {
+    "start": "2022-03-17",
+    "end": "2022-03-30",
+    "source": "Assault on the Inauguration Ceremony"
+   }
+  ],
+  "4091": [
+   {
+    "start": "2022-03-17",
+    "end": "2022-03-30",
+    "source": "Behold the Dark Calamity"
+   }
+  ],
+  "4092": [
+   {
+    "start": "2022-03-17",
+    "end": "2022-03-30",
+    "source": "The Enigmatic Assailant"
+   }
+  ],
+  "4100": [
+   {
+    "start": "2022-04-28",
+    "end": "2022-05-11",
+    "source": "Balamb Garden in Crisis"
+   }
+  ],
+  "4101": [
+   {
+    "start": "2022-04-28",
+    "end": "2022-05-11",
+    "source": "Ancient Dinosaur"
+   }
+  ],
+  "4110": [
+   {
+    "start": "2022-05-12",
+    "end": "2022-05-25",
+    "source": "This Opportunity"
+   }
+  ],
+  "4111": [
+   {
+    "start": "2022-05-12",
+    "end": "2022-05-25",
+    "source": "VS Knight of Ruin Sterne"
+   }
+  ],
+  "4120": [
+   {
+    "start": "2022-05-19",
+    "end": "2022-06-01",
+    "source": "Old Chaos Shrine"
+   }
+  ],
+  "4121": [
+   {
+    "start": "2022-05-19",
+    "end": "2022-06-01",
+    "source": "Earth Fire Water and Wind Fiends Rush"
+   }
+  ],
+  "4130": [
+   {
+    "start": "2022-07-07",
+    "end": "2022-07-20",
+    "source": "The Warriors Pilgrimage"
+   }
+  ],
+  "4131": [
+   {
+    "start": "2022-07-07",
+    "end": "2022-07-20",
+    "source": "The Three Higher Realms"
+   }
+  ],
+  "4140": [
+   {
+    "start": "2022-06-16",
+    "end": "2022-06-28",
+    "source": "The Nightmare of Castle Palamecia"
+   }
+  ],
+  "4141": [
+   {
+    "start": "2022-06-16",
+    "end": "2022-06-28",
+    "source": "The Spectral Treasure Warden"
+   }
+  ],
+  "4150": [
+   {
+    "start": "2022-08-04",
+    "end": "2022-08-17",
+    "source": "A Trap in the Lhusu Mines"
+   }
+  ],
+  "4151": [
+   {
+    "start": "2022-08-04",
+    "end": "2022-08-17",
+    "source": "Heinous Headhunters"
+   }
+  ],
+  "4160": [
+   {
+    "start": "2022-08-25",
+    "end": "2022-09-21",
+    "source": "Channels of Absolution"
+   }
+  ],
+  "4161": [
+   {
+    "start": "2022-08-25",
+    "end": "2022-09-21",
+    "source": "Holy Beast of Yevon Reborn"
+   }
+  ],
+  "4162": [
+   {
+    "start": "2022-08-25",
+    "end": "2022-09-21",
+    "source": "Machina Protectors of the Ruins"
+   }
+  ],
+  "4170": [
+   {
+    "start": "2022-09-22",
+    "end": "2022-10-05",
+    "source": "Go Go Gullwings"
+   }
+  ],
+  "4171": [
+   {
+    "start": "2022-09-22",
+    "end": "2022-10-05",
+    "source": "Arid Assault"
+   }
+  ],
+  "4180": [
+   {
+    "start": "2022-10-20",
+    "end": "2022-11-03",
+    "source": "Passage to the Feymarch"
+   }
+  ],
+  "4181": [
+   {
+    "start": "2022-10-20",
+    "end": "2022-11-03",
+    "source": "Rulers of the Feymarch"
+   }
+  ],
+  "4190": [
+   {
+    "start": "2022-11-04",
+    "end": "2022-11-23",
+    "source": "Viper Manor - Where Lies the Key to the Past"
+   }
+  ],
+  "4191": [
+   {
+    "start": "2022-11-04",
+    "end": "2022-11-23",
+    "source": "The Black-Clad Demi-Human"
+   }
+  ],
+  "4193": [
+   {
+    "start": "2022-11-04",
+    "end": "2022-11-23",
+    "source": "The Young Acacia Dragoon"
+   }
+  ],
+  "4200": [
+   {
+    "start": "2022-11-17",
+    "end": "2022-11-30",
+    "source": "A World Ripped Apart"
+   }
+  ],
+  "4201": [
+   {
+    "start": "2022-11-17",
+    "end": "2022-11-30",
+    "source": "The Beast from Behind"
+   }
+  ],
+  "4202": [
+   {
+    "start": "2022-11-17",
+    "end": "2022-11-30",
+    "source": "Daring Rescue at the Crumbling House"
+   }
+  ],
+  "4203": [
+   {
+    "start": "2022-11-17",
+    "end": "2022-11-30",
+    "source": "A Power to Unite Espers and Men"
+   }
+  ],
+  "4210": [
+   {
+    "start": "2022-12-08",
+    "end": "2022-12-28",
+    "source": "The Second Gate - The Light of Babel"
+   }
+  ],
+  "4211": [
+   {
+    "start": "2022-12-08",
+    "end": "2022-12-28",
+    "source": "Elements Assemble"
+   }
+  ],
+  "4212": [
+   {
+    "start": "2022-12-08",
+    "end": "2022-12-28",
+    "source": "The Chosen Contact"
+   }
+  ],
+  "4213": [
+   {
+    "start": "2022-12-08",
+    "end": "2022-12-28",
+    "source": "Slumbering Resentment"
+   }
+  ],
+  "4220": [
+   {
+    "start": "2022-12-29",
+    "end": "2023-01-11",
+    "source": "Haunted"
+   }
+  ],
+  "4221": [
+   {
+    "start": "2022-12-29",
+    "end": "2023-01-11",
+    "source": "Lord of the Train Graveyard"
+   }
+  ],
+  "4222": [
+   {
+    "start": "2022-12-29",
+    "end": "2023-01-11",
+    "source": "Fight for Survival"
+   }
+  ],
+  "4223": [
+   {
+    "start": "2022-12-15",
+    "end": "2022-12-28",
+    "source": "Rematch atop the Pillar"
+   }
+  ],
+  "4224": [
+   {
+    "start": "2022-12-15",
+    "end": "2022-12-28",
+    "source": "The Turks Play for Keeps"
+   }
+  ],
+  "4230": [
+   {
+    "start": "2023-01-26",
+    "end": "2023-02-08",
+    "source": "The Forest of Slumbering Crystals"
+   }
+  ],
+  "4231": [
+   {
+    "start": "2023-01-26",
+    "end": "2023-02-08",
+    "source": "The Sealed Crystals"
+   }
+  ],
+  "4232": [
+   {
+    "start": "2023-01-26",
+    "end": "2023-02-08",
+    "source": "The Bond Between Pirate and Sea Dragon"
+   }
+  ],
+  "4234": [
+   {
+    "start": "2023-01-26",
+    "end": "2023-02-08",
+    "source": "The Warlock s Castle"
+   }
+  ],
+  "4240": [
+   {
+    "start": "2023-03-23",
+    "end": "2023-04-05",
+    "source": "Aldore Tower Investigation"
+   }
+  ],
+  "4241": [
+   {
+    "start": "2023-03-23",
+    "end": "2023-04-05",
+    "source": "Guardian s Barrel EX"
+   }
+  ],
+  "4242": [
+   {
+    "start": "2023-03-23",
+    "end": "2023-04-05",
+    "source": "Advent of the Emperor"
+   }
+  ],
+  "4260": [
+   {
+    "start": "2023-04-13",
+    "end": "2023-04-26",
+    "source": "Conquering the Omega Core"
+   }
+  ],
+  "4261": [
+   {
+    "start": "2023-04-13",
+    "end": "2023-04-26",
+    "source": "A Clash of Miasma and Aether"
+   }
+  ],
+  "4262": [
+   {
+    "start": "2023-04-13",
+    "end": "2023-04-26",
+    "source": "Souls United"
+   }
+  ],
+  "4263": [
+   {
+    "start": "2023-04-13",
+    "end": "2023-04-26",
+    "source": "The Title of Kingdom s Strongest"
+   }
+  ],
+  "4270": [
+   {
+    "start": "2023-03-09",
+    "end": "2023-03-22",
+    "source": "Rise of the Zilart"
+   }
+  ],
+  "4271": [
+   {
+    "start": "2023-03-09",
+    "end": "2023-03-22",
+    "source": "Awakening of the Zilart"
+   }
+  ],
+  "4272": [
+   {
+    "start": "2023-03-09",
+    "end": "2023-03-22",
+    "source": "Master of Puppets Bringer of a Brighter Future"
+   }
+  ],
+  "4280": [
+   {
+    "start": "2023-05-04",
+    "end": "2023-05-17",
+    "source": "default 14 days"
+   }
+  ],
+  "4281": [
+   {
+    "start": "2023-05-04",
+    "end": "2023-05-17",
+    "source": "Fallen from Pride"
+   }
+  ],
+  "4282": [
+   {
+    "start": "2023-05-04",
+    "end": "2023-05-17",
+    "source": "The Heir to Shinra"
+   }
+  ],
+  "4291": [
+   {
+    "start": "2023-06-01",
+    "end": "2023-06-14",
+    "source": "The Many-Legged Pursuer"
+   }
+  ],
+  "4293": [
+   {
+    "start": "2023-06-01",
+    "end": "2023-06-14",
+    "source": "Mightier than the Sword"
+   }
+  ],
+  "4300": [
+   {
+    "start": "2023-06-08",
+    "end": "2023-06-21",
+    "source": "Saving the Jumi"
+   }
+  ],
+  "4301": [
+   {
+    "start": "2023-06-08",
+    "end": "2023-06-21",
+    "source": "The Looking-Glass Tower"
+   }
+  ],
+  "4302": [
+   {
+    "start": "2023-06-08",
+    "end": "2023-06-21",
+    "source": "Lapis Lazuli of Greater Luster"
+   }
+  ],
+  "4303": [
+   {
+    "start": "2023-06-08",
+    "end": "2023-06-21",
+    "source": "A Pearl of Greater Luster"
+   }
+  ],
+  "4304": [
+   {
+    "start": "2023-06-08",
+    "end": "2023-06-21",
+    "source": "A Thief s Pride"
+   }
+  ],
+  "4310": [
+   {
+    "start": "2023-06-15",
+    "end": "2023-06-28",
+    "source": "Operation Breakthrough"
+   }
+  ],
+  "4311": [
+   {
+    "start": "2023-06-15",
+    "end": "2023-06-28",
+    "source": "A Towering Foe"
+   }
+  ],
+  "4312": [
+   {
+    "start": "2018-11-09",
+    "end": "2018-11-15",
+    "source": "Big Bridge - Exploration"
+   }
+  ],
+  "4314": [
+   {
+    "start": "2023-06-15",
+    "end": "2023-06-28",
+    "source": "The Earnest Knight"
+   }
+  ],
+  "4320": [
+   {
+    "start": "2023-07-06",
+    "end": "2023-07-19",
+    "source": "To Omega s End We Sail"
+   }
+  ],
+  "4321": [
+   {
+    "start": "2023-07-06",
+    "end": "2023-07-19",
+    "source": "Sovereign of the Savage Sea"
+   }
+  ],
+  "4322": [
+   {
+    "start": "2023-07-06",
+    "end": "2023-07-19",
+    "source": "Worthy Opponents"
+   }
+  ],
+  "4323": [
+   {
+    "start": "2023-07-06",
+    "end": "2023-07-19",
+    "source": "A Hero by Core Corrupted"
+   }
+  ],
+  "4330": [
+   {
+    "start": "2023-07-13",
+    "end": "2023-07-26",
+    "source": "The Desert Palace"
+   }
+  ],
+  "4331": [
+   {
+    "start": "2023-07-13",
+    "end": "2023-07-26",
+    "source": "Defense Born of Bloodstones"
+   }
+  ],
+  "4332": [
+   {
+    "start": "2023-07-13",
+    "end": "2023-07-26",
+    "source": "Rise of a Tyrant"
+   }
+  ],
+  "4333": [
+   {
+    "start": "2023-07-13",
+    "end": "2023-07-26",
+    "source": "The Wyvern and the Dragoon"
+   }
+  ],
+  "4340": [
+   {
+    "start": "2023-08-03",
+    "end": "2023-08-16",
+    "source": "Hearts in Turmoil"
+   }
+  ],
+  "4341": [
+   {
+    "start": "2023-08-03",
+    "end": "2023-08-16",
+    "source": "King of the Stags"
+   }
+  ],
+  "4343": [
+   {
+    "start": "2020-08-20",
+    "end": "2020-09-02",
+    "source": "VS Specimen H0512"
+   }
+  ],
+  "4350": [
+   {
+    "start": "2023-08-31",
+    "end": "2023-09-13",
+    "source": "To Hunt L Cie"
+   }
+  ],
+  "4351": [
+   {
+    "start": "2023-08-17",
+    "end": "2023-08-30",
+    "source": "The Sanctum Warmech"
+   }
+  ],
+  "4354": [
+   {
+    "start": "2023-08-31",
+    "end": "2023-09-13",
+    "source": "A Warrior Who Once Protected Grandshelt"
+   }
+  ],
+  "4360": [
+   {
+    "start": "2023-10-05",
+    "end": "2023-10-18",
+    "source": "Beasts Tainted by Dark Power"
+   }
+  ],
+  "4361": [
+   {
+    "start": "2023-10-05",
+    "end": "2023-10-18",
+    "source": "Carbuncle s Jeweled Staff"
+   }
+  ],
+  "4362": [
+   {
+    "start": "2022-10-20",
+    "end": "2022-11-03",
+    "source": "Rulers of the Feymarch"
+   }
+  ],
+  "4364": [
+   {
+    "start": "2023-10-05",
+    "end": "2023-10-18",
+    "source": "Energy Conversion Facility - Nazuu"
+   }
+  ],
+  "4365": [
+   {
+    "start": "2023-10-12",
+    "end": "2023-10-25",
+    "source": "Shiva s Icebound Katana"
+   }
+  ],
+  "4370": [
+   {
+    "start": "2023-11-09",
+    "end": "2023-11-22",
+    "source": "Checkmate"
+   }
+  ],
+  "4380": [
+   {
+    "start": "2023-12-07",
+    "end": "2023-12-27",
+    "source": "The Truth Behind the War of the Lions"
+   }
+  ],
+  "4381": [
+   {
+    "start": "2023-12-07",
+    "end": "2023-12-20",
+    "source": "Confessor of Inquisition"
+   }
+  ],
+  "4390": [
+   {
+    "start": "2024-01-04",
+    "end": "2024-01-31",
+    "source": "Return to Insomnia"
+   }
+  ],
+  "4392": [
+   {
+    "start": "2024-01-04",
+    "end": "2024-01-31",
+    "source": "City of Daemons"
+   }
+  ],
+  "4420": [
+   {
+    "start": "2024-03-07",
+    "end": "2024-03-27",
+    "source": "United with the Water God"
+   }
+  ],
+  "4430": [
+   {
+    "start": "2024-04-04",
+    "end": "2024-05-08",
+    "source": "Cradle of the World"
+   }
+  ],
+  "4450": [
+   {
+    "start": "2024-05-09",
+    "end": "2024-06-05",
+    "source": "Battle on Blazing Sands"
+   }
+  ],
+  "4460": [
+   {
+    "start": "2024-06-06",
+    "end": "2024-07-10",
+    "source": "A Summoner s Path"
+   }
+  ],
+  "4530": [
+   {
+    "start": "2024-07-11",
+    "end": "2024-08-07",
+    "source": "Path of Vengeance"
+   }
+  ],
+  "4540": [
+   {
+    "start": "2024-08-01",
+    "end": "2024-10-31",
+    "source": "Land Swarming with Omega Spawn"
+   }
+  ],
+  "5010": [
+   {
+    "start": "2021-06-10",
+    "end": "2021-06-23",
+    "source": "Guided by Conviction"
+   }
+  ],
+  "5050": [
+   {
+    "start": "2021-12-09",
+    "end": "2021-12-22",
+    "source": "Lonely Island Treasure Hunters"
+   }
+  ],
+  "5110": [
+   {
+    "start": "2022-10-13",
+    "end": "2022-10-26",
+    "source": "The Destroyers Journey"
+   }
+  ],
+  "5113": [
+   {
+    "start": "2022-10-13",
+    "end": "2022-10-26",
+    "source": "Collision with Caledfwlch"
+   }
+  ],
+  "5120": [
+   {
+    "start": "2022-12-01",
+    "end": "2022-12-14",
+    "source": "Awaken Thy Spirit"
+   }
+  ],
+  "5121": [
+   {
+    "start": "2022-12-01",
+    "end": "2022-12-14",
+    "source": "Awaken Thy Spirit"
+   }
+  ],
+  "5122": [
+   {
+    "start": "2022-12-01",
+    "end": "2022-12-14",
+    "source": "A Strength to Sever Sorrow"
+   }
+  ],
+  "5123": [
+   {
+    "start": "2022-12-01",
+    "end": "2022-12-14",
+    "source": "An Appetite for Slaughter"
+   }
+  ],
+  "5133": [
+   {
+    "start": "2023-02-02",
+    "end": "2023-02-15",
+    "source": "Friends in the Making"
+   }
+  ],
+  "5134": [
+   {
+    "start": "2023-03-02",
+    "end": "2023-03-15",
+    "source": "The Viera Who Chose the Skies"
+   }
+  ],
+  "5140": [
+   {
+    "start": "2023-02-23",
+    "end": "2023-03-08",
+    "source": "A New Wind Blows"
+   }
+  ],
+  "5142": [
+   {
+    "start": "2023-02-23",
+    "end": "2023-03-08",
+    "source": "Guardian of the Crystal Deposit"
+   }
+  ],
+  "5143": [
+   {
+    "start": "2023-02-23",
+    "end": "2023-03-08",
+    "source": "The Solitary Emperor"
+   }
+  ],
+  "5152": [
+   {
+    "start": "2023-05-11",
+    "end": "2023-05-24",
+    "source": "The Dragon King s Intervention"
+   }
+  ],
+  "5153": [
+   {
+    "start": "2023-05-11",
+    "end": "2023-05-24",
+    "source": "A War Machine of Visionary Magic"
+   }
+  ],
+  "5154": [
+   {
+    "start": "2023-05-11",
+    "end": "2023-05-24",
+    "source": "The Key to Weapon"
+   }
+  ],
+  "5162": [
+   {
+    "start": "2023-09-28",
+    "end": "2023-10-11",
+    "source": "An Esper of Strange Appearance"
+   }
+  ],
+  "5163": [
+   {
+    "start": "2022-08-25",
+    "end": "2022-09-21",
+    "source": "Holy Beast of Yevon Reborn"
+   }
+  ],
+  "5164": [
+   {
+    "start": "2022-04-07",
+    "end": "2022-04-20",
+    "source": "Battle at Visectrum s Peak"
+   }
+  ],
+  "6000": [
+   {
+    "start": "2021-04-29",
+    "end": "2021-05-12",
+    "source": "Sacrifices"
+   }
+  ],
+  "6001": [
+   {
+    "start": "2021-04-29",
+    "end": "2021-05-12",
+    "source": "Reaper of Crown City"
+   }
+  ],
+  "6010": [
+   {
+    "start": "2021-06-24",
+    "end": "2021-07-07",
+    "source": "Nashmeira s Plea"
+   }
+  ],
+  "6011": [
+   {
+    "start": "2021-06-24",
+    "end": "2021-07-07",
+    "source": "Dark Rider"
+   }
+  ],
+  "6020": [
+   {
+    "start": "2021-08-05",
+    "end": "2021-08-18",
+    "source": "Destiny s Crossroads"
+   }
+  ],
+  "6021": [
+   {
+    "start": "2021-08-05",
+    "end": "2021-08-18",
+    "source": "The Arbiters of Fate"
+   }
+  ],
+  "6030": [
+   {
+    "start": "2021-09-16",
+    "end": "2021-09-29",
+    "source": "The Kingdom s Final Hours"
+   }
+  ],
+  "6031": [
+   {
+    "start": "2021-09-16",
+    "end": "2021-09-29",
+    "source": "Power of the Azure Dragon Crystal"
+   }
+  ],
+  "6040": [
+   {
+    "start": "2021-12-16",
+    "end": "2021-12-29",
+    "source": "Monster Mash"
+   }
+  ],
+  "6041": [
+   {
+    "start": "2021-12-16",
+    "end": "2021-12-29",
+    "source": "A Whole New Underworld"
+   }
+  ],
+  "6050": [
+   {
+    "start": "2021-12-02",
+    "end": "2021-12-15",
+    "source": "Operation Mi ihen"
+   }
+  ],
+  "6051": [
+   {
+    "start": "2021-12-02",
+    "end": "2021-12-15",
+    "source": "The Great Calamity"
+   }
+  ],
+  "6060": [
+   {
+    "start": "2022-01-20",
+    "end": "2022-02-02",
+    "source": "Library of the Ancients"
+   }
+  ],
+  "6061": [
+   {
+    "start": "2022-01-20",
+    "end": "2022-02-02",
+    "source": "Page 64  Event "
+   }
+  ],
+  "6070": [
+   {
+    "start": "2022-03-03",
+    "end": "2022-03-16",
+    "source": "The Rage of Men"
+   }
+  ],
+  "6071": [
+   {
+    "start": "2022-03-03",
+    "end": "2022-03-16",
+    "source": "A Sorrowful Farewell"
+   }
+  ],
+  "6080": [
+   {
+    "start": "2022-04-14",
+    "end": "2022-04-27",
+    "source": "Counterattack of the Exostars"
+   }
+  ],
+  "6081": [
+   {
+    "start": "2022-04-14",
+    "end": "2022-04-27",
+    "source": "The Exostars"
+   }
+  ],
+  "6090": [
+   {
+    "start": "2022-05-05",
+    "end": "2022-05-18",
+    "source": "The First Shoot"
+   }
+  ],
+  "6091": [
+   {
+    "start": "2022-05-05",
+    "end": "2022-05-18",
+    "source": "SeeD Exam - Prerequisite Battle"
+   }
+  ],
+  "6100": [
+   {
+    "start": "2022-06-23",
+    "end": "2022-07-06",
+    "source": "A Culling Mission for Yshe s Elites"
+   }
+  ],
+  "6101": [
+   {
+    "start": "2022-06-23",
+    "end": "2022-07-06",
+    "source": "The Kingdom s Mightiest Warrior"
+   }
+  ],
+  "6110": [
+   {
+    "start": "2022-06-02",
+    "end": "2022-06-21",
+    "source": "Decisive Battle at Sovereign Rock Castle"
+   }
+  ],
+  "6111": [
+   {
+    "start": "2022-06-02",
+    "end": "2022-06-21",
+    "source": "VS Mystvearn"
+   }
+  ],
+  "6120": [
+   {
+    "start": "2022-07-28",
+    "end": "2022-08-11",
+    "source": "Search and Destroy Flora Omega Spawn"
+   }
+  ],
+  "6121": [
+   {
+    "start": "2022-07-28",
+    "end": "2022-08-11",
+    "source": "Consumed Omega Spawn"
+   }
+  ],
+  "6140": [
+   {
+    "start": "2022-08-12",
+    "end": "2022-08-24",
+    "source": "In Search of the Sun-Cryst"
+   }
+  ],
+  "6141": [
+   {
+    "start": "2022-08-12",
+    "end": "2022-08-24",
+    "source": "The Judge Magister Strikes Back"
+   }
+  ],
+  "6151": [
+   {
+    "start": "2022-09-08",
+    "end": "2022-09-21",
+    "source": "The Lingering Dissident"
+   }
+  ],
+  "6152": [
+   {
+    "start": "2022-09-08",
+    "end": "2022-09-21",
+    "source": "Isaaru s Aeons"
+   }
+  ],
+  "6160": [
+   {
+    "start": "2022-09-29",
+    "end": "2022-10-12",
+    "source": "The Road to Terra"
+   }
+  ],
+  "6161": [
+   {
+    "start": "2022-09-29",
+    "end": "2022-10-12",
+    "source": "Guardian of the Earth Shrine"
+   }
+  ],
+  "6170": [
+   {
+    "start": "2022-11-11",
+    "end": "2022-11-23",
+    "source": "Forbidden Land of Slumbering Power"
+   }
+  ],
+  "6171": [
+   {
+    "start": "2022-11-11",
+    "end": "2022-11-23",
+    "source": "Keeper of Ancient Arms"
+   }
+  ],
+  "6180": [
+   {
+    "start": "2023-01-12",
+    "end": "2023-01-25",
+    "source": "Defender of the Main Pillar"
+   }
+  ],
+  "6181": [
+   {
+    "start": "2023-01-12",
+    "end": "2023-01-25",
+    "source": "Covert Ops"
+   }
+  ],
+  "6182": [
+   {
+    "start": "2023-01-19",
+    "end": "2023-02-01",
+    "source": "Power of the Legendary Hero"
+   }
+  ],
+  "6190": [
+   {
+    "start": "2023-02-09",
+    "end": "2023-02-23",
+    "source": "Big Bridge Showdown"
+   }
+  ],
+  "6191": [
+   {
+    "start": "2023-02-09",
+    "end": "2023-02-23",
+    "source": "Seeker of the Void  Event "
+   }
+  ],
+  "6192": [
+   {
+    "start": "2023-02-09",
+    "end": "2023-02-23",
+    "source": "The Princess and the Poison Arrow"
+   }
+  ],
+  "6193": [
+   {
+    "start": "2016-11-24",
+    "end": "2016-12-09",
+    "source": "The Big Bridge"
+   },
+   {
+    "start": "2017-06-19",
+    "end": "2017-06-29",
+    "source": "The Big Bridge"
+   }
+  ],
+  "6200": [
+   {
+    "start": "2023-03-30",
+    "end": "2023-04-12",
+    "source": "Intercepting the Invincible"
+   }
+  ],
+  "6201": [
+   {
+    "start": "2023-03-30",
+    "end": "2023-04-12",
+    "source": "Magitek Test Run"
+   }
+  ],
+  "6202": [
+   {
+    "start": "2023-03-30",
+    "end": "2023-04-12",
+    "source": "Shadows of the Dragon King and War Goddess"
+   }
+  ],
+  "6203": [
+   {
+    "start": "2023-04-06",
+    "end": "2023-04-19",
+    "source": "Eight Sages United"
+   }
+  ],
+  "6211": [
+   {
+    "start": "2022-11-22",
+    "end": "2022-12-05",
+    "source": "default 14 days"
+   }
+  ],
+  "6220": [
+   {
+    "start": "2023-04-27",
+    "end": "2023-05-17",
+    "source": "The Hunted S Cells"
+   }
+  ],
+  "6221": [
+   {
+    "start": "2023-04-27",
+    "end": "2023-05-17",
+    "source": "The Youngest Turk in History"
+   }
+  ],
+  "6222": [
+   {
+    "start": "2023-04-27",
+    "end": "2023-05-17",
+    "source": "The March of Degradation"
+   }
+  ],
+  "6223": [
+   {
+    "start": "2023-04-27",
+    "end": "2023-05-17",
+    "source": "A Battle between 1-C SOLDIERs"
+   }
+  ],
+  "6224": [
+   {
+    "start": "2023-04-27",
+    "end": "2023-05-17",
+    "source": "Fists Trained to Protect"
+   }
+  ],
+  "6230": [
+   {
+    "start": "2023-05-25",
+    "end": "2023-06-14",
+    "source": "The Grudge-Filled Ruins"
+   }
+  ],
+  "6231": [
+   {
+    "start": "2023-05-25",
+    "end": "2023-06-14",
+    "source": "Ruled by Hatred"
+   }
+  ],
+  "6232": [
+   {
+    "start": "2023-05-25",
+    "end": "2023-06-14",
+    "source": "King of the Tonberries"
+   }
+  ],
+  "6233": [
+   {
+    "start": "2023-05-25",
+    "end": "2023-06-14",
+    "source": "Servant of the Sorceress from the Future"
+   }
+  ],
+  "6234": [
+   {
+    "start": "2023-05-25",
+    "end": "2023-06-14",
+    "source": "The Rebel and the Very Good Dog"
+   }
+  ],
+  "6240": [
+   {
+    "start": "2023-06-22",
+    "end": "2023-07-05",
+    "source": "A Fog-Laden Foray"
+   }
+  ],
+  "6241": [
+   {
+    "start": "2023-06-22",
+    "end": "2023-07-05",
+    "source": "Betrayal of the Empire"
+   }
+  ],
+  "6242": [
+   {
+    "start": "2023-06-22",
+    "end": "2023-07-05",
+    "source": "Mission Under Ceasefire"
+   }
+  ],
+  "6243": [
+   {
+    "start": "2023-06-22",
+    "end": "2023-07-05",
+    "source": "The Power to Lead Class Zero"
+   }
+  ],
+  "6260": [
+   {
+    "start": "2023-07-27",
+    "end": "2023-08-09",
+    "source": "The Sealed Volcano"
+   }
+  ],
+  "6261": [
+   {
+    "start": "2023-07-27",
+    "end": "2023-08-09",
+    "source": "The Lindblum Festival of the Hunt"
+   }
+  ],
+  "6262": [
+   {
+    "start": "2023-07-27",
+    "end": "2023-08-09",
+    "source": "The Weight of Alexandria"
+   }
+  ],
+  "6263": [
+   {
+    "start": "2020-04-09",
+    "end": "2020-04-15",
+    "source": "Pandemonium - Exploration"
+   }
+  ],
+  "6270": [
+   {
+    "start": "2023-09-14",
+    "end": "2023-09-27",
+    "source": "Escape s End"
+   }
+  ],
+  "6271": [
+   {
+    "start": "2023-09-14",
+    "end": "2023-09-27",
+    "source": "A Sanctum of the People"
+   }
+  ],
+  "6272": [
+   {
+    "start": "2023-09-14",
+    "end": "2023-09-27",
+    "source": "Beasts Hemmed in Stone"
+   }
+  ],
+  "6273": [
+   {
+    "start": "2023-08-17",
+    "end": "2023-08-30",
+    "source": "To Forsake One s Focus"
+   }
+  ],
+  "6275": [
+   {
+    "start": "2019-08-09",
+    "end": "2019-08-15",
+    "source": "The Gapra Whitewood - Exploration"
+   }
+  ],
+  "6280": [
+   {
+    "start": "2023-10-19",
+    "end": "2023-11-01",
+    "source": "Start of a Long Journey"
+   }
+  ],
+  "6284": [
+   {
+    "start": "2023-10-19",
+    "end": "2023-11-01",
+    "source": "Hope Fighting Darkness"
+   }
+  ],
+  "6285": [
+   {
+    "start": "2023-10-26",
+    "end": "2023-11-08",
+    "source": "The Crystal Tower - Exploration"
+   }
+  ],
+  "6290": [
+   {
+    "start": "2023-11-02",
+    "end": "2023-11-15",
+    "source": "Heart of Vearn Palace"
+   }
+  ],
+  "6300": [
+   {
+    "start": "2024-02-01",
+    "end": "2024-02-14",
+    "source": "On the Hunt for Treasure"
+   }
+  ],
+  "6310": [
+   {
+    "start": "2023-11-30",
+    "end": "2023-12-13",
+    "source": "Glittering Desert Sand s Temptation"
+   }
+  ],
+  "6311": [
+   {
+    "start": "2024-02-01",
+    "end": "2024-02-14",
+    "source": "Hellknight at Tomb s End"
+   }
+  ],
+  "6321": [
+   {
+    "start": "2023-12-14",
+    "end": "2023-12-27",
+    "source": "Zealotry in Birthright"
+   }
+  ],
+  "6322": [
+   {
+    "start": "2023-12-14",
+    "end": "2023-12-27",
+    "source": "To Save a Noble Sacrifice"
+   }
+  ],
+  "6325": [
+   {
+    "start": "2023-12-14",
+    "end": "2023-12-27",
+    "source": "Somebody to Love"
+   }
+  ],
+  "6330": [
+   {
+    "start": "2024-02-22",
+    "end": "2024-03-13",
+    "source": "To the Mana Tree"
+   }
+  ],
+  "6332": [
+   {
+    "start": "2024-02-22",
+    "end": "2024-03-13",
+    "source": "The Revived Mana Fortress"
+   }
+  ],
+  "6341": [
+   {
+    "start": "2024-01-18",
+    "end": "2024-01-31",
+    "source": "Ogre Plagued with Starscourge"
+   }
+  ],
+  "6342": [
+   {
+    "start": "2024-01-18",
+    "end": "2024-01-31",
+    "source": "Founder Plagued with Starscourge"
+   }
+  ],
+  "6351": [
+   {
+    "start": "2024-02-08",
+    "end": "2024-02-21",
+    "source": "The Great Phantom Bird"
+   }
+  ],
+  "6370": [
+   {
+    "start": "2024-03-28",
+    "end": "2024-04-17",
+    "source": "The Power of Destruction"
+   }
+  ],
+  "6371": [
+   {
+    "start": "2024-03-28",
+    "end": "2024-04-10",
+    "source": "Ruler of the Ocean"
+   }
+  ],
+  "6373": [
+   {
+    "start": "2024-03-28",
+    "end": "2024-04-10",
+    "source": "default 14 days"
+   }
+  ],
+  "7170": [
+   {
+    "start": "2021-12-09",
+    "end": "2021-12-22",
+    "source": "Lonely Island Super-Foe Rush"
+   },
+   {
+    "start": "2022-03-10",
+    "end": "2022-03-23",
+    "source": "default 14 days"
+   }
+  ],
+  "7180": [
+   {
+    "start": "2022-03-10",
+    "end": "2022-03-23",
+    "source": "Fort Vorn Sealed Sector Super-Foe Rush"
+   }
+  ],
+  "7201": [
+   {
+    "start": "2022-07-14",
+    "end": "2022-07-27",
+    "source": "The Three Lower Realms"
+   }
+  ],
+  "9900": [
+   {
+    "start": "2022-02-10",
+    "end": "2022-02-23",
+    "source": "The Scarlet Demon and the Dark-Winged Destroyer"
+   }
+  ],
+  "9901": [
+   {
+    "start": "2022-06-09",
+    "end": "2022-06-21",
+    "source": "VS Lon Beruk"
+   }
+  ],
+  "9902": [
+   {
+    "start": "2022-06-16",
+    "end": "2022-06-24",
+    "source": "A Very Special Guest Returns"
+   }
+  ],
+  "9903": [
+   {
+    "start": "2020-04-13",
+    "end": "2020-04-26",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2020-07-02",
+    "end": "2020-07-15",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2021-03-26",
+    "end": "2021-04-07",
+    "source": "WOTV FFBE Equipment Enhancement Event"
+   }
+  ],
+  "9904": [
+   {
+    "start": "2021-07-15",
+    "end": "2021-08-04",
+    "source": "July Equipment Enhancement Event"
+   }
+  ],
+  "9906": [
+   {
+    "start": "2022-08-18",
+    "end": "2022-09-08",
+    "source": "Creeping Malice"
+   }
+  ],
+  "9907": [
+   {
+    "start": "2022-08-18",
+    "end": "2022-09-08",
+    "source": "Creeping Malice - EXT"
+   }
+  ],
+  "9909": [
+   {
+    "start": "2019-04-19",
+    "end": "2019-05-02",
+    "source": "Eggstinction"
+   }
+  ],
+  "9910": [
+   {
+    "start": "2022-10-27",
+    "end": "2022-11-09",
+    "source": "One Cut of the Undead"
+   }
+  ],
+  "9911": [
+   {
+    "start": "2022-10-27",
+    "end": "2022-11-10",
+    "source": "Don t Stop Slashing"
+   }
+  ],
+  "9912": [
+   {
+    "start": "2021-09-02",
+    "end": "2021-09-22",
+    "source": "September Equipment Enhancement Event"
+   }
+  ],
+  "9913": [
+   {
+    "start": "2022-11-24",
+    "end": "2022-12-15",
+    "source": "Destroy the Machine Lifeform 2022"
+   }
+  ],
+  "9914": [
+   {
+    "start": "2022-11-24",
+    "end": "2022-12-15",
+    "source": "The Formidable Engels 2022"
+   }
+  ],
+  "9915": [
+   {
+    "start": "2022-10-06",
+    "end": "2022-10-19",
+    "source": "The Fleeting Fate of the Jumi"
+   }
+  ],
+  "9916": [
+   {
+    "start": "2022-10-06",
+    "end": "2022-10-19",
+    "source": "Business Unusual on the Luon Highway"
+   }
+  ],
+  "9917": [
+   {
+    "start": "2018-07-20",
+    "end": "2018-08-02",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2018-09-20",
+    "end": "2018-10-03",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2018-10-11",
+    "end": "2018-10-24",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2018-11-08",
+    "end": "2018-11-21",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2018-12-12",
+    "end": "2018-12-25",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-01-03",
+    "end": "2019-01-16",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-02-14",
+    "end": "2019-02-27",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-03-21",
+    "end": "2019-04-03",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-04-18",
+    "end": "2019-05-01",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-05-16",
+    "end": "2019-05-29",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-06-20",
+    "end": "2019-07-03",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-06-28",
+    "end": "2019-07-11",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-08-09",
+    "end": "2019-08-22",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-09-06",
+    "end": "2019-09-19",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-10-17",
+    "end": "2019-10-30",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-11-07",
+    "end": "2019-11-20",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2019-12-05",
+    "end": "2019-12-18",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2020-02-06",
+    "end": "2020-02-19",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2020-03-19",
+    "end": "2020-04-01",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2020-10-08",
+    "end": "2020-10-21",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2020-11-12",
+    "end": "2020-11-25",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2020-12-10",
+    "end": "2020-12-23",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2021-02-04",
+    "end": "2021-02-17",
+    "source": "default 14 days"
+   },
+   {
+    "start": "2021-04-15",
+    "end": "2021-04-28",
+    "source": "default 14 days"
+   }
+  ],
+  "9920": [
+   {
+    "start": "2022-12-22",
+    "end": "2023-01-05",
+    "source": "Get Ready to Crumble"
+   }
+  ],
+  "9921": [
+   {
+    "start": "2022-12-22",
+    "end": "2023-01-05",
+    "source": "Holly Brawl-y Holiday"
+   }
+  ],
+  "9922": [
+   {
+    "start": "2022-12-15",
+    "end": "2022-12-28",
+    "source": "Battles Begin in the City of Mako"
+   }
+  ],
+  "9927": [
+   {
+    "start": "2023-01-19",
+    "end": "2023-02-02",
+    "source": "Hoppy New Year"
+   }
+  ],
+  "9928": [
+   {
+    "start": "2023-01-19",
+    "end": "2023-02-02",
+    "source": "Hoppin Mad"
+   }
+  ],
+  "9929": [
+   {
+    "start": "2023-03-16",
+    "end": "2023-04-06",
+    "source": "Sworn to Slay a Demon"
+   }
+  ],
+  "9932": [
+   {
+    "start": "2023-03-30",
+    "end": "2023-04-12",
+    "source": "Traumatic Wave"
+   }
+  ],
+  "9933": [
+   {
+    "start": "2023-03-16",
+    "end": "2023-04-06",
+    "source": "Tenma the Terrible"
+   }
+  ],
+  "9936": [
+   {
+    "start": "2023-06-29",
+    "end": "2023-08-02",
+    "source": "Oblivion Blade"
+   }
+  ],
+  "9938": [
+   {
+    "start": "2023-06-15",
+    "end": "2023-06-24",
+    "source": "Producer of the Crystal"
+   }
+  ],
+  "9939": [
+   {
+    "start": "2023-06-01",
+    "end": "2023-06-14",
+    "source": "A Fate Written Before Time"
+   }
+  ],
+  "9940": [
+   {
+    "start": "2023-06-29",
+    "end": "2023-11-30",
+    "source": "Lucky Seven Celebration Daily Quest"
+   }
+  ],
+  "9941": [
+   {
+    "start": "2023-09-21",
+    "end": "2023-10-11",
+    "source": "Influence of Deep"
+   }
+  ],
+  "9942": [
+   {
+    "start": "2023-09-21",
+    "end": "2023-10-11",
+    "source": "Birth of the Ultimate Being"
+   }
+  ],
+  "9944": [
+   {
+    "start": "2023-08-17",
+    "end": "2023-08-30",
+    "source": "Cast from Paradise"
+   }
+  ],
+  "9948": [
+   {
+    "start": "2022-06-09",
+    "end": "2022-06-22",
+    "source": "DRAGON QUEST The Adventure of Dai"
+   }
+  ],
+  "9950": [
+   {
+    "start": "2024-01-11",
+    "end": "2024-01-31",
+    "source": "The Long Road"
+   }
+  ],
+  "9954": [
+   {
+    "start": "2024-05-23",
+    "end": "2024-06-12",
+    "source": "To Liberate God"
+   }
+  ],
+  "9955": [
+   {
+    "start": "2024-06-27",
+    "end": "2024-08-31",
+    "source": "Fundamental Forces The Final Chapter"
+   }
+  ],
+  "9956": [
+   {
+    "start": "2024-07-25",
+    "end": "2024-08-07",
+    "source": "Rosfield"
+   }
+  ],
+  "9961": [
+   {
+    "start": "2024-08-15",
+    "end": "2024-08-28",
+    "source": "default 14 days"
+   }
+  ]
+ },
+ "newly_dated": {
+  "3124": "Boss Rush Survival - ADV: Event Period of wiki page 'Boss Rush Survival' (2020-07-30 - 2020-08-12)",
+  "3142": "Boss Rush Survival - ADV: Event Period of wiki page 'Boss Rush Survival 2' (2021-02-18 - 2021-03-03)",
+  "3122": "Boss Rush Survival - BGN: Event Period of wiki page 'Boss Rush Survival' (2020-07-30 - 2020-08-12)",
+  "3140": "Boss Rush Survival - BGN: Event Period of wiki page 'Boss Rush Survival 2' (2021-02-18 - 2021-03-03)",
+  "3123": "Boss Rush Survival - INT: Event Period of wiki page 'Boss Rush Survival' (2020-07-30 - 2020-08-12)",
+  "3141": "Boss Rush Survival - INT: Event Period of wiki page 'Boss Rush Survival 2' (2021-02-18 - 2021-03-03)",
+  "1096": "Daily Eggstravaganza: Event Period of wiki page 'A Tough Egg to Crack' (2022-02-24 - 2022-03-16)",
+  "1029": "Enhancement Material Collection Quest: Event Period of wiki page 'Fundamental Forces: Shinobi Arc' (2020-09-17 - 2020-09-30)",
+  "3158": "Enhancement Material Collection Quest: Event Period of wiki page 'A Blue Prelude' (2020-08-27 - 2020-09-09)",
+  "3167": "Enhancement Material Collection Quest: Event Period of wiki page 'The Curse of Betrayal' (2020-11-05 - 2020-11-18)",
+  "3200": "Enhancement Material Collection Quest: Event Period of wiki page 'A New Era of Knights' (2020-12-03 - 2020-12-16)",
+  "3213": "Enhancement Material Collection Quest: Event Period of wiki page 'After the Rain' (2021-01-14 - 2021-01-27)",
+  "1030": "Shinobi Battle - VS Itachi: Event Period of wiki page 'Fundamental Forces: Shinobi Arc' (2020-09-17 - 2020-09-30)",
+  "1031": "Shinobi Battle - VS Yoshikiri: Event Period of wiki page 'Fundamental Forces: Shinobi Arc' (2020-09-17 - 2020-09-30)"
+ },
+ "undated": [
+  "218",
+  "219",
+  "909",
+  "1038",
+  "1041",
+  "1045",
+  "1052",
+  "1054",
+  "3152",
+  "3173",
+  "3174",
+  "3181",
+  "3189"
+ ],
+ "skipped": {
+  "216": "Chamber of Riches: permanent (always open)",
+  "217": "Chamber of Crystals: permanent (always open)",
+  "224": "Chamber of Creation: permanent (always open)",
+  "225": "Chamber of Awakening: permanent (always open)",
+  "226": "Chamber of Experience: permanent (always open)",
+  "227": "Chamber of Crysts: permanent (always open)",
+  "228": "Chamber of Forticite: permanent (always open)",
+  "229": "Chamber of Crysts: permanent (always open)",
+  "318": "Chamber of Blue Magic: permanent (always open)",
+  "401": "Training the Soul: permanent (always open)",
+  "898": "Chamber of Arms: permanent (always open)",
+  "899": "Chamber of the Fallen: permanent (always open)",
+  "902": "Chamber of Challenges: permanent (always open)",
+  "903": "Chamber of Challenges: permanent (always open)",
+  "904": "Chamber of Challenges: permanent (always open)",
+  "905": "Chamber of Challenges: permanent (always open)",
+  "920": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "922": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "924": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "925": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "926": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "927": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "928": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "929": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "930": "Chamber of Challenges: permanent (always open)",
+  "931": "Chamber of Challenges: permanent (always open)",
+  "932": "Chamber of Challenges: permanent (always open)",
+  "933": "Chamber of Challenges: permanent (always open)",
+  "934": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "935": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "936": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "938": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "939": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "941": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "942": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "944": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "945": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "946": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "949": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "953": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "955": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "959": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "963": "Chamber of the Vengeful: permanent (always open)",
+  "969": "Chamber of Enlightenment: permanent (always open)",
+  "1115": "Chamber of Supercite: permanent (always open)",
+  "7100": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "7101": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "7102": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "7103": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "7104": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9500": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9501": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9502": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9503": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9504": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9505": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9506": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9507": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9508": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9509": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9510": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9511": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9512": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9513": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9514": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9515": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9516": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9517": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9518": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9519": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9520": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9521": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9522": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9523": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9524": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9525": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9526": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9527": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9528": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9529": "Clash of Wills: has windows in event_history.json (ranked event periods)",
+  "9918": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "9919": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "9925": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "9926": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "9931": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "9934": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "9937": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "9945": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "9949": "Dark Visions: has windows in event_history.json (ranked event periods)",
+  "9953": "Dark Visions: has windows in event_history.json (ranked event periods)"
+ },
+ "bad_starts": {
+  "6371": [
+   "2023-03-28"
+  ],
+  "6370": [
+   "2023-03-28"
+  ]
+ }
+}

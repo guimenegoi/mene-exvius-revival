@@ -82,11 +82,30 @@ def unit_class_up(spec, req):
     materials = str(step.get("KCk8u0am") or "")
     gil = int(step.get("7UR4J2SE") or 0)
     rows = [m.split(":") for m in materials.split(",") if m.count(":") == 2]
-    if any(State.player.item_count(int(k), i) < int(c) for k, i, c in rows) or \
+    # The Omniprism. The awakening screen offers it in place of a 6-star unit's own prism
+    # (UnitEnhanceClassUpMaterialObj::init: item material, unit rarity 6), and the request then carries
+    # `p9Xj4Anc` = 1 (UnitClassUpRequest AllKigenFlg). Its item is F_DEFINE_MST CLASS_UP_PRISM_ALL_ITEM_ID, one per
+    # awakening (UnitClassupUtils::getAllKigenItemNum). Gil is unchanged.
+    # The flag is only written when FUNCTION_SP_CLASSUP is on (UnitClassUpRequest::createBody). Should a request come
+    # without it for a unit whose own prism is missing, the Omniprism was still what the player chose: the screen
+    # enables its button for a missing prism only with the Omniprism ticked (isEnoughItemCnt).
+    from player_state import unit_mst
+    item = str((_mst("F_DEFINE_MST.ndjson", "AK8Nn7ta").get("CLASS_UP_PRISM_ALL_ITEM_ID") or {}).get("YjIUDJ97") or "")
+    takes_one = bool(item) and (unit_mst(unit["master_id"]) or {}).get("9fW0TePj") == "6" and \
+        len(rows) == 1 and rows[0][0] == "20" and rows[0][2] == "1"
+    omniprism = str(node.get("p9Xj4Anc") or "0") == "1"
+    if omniprism and not takes_one:
+        _note(f"unit-class-up: Omniprism asked for {unit['master_id']}, which does not take one")
+        return _refuse_awakening(spec, "the Omniprism can't be used for this awakening")
+    if "p9Xj4Anc" not in node and takes_one and State.player.item_count(20, rows[0][1]) < 1 \
+            and State.player.item_count(20, item) >= 1:
+        omniprism = True
+    paid = [["20", item, "1"]] if omniprism else rows
+    if any(State.player.item_count(int(k), i) < int(c) for k, i, c in paid) or \
             int(State.player.currencies.get("gil", 0)) < gil:
         _note(f"unit-class-up: {unit['master_id']} lacks materials or gil; not awakened")
         return _refuse_awakening(spec, "not enough materials or gil")
-    for k, i, c in rows:
+    for k, i, c in paid:
         State.player.spend_item(int(k), i, int(c))
     State.player.spend_currency("gil", gil)
     before = unit["master_id"]
@@ -97,10 +116,11 @@ def unit_class_up(spec, req):
     State.player.record_archive({'TOTAL_UNIT_CLASS_UP': 1, 'TOTAL_UNIT_RARE7_CLASS_UP':
                                  int(destination.get('9fW0TePj') == '7' and destination.get('JPW8Vs40') == '0')})
     State.player.dirty = True
-    print(f"unit: awakened {iid} {before} -> {unit['master_id']} for {gil} gil + {materials}", flush=True)
+    spent = ",".join(":".join(row) for row in paid)
+    print(f"unit: awakened {iid} {before} -> {unit['master_id']} for {gil} gil + {spent}", flush=True)
     out = _refresh(spec)
     out["sWc7EH69"] = [{"og2GHy49": iid, "5u7VYNEX": unit['instance_id'], "KCk8u0am": materials, "WbGYcN17": "",
-                        "02CI3bpE": "", "p9Xj4Anc": "0"}]
+                        "02CI3bpE": "", "p9Xj4Anc": "1" if omniprism else "0"}]
     return out
 
 
@@ -159,7 +179,13 @@ def unit_equip(spec, req):
 
 
 def sacrifice(spec, req, group="6kvFj2Kw"):
-    """Consume eligible units only after resolving the fragment rewards for the full batch."""
+    """Consume eligible units only after resolving the rewards for the full batch.
+
+    The phone's two buttons (convert_rules.py): `SacrificeRequest` rows with `ijEey5f7` 0 are Convert to Prism (the
+    family's prism only), 1 Convert to Fragments (the fragments of the row the phone showed, no prism);
+    `NvSacrificeRequest` is Convert to Fragments for summoned NVs. Before 2026-11-12 both buttons paid prism and
+    fragments."""
+    import convert_rules
     from exvius_actions_shops import deployed_unit_ids
     from player_state import unit_mst
 
@@ -167,7 +193,6 @@ def sacrifice(spec, req, group="6kvFj2Kw"):
     nodes = req.get(group)
     if player.mode == "frozen" or not isinstance(nodes, list) or not nodes:
         return spec
-    table = _mst("F_SACRIFICE_MST.ndjson", "woghJa61")
     deployed = deployed_unit_ids(player)
     ids, rewards, result = set(), [], []
     for node in nodes:
@@ -176,16 +201,10 @@ def sacrifice(spec, req, group="6kvFj2Kw"):
         if not unit or iid in ids or iid in deployed or unit.get("favourite"):
             return _refresh(spec)
         master = unit_mst(unit["master_id"]) or {}
-        row = table.get(str(unit["master_id"])) or table.get(master.get("woghJa61"))
-        if not row:
-            return _refresh(spec)
-        # The native picker can send pure NV units through SacrificeRequest.
-        # The unit's master row determines its rewards for either request.
-        items = str(row.get("1swM3H4T") or row.get("q1PJQ3eE") or "")
+        to_prism = group != "4Ncra9DF" and str(node.get("ijEey5f7", "1")) == "0"
+        prism = (convert_rules.prism(master) or "0") if to_prism else "0"
+        items = "" if to_prism else (convert_rules.fragments(master) or "")
         unit_rewards = _parse_rewards(items)
-        prism = str(row.get("tL6G9egd") or "0")
-        if group == "4Ncra9DF":
-            prism = "0"
         if prism != "0":
             unit_rewards.insert(0, {"kind": 20, "id": int(prism), "count": 1})
         if not unit_rewards or any(not player._can_credit(reward) for reward in unit_rewards):

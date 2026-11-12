@@ -302,7 +302,14 @@ def visible_banners(player, banners):
     if enabled():
         ids = rotation_ids(banners) + held_ticket_ids(player, banners)
     else:
-        ids = selected_group(player, catalogue(banners))['ids']
+        # EXVIUS_SUMMON_ROTATION=0: every banner at once (README), in the archive's order: the permanent summons,
+        # then each group (collaborations, the story seasons, Standard), then held-ticket summons. One copy each.
+        # The Android build's archive chooser can still narrow it to one group (menu); the iPhone has no chooser.
+        groups = catalogue(banners)
+        chosen = (player.data.get('summon_archive') if player else None) or 'all'
+        group = next((g for g in groups if g['id'] == chosen), None)
+        ids = (group['ids'] if group else all_ids(banners)) + held_ticket_ids(player, banners)
+    ids = list(dict.fromkeys(ids))
     by_id = {str(banner['id']): banner for banner in banners}
     # A once-per-player deal (a "first 10+1" summon, the cash summon) leaves the list once it is used up,
     # as on Global, rather than staying greyed out (2026-11-07, deal banners). Same for a step-up whose
@@ -315,6 +322,14 @@ def visible_banners(player, banners):
             for index, bid in enumerate(ids)]
 
 
+def all_ids(banners) -> list:
+    """Every listed banner, permanent summons first, then each archive group in order, without repeats."""
+    out = []
+    for group in catalogue(banners):
+        out += group['ids']
+    return list(dict.fromkeys(out))
+
+
 def menu(player, banners, selection=''):
     from gacha_rotation import enabled, rotation_ids
     if enabled():
@@ -322,7 +337,9 @@ def menu(player, banners, selection=''):
         ids = rotation_ids(banners)
         week = {'id': 'rotation', 'label': 'This Week', 'count': len(ids), 'tab': 0}
         return {'groups': [week], 'selected': week}
-    groups = catalogue(banners)
+    # Rotation off: "All Summons" first and by default (visible_banners), then the archive's groups.
+    everything = {'id': 'all', 'label': 'All Summons', 'count': len(all_ids(banners)), 'tab': 0}
+    groups = [everything] + catalogue(banners)
     if selection:
         if selection not in {group['id'] for group in groups}:
             raise ValueError('Unknown summon archive group')

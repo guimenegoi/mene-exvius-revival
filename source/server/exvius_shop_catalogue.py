@@ -79,6 +79,8 @@ def _catalogue(cutoff=None):
             if any(r['kind'] == 10 and not replay.released_by(r['id'], date.fromisoformat(cutoff))
                    for r in parse(reward, exchange=bool(medal))):
                 return
+        from exvius_rewards import card_text
+        reward = card_text(reward)          # Vision Cards with their level (viewing a short one crashed)
         row = {'jPV7Xc4N': str(pid), '3X1gLufw': str(did), 'P4puB2ch': reward,
                'e4mG8jTc': str(price), 'uYcL8IQ1': str(-1 if int(limit) == 2147483647 else limit),
                'Z0EN6jSh': str(len(products) + 1),

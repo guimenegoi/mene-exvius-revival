@@ -28,6 +28,7 @@ import sys
 import tempfile
 import time
 
+import convert_rules
 import data_paths   # the data-root contract (`FFBE_DATA` / `--data`); see its docstring
 
 # With no data root these are exactly the checkout-relative paths this module always used.
@@ -5011,6 +5012,11 @@ class PlayerState:
             flags = self.data.get('exvius_sublimation', {}).get('slots', {})
             if str(u['instance_id']) in flags:
                 row['T9Apq5fS'] = str(int(flags[str(u['instance_id'])]))
+            # NV-awakened unit (convert_rules.py): without it the phone takes every NV for a summoned one and the
+            # Convert to Fragments list skips awakened NVs. EXVIUS_NV_AWAKENED_FLAG=0 leaves it out.
+            awakened = convert_rules.unit_row_flag(u['master_id'])
+            if awakened:
+                row[convert_rules.NV_FLAG] = awakened
             row["9Tbns0eI"] = str(user_id)          # the last key commits the object (schema §3.3)
             rows.append(row)
         return rows

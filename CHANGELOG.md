@@ -2,6 +2,60 @@
 
 Each entry is one update to this repo. To update: in your repo folder run `git pull`, then from `ios-server` run `docker compose build && docker compose up -d`. Your save isn't touched. Open the game twice afterwards so it picks up the new data.
 
+## 2026-11-12: Items used in battle stay used
+
+- Potions and other items you use in a battle (won, lost or retired) now leave your item set and your bag for good. Before, the item set refilled after you restarted the game.
+- If a battle uses up every item in your set, the server keeps your previous set rather than risk emptying it by mistake.
+
+## 2026-11-12: Results EXP, item set, chests, Big Bridge
+
+- The results screen no longer shows level-ups that didn't happen. It now counts up only the EXP each unit earned.
+- Your battle item set (Potions, Antidotes and so on) is still there after you restart the game.
+- Treasure chests holding equipment, materia or key items (the Green Beret in Lanzelt Highlands and others) now give their item. Chests like these you opened in the last few days arrive once by mail, if the server still has the record. Other unpaid chests should be closed again and pay when you open them now.
+- The Big Bridge (Final Fantasy V event): five of its fixed fights, Gilgamesh included, had no enemy data, which could close the game. It now plays its 13 fixed battles, as on Global, with no extra random battles.
+- Other explorations whose fixed fights or bosses had no enemy data now have it.
+- New setting `EXVIUS_CHEST_BACKPAY` (see the README).
+
+## 2026-11-12: Convert to Prism and Fragments
+
+- NV units you got by NV awakening (Dark Fina, Lightning and the like) now show in Convert to Fragments.
+- Convert to Prism now gives only the prism, and Convert to Fragments only the fragments. Before, both gave both.
+- Which units each list shows, as on Global:
+  - Convert to Prism lists units at 5★ or 6★ that have a prism. That's nearly every unit that starts at 5★, but only 10 units that start at 3★ or 4★, and those only once they reach 5★. A 4★ unit at 4★ and any 7★ unit are never listed.
+  - Convert to Fragments lists units with NV fragments, and NV units.
+  - Trust Coin and Gil conversion never list NV units.
+- New setting `EXVIUS_NV_AWAKENED_FLAG` (see the README).
+- Open the game twice after updating.
+
+## 2026-11-12: Game data download location
+
+- The game data is now downloaded from a copy hosted with this project. Rebuild to pick up the change (`docker compose build && docker compose up -d`); nothing downloads again, your installed data is unchanged.
+
+## 2026-11-12: Yuffie, Ayaka and Elly banners
+
+- Added three featured summons the replay was missing: Materia Hunter Yuffie (January 2023), Christmas 2022 Cheerful Caroler Ayaka, and Xenogears' Holy Mother Reborn Elly (December 2022). The 2017 Halloween summon now features its units.
+- The Embracer of Duty Edgar summon (November 2022) shows once instead of twice.
+
+## 2026-11-12: Replay runs, late banners
+
+- With the historic replay, banners and events now stay up for their whole Global run, so long ones (weekly free summons, anniversary campaigns) last several weeks. Some weeks are busier than others.
+- Added Global's banners from September 2023 to the end of service (about 200 new summons, many with estimated dates), and three missing earlier ones: Cloud Strife & Avalanche's Barret, Silent Knight Charlotte, and the FINAL FANTASY XI banner with Lady Shantotto.
+- Units Global released later than we had dated them (such as Silent Knight Charlotte) now wait for their Global date in summon pools.
+- New settings `EXVIUS_REPLAY_FULL_RUNS`, `EXVIUS_LATE_BANNERS` and `EXVIUS_LATE_UNCONFIRMED` (see the README).
+
+## 2026-11-12: Friend 10x, LB EXP, Kira, Metal Gigantuar card, all banners
+
+- The friend point Standard Summon has a 10x button: 10 units for 2,000 friend points.
+- Clearing a quest now gives LB EXP to every unit in your party, as on Global: 100 per stamina, 250 per raid orb, 100 per weapon-enhancement orb. Losing or retiring gives none.
+- Kira's abilities that showed no name in battle now have English names and descriptions.
+- Fixed the game crashing when you view the Metal Gigantuar's Here! vision card in the VIP Shop (and other vision cards sold or won the same way).
+- `EXVIUS_SUMMON_ROTATION` set to `0` now shows every banner at once and also turns the historic replay off. Change it in `docker-compose.yml`, then run `docker compose up -d` (see the README).
+- Open the game twice after updating.
+
+## 2026-11-11: Omniprism
+
+- Awakening a 6★ unit to 7★ with an Omniprism now works. Before, the server only accepted the unit's own prism and refused the awakening.
+
 ## 2026-11-11: NV awakening
 
 - NV awakening no longer needs level 120 or 100% Super Trust, as on Global since Version 7.0.0 (March 2022). It still costs its materials and Gil.

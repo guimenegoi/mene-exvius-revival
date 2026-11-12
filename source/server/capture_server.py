@@ -114,7 +114,7 @@ from ffbe_pipeline import reply_pipeline, _PIPELINE_PROBLEMS
 # owns the chain so this server and the authoring CLI share ONE implementation; it imports nothing from
 # the server, and `BATTLE_DERIVE=off` makes it a no-op.
 import battle_content
-from offline_menu import STATE_LOCK, status as offline_status, new_game as offline_new_game
+from offline_menu import STATE_LOCK, status as offline_status, new_game as offline_new_game, convert_test, convert_test_undo
 
 
 import random
@@ -437,6 +437,10 @@ class Handler(BaseHTTPRequestHandler):
         with STATE_LOCK:
             if self.path == '/__exvius/new-game':
                 return self._offline_menu(reset=True)
+            if self.path == '/__exvius/convert-test':
+                return self._offline_menu(reset=True, action=convert_test)
+            if self.path == '/__exvius/convert-test-undo':
+                return self._offline_menu(reset=True, action=lambda state, path: convert_test_undo(state, path, st.STATE_SLOT))
             if '/actionSymbol/' in self.path:
                 self._handle()
             else:
@@ -450,7 +454,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._offline_menu()
         self._cdn_fetch()
 
-    def _offline_menu(self, reset=False):
+    def _offline_menu(self, reset=False, action=None):
         code = 200
         try:
             if self.client_address[0] not in ('127.0.0.1', '::1'):
@@ -461,7 +465,10 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError('Expected a small JSON confirmation.')
                 if json.loads(self.rfile.read(length)) != {'confirm': True}:
                     raise ValueError('New Game requires confirmation.')
-                result = offline_new_game(State, st.STATE_FILE, st.STATE_SLOT)
+                if action is not None:
+                    result = action(State, st.STATE_FILE)
+                else:
+                    result = offline_new_game(State, st.STATE_FILE, st.STATE_SLOT)
             else:
                 result = offline_status(State, st.STATE_FILE)
         except (ValueError, OSError, PermissionError) as exc:

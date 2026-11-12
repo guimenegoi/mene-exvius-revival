@@ -23,7 +23,8 @@ def _targets() -> list[tuple[str, str, str, tuple]]:
     """[(file name, url or "", title, size)] for every deal banner image."""
     from ffbe_config import GACHA_DEALS, GACHA_RAIDS
     banners = []
-    for path in (GACHA_DEALS, GACHA_RAIDS):     # the raid summons' titled stand-ins too (2026-11-10)
+    import late_banners
+    for path in (GACHA_DEALS, GACHA_RAIDS, late_banners.PATH):   # raid stand-ins (2026-11-10), late banners (11-12)
         try:
             with open(path, encoding='utf-8') as fh:
                 banners += json.load(fh).get('banners', [])

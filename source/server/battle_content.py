@@ -768,6 +768,34 @@ def _scenario_groups() -> set[str]:
     return _FIELD_SCENARIO_GROUPS
 
 
+# Explorations whose battles are all map-script fights (scenario battles), with no random encounters on Global
+# (2026-11-12). The FFV Big Bridge: the wiki says "Encounters are static", and the MissionStartRequest reply's
+# scenario battles 7090101-7090113 are BGN's 13 battles (10 fights, three in two parts), its "battle = 13".
+# The plan built from the wiki's monster counts added random fights on top of those.
+SCRIPTED_ONLY = frozenset({'7090101', '7090102', '7090103', '7090104', '7090105'})
+_SCENARIO_BATTLE_GROUPS = None
+
+
+def scenario_battle_groups() -> set[str]:
+    """Every battle group a scenario battle can start (`ScenarioBattleGroupMst` `2fY1IomW`, and its continuation
+    `V2mCH5UR`), from the MissionStartRequest reply (`29JRaDbd`, tag `YjHhvN65`) the phone gets.
+
+    `MapManager::startEventBattle` (GL 0x1fb4624) reads the scenario battle with no null check, then the group;
+    a fight whose group the mission's bundle left out has no monsters to load. Until 2026-11-12 an exploration
+    with a random-battle plan kept only the plan's groups, so 90 explorations' scripted fights lost their groups
+    (the FFV Big Bridge's 4th-8th fights and Gilgamesh, many explorations' bosses)."""
+    global _SCENARIO_BATTLE_GROUPS
+    if _SCENARIO_BATTLE_GROUPS is None:
+        try:
+            with open(DEFAULT_RESPONSES, encoding='utf-8') as fh:
+                rows = (json.load(fh).get('29JRaDbd') or {}).get('YjHhvN65') or []
+        except (OSError, ValueError):
+            rows = []
+        _SCENARIO_BATTLE_GROUPS = {str(r.get(k)) for r in rows if isinstance(r, dict)
+                                   for k in ('2fY1IomW', 'V2mCH5UR') if r.get(k)}
+    return _SCENARIO_BATTLE_GROUPS
+
+
 def exploration_plans() -> dict:
     """content/exploration_encounters.json (ios-server/devtools/build_exploration_encounters.py):
     each exploration's battles per zone, rebuilt from the FFBE wiki's monster counts."""
@@ -857,13 +885,14 @@ def field_mission_bundle(carrier: dict, mission: dict) -> dict:
     zones: list[tuple[int, list[str]]] = []
     if encount_enabled():
         plans = exploration_plans()
-        plan = plans['missions'].get(mid)
+        plan = None if mid in SCRIPTED_ONLY else plans['missions'].get(mid)
         if plan:
             zones = [(int(z['zone']), [str(g) for g in z['battles']]) for z in plan['zones']]
             battle_groups = {g for _, battles in zones for g in battles}
             # The mission's own random-battle groups give way to the plan (map-script groups stay).
+            # Groups a scenario battle starts stay too (scenario_battle_groups).
             group_ids.difference_update(set(own_groups) - battle_groups
-                                        - set(_FIELD_GROUP_BINDINGS.get(mid, [])))
+                                        - set(_FIELD_GROUP_BINDINGS.get(mid, [])) - scenario_battle_groups())
             group_ids.update(battle_groups)
             made_up = [row for g in sorted(battle_groups) for row in plans['groups'].get(g, [])]
             if made_up:

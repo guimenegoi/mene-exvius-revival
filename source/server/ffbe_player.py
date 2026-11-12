@@ -3682,6 +3682,9 @@ def _carry_reply(spec):
     return out
 
 
+CARRY_LOGIN_REPLY = "X07iYtp5"     # GetUserInfoRequest
+
+
 def apply_carry_edit(plaintext, spec, reply_id=None):
     """`UM7hA0Zd` (`ItemCarryEditRequest`) → record the player's ITEM SET and echo the refreshed list.
 
@@ -3704,6 +3707,12 @@ def apply_carry_edit(plaintext, spec, reply_id=None):
     whose consumer reads nothing — and `apply_to_reply`'s own docstring records what an unexpected
     clear-and-rebuild group does to pending client state (`UnitEquipRequest` / `5Eb0Rig6`).
     """
+    if str(reply_id) == CARRY_LOGIN_REPLY and State.player is not None:
+        # The login copy (2026-11-12): without it the item set the phone saved came back empty after a relaunch.
+        # `GameResponseFactory::createResponseData` reads `nE7pV2wr` on whatever reply carries it, and
+        # `LoginScene::initConnect` sends GetUserInfo, GetUserInfo2 and GetUserInfo3 at every login, so the first
+        # of them carries it and no other reply does.
+        return _carry_reply(spec)
     if str(reply_id) != CARRY_EDIT_REQUEST or State.player is None or not plaintext:
         return spec
     try:

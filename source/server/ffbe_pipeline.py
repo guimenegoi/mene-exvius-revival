@@ -276,6 +276,9 @@ PIPELINE: tuple = (
          "state", "State.player.mailbox", "first-clear rewards of cleared quests never paid, by mail (first_clear.py)"),
     Step("register_guide", lambda c: __import__("guide").register(c.spec, c.reply_id),
          "state", "State.player.guide", "keep held units/items/gear/materia/cards in the Guide register (guide.py)"),
+    Step("deliver_chest_backpay", lambda c: __import__("chest_backpay").deliver(c.spec, c.reply_id),
+         "state", "State.player.mailbox", "equipment/materia/key-item chests opened but never paid, by mail once "
+         "(chest_backpay.py)"),
     Step("deliver_story_recipes", lambda c: __import__("story_recipes").deliver(c.spec, c.reply_id),
          "state", "State.player.mailbox", "story recipes cleared quests never paid, by mail (story_recipes.py)"),
     Step("deliver_replay_mails", lambda c: __import__("replay_mails").deliver(c.spec, c.reply_id),
@@ -382,6 +385,12 @@ PIPELINE: tuple = (
          "state", "State.player.inventory.carry_items / nE7pV2wr",
          "records the client's item set and echoes it complete (the reply clears before it rebuilds); GATED "
          "on the carry-edit requestID because the group is clear-and-rebuild on the client"),
+    # Battles lower the item set (carry_report.py, 2026-11-12): every battle-end request reports the set left
+    # after the battle; each slot keeps the smaller count and the bag loses the difference. No echo.
+    Step("record_battle_carry", lambda c: __import__("carry_report").step(c.spec, c.reply_id, c.plaintext, State),
+         "state", "State.player.inventory.carry_items / items",
+         "items used in battle leave the item set and the bag, once (the smaller count wins, so a retry takes "
+         "nothing); GATED on the battle-end requestIDs"),
     # ORB RECHARGE (APP-34, 2026-10-11): the Arena's "recover orbs" confirm sends `ShopUseRequest` with
     # shopId 21 (libgame 0x208b8f4 constructs it and calls setShopId with 0x15, the client's own analytics
     # call naming the action "Recover Colosseum Orb"); until now the reply was EMPTY, which the client
@@ -501,6 +510,10 @@ PIPELINE_EDGES: tuple = (
          "(`n69quiCJ`); project first and the header shows the PREVIOUS crest"),
     Edge("apply_emblem_setting", "save_state", "st.STATE_FILE",
          "the chosen emblem has to survive the restart that ends the run, or it silently reverts"),
+    Edge("record_battle_carry", "save_state", "State.player.inventory.carry_items",
+         "the lowered item set and bag are written by the battle-end request itself"),
+    Edge("record_battle_carry", "apply_to_reply", "State.player.inventory.items",
+         "the reply's bag group must show the Potions the battle used"),
     Edge("apply_carry_edit", "save_state", "State.player.inventory.carry_items",
          "the item set is written by the same request that sets it, so the state writer must persist it"),
     Edge("apply_orb_recharge", "apply_to_reply", "State.player.orbs",

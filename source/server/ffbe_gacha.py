@@ -303,6 +303,11 @@ def all_banners() -> list:
         by_id[str(b["id"])] = b
     for b in raid_banners():
         by_id[str(b["id"])] = b
+    # Global's banners from 2023-08 to the end, rebuilt, and the real dates of the ones we had lumped (late_banners.py).
+    import late_banners
+    for b in late_banners.banners():
+        by_id[str(b["id"])] = b
+    late_banners.apply(by_id)
     # Archive identity merging shows a replacement and its calendar alias once.
     # Keep both IDs resolvable for requests already issued by an older client.
     only = gacha_only_ids()
@@ -879,7 +884,7 @@ def serve_gacha(spec, plaintext: str | None = None, reply_id=None):
             r for r in res.get('bonus_awards', []) if r['kind'] != 10]
         if item_bonuses:
             node['UJz5QED2'] = ','.join(filter(None, [node['UJz5QED2'],
-                ','.join(f"{r['kind']}:{r['id']}:{r['count']}" for r in item_bonuses)]))
+                __import__('exvius_rewards').reward_text(item_bonuses)]))
         # The Vision Card of each NV pulled, in pull order: "27:<card id>:<owned card key>" (comma list).
         # UnitGetScene::touchEnded shows it after the NV (UserGachaResult::getNVResultData(true) keeps the
         # type-27 entries; the key resolves in UserVisionCardInfoList, served below in 4hPYneL3).

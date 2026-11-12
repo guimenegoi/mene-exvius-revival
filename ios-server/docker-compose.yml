@@ -41,7 +41,8 @@ services:
       # 1 asks the game to upload its own error log (saved in server/client-reports/) for troubleshooting,
       # once per launch (tens of MB each). Leave it 0 otherwise.
       EXVIUS_CLIENT_REPORTS: "0"
-      # Weekly summon rotation (see source/server/gacha_rotation.py). Set to 0 to show every banner.
+      # Weekly summon rotation (see source/server/gacha_rotation.py). Set to 0 to show every banner at once;
+      # that also turns the historic replay below off. Then run: docker compose up -d
       EXVIUS_SUMMON_ROTATION: "1"
       EXVIUS_ROTATION_TZ: America/New_York
       EXVIUS_ROTATION_DAY: "6"        # 0 = Monday ... 6 = Sunday
@@ -58,6 +59,8 @@ services:
       # Permanent summons only draw units released by then. "0" goes back to the random weekly rotation.
       # Delete server/state/replay.json to restart the replay from EXVIUS_REPLAY_START.
       EXVIUS_REPLAY: "1"
+      # A banner or event stays up for every week its whole Global run overlaps. "0" = one week per start date.
+      EXVIUS_REPLAY_FULL_RUNS: "1"
       EXVIUS_REPLAY_START: "2016-12-16"
       EXVIUS_REPLAY_PACE: "3,2@2020-08-20"   # 3 weeks per week, then 2 from the first Neo Vision banner
       # A "This week" notice on the News board for each replay week ("0" turns them off).

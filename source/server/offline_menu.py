@@ -1,4 +1,5 @@
 """Local title-menu actions using the existing persistent PlayerState format."""
+import json
 from pathlib import Path
 import shutil
 import threading
@@ -39,3 +40,63 @@ def new_game(state, state_file, slot):
     state.player = fresh
     state.state_dirty = False
     return status(state, state_file)
+
+
+# The Convert screen test (2026-11-12): one duplicate of each kind the Convert lists treat differently. Only the
+# units the phone should list are named in the reply; the rest show the lists leave them out.
+CONVERT_TEST_UNITS = (
+    ("306001303", "3★ base, no conversion row: listed nowhere"),
+    ("306000605", "3★ base with a row, at 5★: Convert to Prism"),
+    ("100004604", "4★ base, no conversion row: listed nowhere"),
+    ("208000404", "4★ base with a row, at 4★: listed nowhere"),
+    ("208000405", "4★ base with a row, at 5★: Convert to Prism and to Fragments"),
+    ("306000905", "5★ base, prism only: Convert to Prism"),
+    ("100000315", "Dark Fina 5★: Convert to Prism and to Fragments"),
+    ("100000317", "Dark Fina 7★: Convert to Fragments"),
+    ("100044807", "a summoned NV: Convert to Fragments"),
+    ("100000327", "Dark Fina NV (NV-awakened): Convert to Fragments"),
+)
+
+
+def convert_test(state, state_file):
+    """Save a copy of the save, then add CONVERT_TEST_UNITS to it (the server's own save path)."""
+    player = state.player
+    if player is None:
+        raise ValueError('No save loaded.')
+    destination = Path(state_file)
+    backup = None
+    if destination.exists():
+        recovery = destination.parent / 'backups'
+        recovery.mkdir(exist_ok=True)
+        backup = recovery / (destination.stem + '-before-convert-test-' + time.strftime('%Y%m%d-%H%M%S') + '.json')
+        shutil.copyfile(destination, backup)
+    added = []
+    for master_id, what in CONVERT_TEST_UNITS:
+        player.grant_unit(master_id)
+        added.append(f'{master_id}: {what}')
+    player.dirty = True
+    if not player.save(str(destination)):
+        raise OSError('The save could not be written.')
+    state.state_dirty = False
+    return {'added': added, 'backup': str(backup) if backup else ''}
+
+
+def convert_test_undo(state, state_file, slot):
+    """Put back the save `convert_test` copied last (the running server loads it and writes it as the save)."""
+    destination = Path(state_file)
+    copies = sorted((destination.parent / 'backups').glob(destination.stem + '-before-convert-test-*.json'))
+    if not copies:
+        raise ValueError('No copy from convert-test was found in server/state/backups/.')
+    try:
+        saved = json.loads(copies[-1].read_text(encoding='utf-8'))
+    except (OSError, ValueError) as exc:
+        raise ValueError(f'The copy {copies[-1].name} could not be read ({exc}). Nothing was changed.')
+    restored = PlayerState.load(str(copies[-1]), slot=slot, mode='live')
+    if len(restored.data.get('roster') or []) != len(saved.get('roster') or []):
+        raise ValueError(f'The copy {copies[-1].name} did not load as saved. Nothing was changed.')
+    restored.dirty = True
+    if not restored.save(str(destination)):
+        raise OSError('The save could not be written. The test save is still in place.')
+    state.player = restored
+    state.state_dirty = False
+    return {'restored_from': str(copies[-1]), **status(state, state_file)}

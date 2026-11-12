@@ -95,7 +95,7 @@ Tailscale split DNS ── only gumi.sg / exvius.com questions ──▶  ffbe (
 - **Its own Tailscale address.** One container, `ffbe`, runs Tailscale (joining your tailnet as a machine called `ffbe`) and the game server together. If either stops, both restart together. Nothing listens on your computer's own ports, so it can't clash with anything else you run.
 - **A tiny DNS responder.** It answers only `gumi.sg` and `exvius.com` names. A Tailscale split-DNS rule sends the phone's lookups for those names to it. Nothing else about your phone's or tailnet's DNS changes.
 - **A private certificate** that can only vouch for `gumi.sg` and `exvius.com` (an X.509 name constraint). You install it on the phone once, and it can't be used for any other site.
-- **The game data** (about 14.6 GB) is downloaded from the Exvius Offline GitHub releases during setup.
+- **The game data** (about 14.6 GB) is downloaded during setup from a copy of Exvius Offline's data hosted with this project.
 
 Everything the stack creates lives in one folder (`FFBE_DIR`). [Removing everything](#removing-everything) is at the end.
 
@@ -281,6 +281,7 @@ The server also keeps a record of each request it received, for three days and a
 | Logs | `docker compose logs -f server` |
 | Stop | `docker compose down` |
 | Unraid | After [moving it to the Docker tab](#unraid-run-it-from-the-docker-tab): start, stop, restart, logs and settings are all on the `ffbe` icon. Commands run inside it with `docker exec ffbe python3 /app/ffbe.py …` (for example `rotation` or `status`) instead of `docker compose exec server …`. |
+| Test the Convert screens | `docker exec ffbe python3 /app/ffbe.py convert-test` (Unraid; with Compose: `docker compose exec server python3 /app/ffbe.py convert-test`). Adds ten units, one of each kind the Convert lists treat differently, and says which list each should be in. A copy of the save from just before is kept in `server/state/backups/`; `convert-test --undo` puts it back (the ten units go, and anything else done since). |
 | Start the game over | `docker compose exec server python3 /app/ffbe.py new-game --yes` (the old save is backed up to `server/state/backups/`) |
 
 **Your save** is in `FFBE_DIR/server/state/`. Back up that folder.
@@ -321,7 +322,10 @@ The container's own log (`docker logs ffbe`) is capped at 60 MB by Docker (3 fil
 
 | Setting | What it controls |
 | --- | --- |
-| `EXVIUS_REPLAY` | `1` (default) follows Global's history: each week shows the summon sets released in that week's slice of history, the Vortex events that launched with them, and permanent summons and exchange shops limited to units released by then (NV EXVIUS appears with the NV era). `0` uses the random weekly rotation below. Needs `EXVIUS_SUMMON_ROTATION=1`. |
+| `EXVIUS_REPLAY` | `1` (default) follows Global's history: each week shows the summon sets released in that week's slice of history, the Vortex events that launched with them, and permanent summons and exchange shops limited to units released by then (NV EXVIUS appears with the NV era). `0` uses the random weekly rotation below. Only works with `EXVIUS_SUMMON_ROTATION` at `1`: setting the rotation to `0` turns the replay off too, whatever this says. Change it in `docker-compose.yml` (on Unraid, the template's variable), then run `docker compose up -d`. |
+| `EXVIUS_REPLAY_FULL_RUNS` | `1` (default): with the replay on, a banner or event is up in every week whose slice of history overlaps its whole Global run, so long banners (weekly free summons, anniversary campaigns) and events stay for several weeks, and some weeks are busier than others. `0`: each banner shows only in the week its start date falls in, and events open beside the banners released with them. Change it in `docker-compose.yml`, then run `docker compose up -d`. |
+| `EXVIUS_LATE_BANNERS` | `1` (default) adds Global's banners from September 2023 to the end of service (rebuilt from the wiki and Global's news), puts the cached Global banners of that period on their real dates and hides the placeholder records. `0` goes back to the old placeholder dates. |
+| `EXVIUS_LATE_UNCONFIRMED` | `0` (default) leaves out 26 rebuilt 2024 NV Premium Step-Up summons whose existence is only inferred from the 2023 pattern (nothing from Global confirms them). `1` adds them. |
 | `EXVIUS_REPLAY_START` | Where history starts in your first replay week. Default `2016-12-16` (Noctis). |
 | `EXVIUS_REPLAY_PACE` | Historical weeks per real week, with optional changes by date. Default `3,2@2020-08-20`: three, then two from Global's first Neo Vision banner. |
 | `EXVIUS_REPLAY_NV_ERA` | When NV EXVIUS appears among the permanent summons. Default `2020-08-20`. |
@@ -373,7 +377,10 @@ The original game's Lapis income assumed you'd buy Lapis. These settings raise w
 | `EXVIUS_ENGLISH_SEARCH` | `1` (default) gives each Vision Card its English name as its search reading, so the Vision Card search finds cards by English name (the game's data has Japanese readings for 216 cards). `0` serves the card table as shipped. |
 | `EXVIUS_FARPLANE_SCENES` | `1` (default) stops the Farplane from replaying its first scene and sending you back to Mitra on every visit: the game is told to skip two Farplane scene files that hold a copy of that first scene (the Crest scene and the end of the Moogle quests; neither survives in English). `0` sends the game's own list again (open the game twice afterwards). |
 | `EXVIUS_REFETCH_TABLES` | `1` (default) makes the game download the unit conversion table (`F_SACRIFICE_MST`) again, which the Convert to Prism and Convert to Fragments lists need. `0` advertises it as shipped. |
+| `EXVIUS_NV_AWAKENED_FLAG` | `1` (default) tells the game which NV units you got by NV awakening (Dark Fina NV, Lightning NV and the like), so Convert to Fragments lists them. `0` doesn't, and those units are left out of that list again. |
+| `EXVIUS_CHEST_BACKPAY` | `1` (default) mails you, once, the equipment, materia and key items from treasure chests you opened that never arrived (only those the server still has a record of). `0` doesn't send it. |
 | `EXVIUS_MISSION_GIL` | `1` (default) pays each quest's own clear Gil on every win (the Chamber of Riches pays almost all its Gil this way: 1,500 to 85,000 per run) and shows it on the result screen. `0` pays only the Gil the monsters drop. |
+| `EXVIUS_LB_EXP` | `1` (default) gives every party unit LB EXP when you clear a quest, as on Global: 100 per stamina point the quest costs (also below rank 51, where quests cost no stamina), 250 per raid orb, 100 per weapon-enhancement orb. Losing or retiring gives none. `0` turns it off (LB EXP then only comes from fusion and Burst Pots). |
 | `EXVIUS_EVENT_CURRENCY_RUNS` | Event currency (King Mog and similar: Mana Mystery's Candy and the rest) drops from the event's enemies, as it did on Global: Global's per-clear amounts (from the FFBE wiki, or Japan's battle data where its enemies already carry it), multiplied so the event's own gear, materia, units and tickets in its exchange take about this many clears of its top quest (never less than Global's own amount). Easier quests drop less, in Global's proportions. Default `30`; `0` gives Global's own amounts. Events where no source says which quests drop the currency still pay it once at the end of each clear instead (list in `ios-server/research/DROP_CHECK.md`). Each exchange is in the Shop's exchange list while its event is in the Vortex or while you hold its currency, with the stock it had at that event's run. |
 | `EXVIUS_FIRST_CLEAR_BACKPAY` | `1` (default) sends one mail, once, with the first-clear rewards of every quest you had already cleared before first-clear rewards were paid (Lapis is multiplied when you receive it). `0` doesn't send it. |
 | `EXVIUS_REPLAY_MAILS` | Global's mails to every player (the Guaranteed NV Summon Ticket in Jan 2021, the Player Appreciation tickets in Sep 2021, Feb 2022 and Jun 2022), each sent once when the replay reaches its date. Default `1`; `0` turns them off. |
@@ -412,7 +419,7 @@ Your own hand-picked companions still come from `source/server/friends.yaml`.
 
 | Setting | What it controls |
 | --- | --- |
-| `EXVIUS_SUMMON_ROTATION` | `1` rotates banners weekly; `0` shows every banner at once. |
+| `EXVIUS_SUMMON_ROTATION` | `1` (default) rotates banners weekly. `0` shows every banner at once, about 850 of them (the permanent summons first, then collaborations, the story seasons and Standard; summons for tickets you hold too), and turns the historic replay off as well: no summon pool, shop or Vortex event is held back by date, and NV EXVIUS is open. To change it, edit `EXVIUS_SUMMON_ROTATION` in `docker-compose.yml` (on Unraid, the template's variable), then run `docker compose up -d`; no rebuild is needed. Open the game twice afterwards. |
 | `EXVIUS_ROTATION_HOLIDAYS` | `1` (default) keeps holiday summon sets (Christmas, Halloween, Valentine's Day, Easter) for the week before that holiday and the holiday's own week. Holiday events (the Christmas, Halloween, Easter and Valentine's King Mog events and the Halloween Castle; the list is `HOLIDAY_EVENTS` in `source/server/event_archive.py`) follow the same weeks and never open on their history dates. Without the replay, it's one original year at a time, oldest first, so the newest and strongest holiday units come later. `0` mixes them into the normal pool. |
 | `EXVIUS_VORTEX_ROTATION` | `1` (default) makes the Vortex follow the summon rotation: the permanent dungeons are always open, plus the events that originally ran alongside this week's summon sets, so an event's featured units, coins and tickets line up with the banners you can pull. An event opens at each of its Global runs, first runs and reruns alike (`source/server/event_history.json`). Clash of Wills and Dark Visions open only during the periods Global ran them. The Vortex never shows two tiles that look the same: the Chamber of Challenges and Chamber of Crysts areas take turns a week each (Chamber of Challenges' Halloween and Christmas battles only in those holidays' weeks), and later copies of an event show only the first. Events are listed first (holiday events, then newest first), then Clash of Wills and Dark Visions, then the permanent dungeons. `0` opens all 764 archived events at once. |
 | `EXVIUS_VORTEX_EXTRA` | How many undated recurring Vortex events (Boss Rush, Cactuar Dunes, Challenge of the Brave, …) open each week. Default `2`. |
@@ -489,6 +496,6 @@ Nothing else on your computer, network or tailnet is changed.
 
 ## Credits
 
-The game engine, the preserved game data and the original Android app are [Exvius Offline](https://github.com/Elvlin/exvius-offline) by Elvlin. This project adds the iPhone server around it. The game data is downloaded from that project's GitHub releases during setup.
+The game engine, the preserved game data and the original Android app are [Exvius Offline](https://github.com/Elvlin/exvius-offline) by Elvlin. This project adds the iPhone server around it.
 
 Final Fantasy Brave Exvius belongs to Square Enix and gumi. This is an unofficial fan project, not affiliated with either.

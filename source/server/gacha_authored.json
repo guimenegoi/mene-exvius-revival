@@ -60,6 +60,16 @@
     "amount": 200
    },
    "draws": 1,
+   "secondary_offer": {
+    "cost": {
+     "kind": "friend_point",
+     "amount": 2000
+    },
+    "draws": 10,
+    "exe_count": 1,
+    "img_btn": "gacha_btn_n2",
+    "note": "Global's 10-at-a-time friend point summon (r/FFBraveExvius, Aug 2017: 'standard summon does have a 10 at a time'). gacha_btn_n2 is the client's own friend-point Multi-Summon button (Ver58_gacha1)."
+   },
    "schedule": {
     "disp_order": 1,
     "banner_type": 0,
