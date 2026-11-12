@@ -121,10 +121,11 @@ jobs:
               x86_64) NDK_TRIPLE=x86_64-linux-android ;;
               *) exit 2 ;;
             esac
-            # Pillow's setuptools probe doesn't search the NDK sysroot by
-            # default, even though the cross-compiler finds zlib.h and -lz.
+            # The Android cross-build overwrites CFLAGS and LDFLAGS.
+            # Pillow's own setup.py explicitly scans C_INCLUDE_PATH and
+            # LIBRARY_PATH for the NDK's zlib.h and libz.so.
             SYSROOT="$ANDROID_HOME/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
-            export CIBW_ENVIRONMENT="CFLAGS=-I$SYSROOT/usr/include LDFLAGS=-L$SYSROOT/usr/lib/$NDK_TRIPLE/24"
+            export CIBW_ENVIRONMENT="C_INCLUDE_PATH=$SYSROOT/usr/include LIBRARY_PATH=$SYSROOT/usr/lib/$NDK_TRIPLE/24"
           fi
           python -m cibuildwheel --platform android --output-dir wheelhouse "source/$PACKAGE-$VERSION"
       - name: Validate Android wheel tags and ELF architecture
