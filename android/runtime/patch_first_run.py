@@ -4,8 +4,9 @@
 The only changed base members are AndroidManifest.xml and the new classes4.dex.
 The upstream Java launcher implements DataDownloadActivity, DataUpdates, DataPack,
 and GameAssets; no embedded APKs, new network permissions, or game logic changes.
-The embedded Python adapter reconciles upstream receipts after data setup;
-this laboratory launcher still does not wait for Revival HTTP readiness.
+The embedded Python adapter reconciles upstream receipts after data setup.
+The launcher waits off-thread for the real Revival HTTP hello with a bounded
+failure path; successful 19-pack gameplay is not yet verified.
 """
 from __future__ import annotations
 
@@ -18,6 +19,7 @@ import zipfile
 from pathlib import Path
 
 from patch_bootstrap_probe import ORIGINAL_BASE_SHA256
+from first_run_readiness import patch_smali
 
 UPSTREAM_APK_SHA256 = "98875e7b8ebcd04794b36392f8afa71c207bebeba2f90d939ee9572f034e95e2"
 UPSTREAM_INSTALLER_DEX = "classes6.dex"
@@ -186,6 +188,7 @@ def main() -> None:
         updates = upstream_dir / UPSTREAM_UPDATES_SMALI
         updates.write_text(pin_manifest_url(updates.read_text(encoding="utf-8")),
                            encoding="utf-8")
+        patch_smali(upstream_dir)
         upstream_rebuilt = scratch / "upstream-compiled.apk"
         subprocess.run(
             [str(args.java), "-jar", str(args.apktool), "b", "-o",
@@ -195,9 +198,13 @@ def main() -> None:
             data = built.read(UPSTREAM_INSTALLER_DEX)
         if UPSTREAM_PINNED.encode() not in data or UPSTREAM_LATEST.encode() in data:
             raise ValueError("Upstream DEX did not pin the verified data revision")
+        for marker in (b"RevivalReadiness", b"/__exvius/hello",
+                       b"showReadinessFailure"):
+            if marker not in data:
+                raise ValueError("Readiness gate missing from rebuilt DEX")
         report = merge_apk(args.base_apk, compiled, data, args.out_apk)
     print(report)
-    print("LAB ONLY: pinned upstream UI is wired; HTTP readiness gate remains pending.")
+    print("LAB ONLY: upstream launcher waits for verified Revival HTTP hello before Lapis.")
 
 
 if __name__ == "__main__":

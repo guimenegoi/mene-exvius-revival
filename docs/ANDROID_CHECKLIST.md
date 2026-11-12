@@ -34,9 +34,13 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       upstream v0.1.30: tela abriu no Waydroid sem travamento.
       Manifesto de 19 pacotes fixado por commit upstream; `local_http.py`
       aceita recibos Android e cria links nativos apenas após validação.
-- [ ] Validar download/extração reais dos 19 pacotes no Android, anexar
-      `game-assets.apk` e **aguardar readiness** do servidor antes de abrir
-      Lapis; a Activity atual ainda inicia o jogo imediatamente.
+- [x] Bloquear entrada em `Lapis` até resposta real do handler
+      `127.0.0.1:18080/__exvius/hello`, com worker, prazo limitado e tela
+      de erro. Falha segura comprovada no Waydroid, inclusive JNI/AES
+      inicializados **antes** de `Lapis.onCreate`, sem downloads ou saves.
+- [ ] Instalar/extrair os 19 pacotes reais no Android, anexar
+      `game-assets.apk`, comprovar readiness **positiva** e entrada no jogo;
+      o gate de falha já existe, mas o fluxo completo segue pendente.
 - [x] Executar código Python 3.14.10 ARM64 dentro do processo FFBE em laboratório:
       JNI, stdlib privada, `Py_InitializeFromConfig` e `PYTHON-EXECUTED-42`.
 - [x] Importar extensões oficiais nativas (67 módulos do CPython) no FFBE:
@@ -104,6 +108,22 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       depois do primeiro APK offline realmente jogável.
 
 ## Registro de execução
+
+### 2026-11-12 — gate de readiness real antes de abrir Lapis
+
+- `first_run_readiness.py` reutiliza `LocalPythonProbe.probe()` e
+  `startAsync()`, agora chamados pelo launcher em worker, **antes** de
+  `Lapis.onCreate`. Sonda o handler real `/__exvius/hello` em loopback
+  sem bloquear a UI e só entrega o Intent ao `Lapis` após HTTP 200
+  com resposta esperada. Timeout e falha mantêm `Lapis` fechado.
+- O teste isolado no Waydroid descobriu a dependência de carga do JNI
+  previamente feita por `Lapis`; após conectar a chamada existente
+  `probe()`, a segunda prova passou: CPython/AES, Activity de instalação,
+  erro de prontidão, porta 18080 fechada e nenhum lançamento de `Lapis`.
+- A variante completa abriu o launcher sem erro de classes ou crash;
+  ainda não instalamos os 19 ZIPs no Android nem observamos prontidão
+  positiva. O cliente aprovado foi restaurado com `install-multiple -r`,
+  sem desinstalar ou limpar dados.
 
 ### 2026-11-12 — launcher Android de primeira execução e compatibilidade
 

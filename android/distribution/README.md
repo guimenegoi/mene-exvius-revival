@@ -15,6 +15,13 @@ CPython/Revival. O launcher abriu no Waydroid e a sonda AES passou, mas
 Os 19 pacotes não foram instalados no Android de teste. Seu uso é
 **exclusivamente experimental** e não comprova gameplay offline.
 
+A variante posterior `apk/first-run-readiness/` inclui a espera
+assíncrona do handler real `127.0.0.1:18080/__exvius/hello`. O caminho
+de **falha segura** foi comprovado no Waydroid: sem recursos, a tela
+explica que o servidor não iniciou, o JNI/AES funciona e `Lapis` não é
+aberto. A transição positiva após instalação dos 19 pacotes reais ainda
+não foi comprovada. Ambas as variantes são de laboratório, não releases.
+
 ## Estrutura
 
 - `apk/`: cinco splits Android **assinados com certificado de teste**, da

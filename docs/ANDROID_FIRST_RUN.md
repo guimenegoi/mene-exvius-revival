@@ -46,11 +46,30 @@ A prova JNI do APK integrado confirmou `PYTHON-REVIVAL-CRYPTO-OK` em worker,
 com `REVIVAL-DATA-NOT-READY` e porta 18080 fechada quando faltam dados.
 O cliente aprovado foi restaurado após o teste, sem apagar dados.
 
-**Bloqueio restante:** no upstream, `DataDownloadActivity.openGame()` ainda
-inicia `Lapis` imediatamente após o download/anexação de assets. O backend
-Python demora segundos para ficar pronto; é preciso uma espera assíncrona
-com timeout e falha segura antes de liberar o jogo. Não marcar gameplay
-offline ou instalação funcional completa como comprovados.
+**Gate de prontidão implementado e provado em falha segura:**
+`first_run_readiness.py` altera somente o ponto de abertura de `Lapis` em
+`DataDownloadActivity.openGame()`. Após `GameAssets.attach()`, reaproveita
+`LocalPythonProbe.probe()` (carregamento de `libpython3.14` e JNI) e
+`startAsync()` fora da thread de UI. Um worker consulta apenas
+`http://127.0.0.1:18080/__exvius/hello`, exigindo HTTP 200 e o corpo
+esperado do handler **real** de `serve.py`. O número de consultas é limitado;
+na falha, mantém o jogo fechado e mostra o erro na mesma tela do upstream,
+sem oferecer Retry enganoso do downloader. Não introduz listener novo.
+
+**Prova Waydroid sem recursos:** uma variante temporária de teste, não
+publicada, invocou o gate diretamente com prazo reduzido (três consultas).
+Na primeira tentativa, o runtime mostrou `UnsatisfiedLinkError` porque
+`probe()` era chamado somente por `Lapis.onCreate()`. O diagnóstico orientou
+um patch mínimo: `probe()` **antes** de `startAsync()` no próprio worker do
+gate. Repetido o teste, o Android confirmou o carregamento JNI, os imports
+AES (`PYTHON-REVIVAL-CRYPTO-OK`), `REVIVAL-DATA-NOT-READY`, Activity do
+instalador ainda em primeiro plano e a mensagem de timeout, sem listener
+na porta 18080 e sem abrir `Lapis`. O APK de distribuição mantém o prazo
+normal (240 consultas) e não contém o bypass de teste.
+
+**Ainda não comprovado:** download/extração dos 19 pacotes no Android,
+resposta positiva do servidor real, entrada em `Lapis`, batalha e saves
+offline. O ciclo de vida/start-stop do motor também continua pendente.
 
 ## Diferenças que devem ser conciliadas ANTES da integração
 
@@ -81,7 +100,10 @@ offline ou instalação funcional completa como comprovados.
       retomada, checksum SHA-256 e exclusão dos ZIPs após instalação.
 - [ ] Instalar dados compartilhados sem duplicação e sem mexer em saves.
 - [ ] Anexar `game-assets.apk`, concluir recibos e iniciar o servidor real.
-- [ ] Aguardar readiness da porta 18080 antes de entrar no jogo.
+- [x] Implementar espera assíncrona de `18080/__exvius/hello`, com prazo
+      limitado e falha segura, e confirmar a recusa no Waydroid sem dados.
+- [ ] Com os 19 pacotes reais instalados, provar transição por readiness
+      positiva do servidor Revival para `Lapis`.
 - [ ] Reiniciar sem redownload; verificar download interrompido e reparação.
 - [ ] Desligar internet e testar login, batalha, recompensa e save/reabertura.
 

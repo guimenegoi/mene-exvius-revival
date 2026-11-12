@@ -254,9 +254,16 @@ O `preflight()` permanece somente leitura; sem dados não abre a porta.
 
 **Waydroid:** Activity de configuração exibida, início JNI assíncrono,
 `REVIVAL-DATA-NOT-READY` e `PYTHON-REVIVAL-CRYPTO-OK` no mesmo APK.
-Instalação integral e readiness HTTP não testados; o upstream ainda
-abre `Lapis` imediatamente após `GameAssets.attach()`. Antes de usar
-como jogo é obrigatória a espera segura de `18080` no launcher.
+O patch `android/runtime/first_run_readiness.py` substitui a abertura
+imediata de `Lapis` por uma espera assíncrona de
+`127.0.0.1:18080/__exvius/hello`, exigindo a resposta real do handler
+existente. Usa `LocalPythonProbe.probe()` antes de `startAsync()` para
+carregar o JNI, já que `Lapis.onCreate()` ainda não foi chamado.
+O Android confirmou o caminho **sem dados**: JNI/CPython/AES carregaram,
+a porta 18080 permaneceu fechada, a tela exibiu erro de prontidão e o
+jogo não abriu. O bypass de teste com três consultas não é incluído no
+APK de laboratório normal (240 consultas e UI original de download).
+A transição positiva após 19 downloads e a partida real não foram testadas.
 O APK anterior foi restaurado com `install-multiple -r`, sem limpar dados.
 
 ## Limites e pendências reais
