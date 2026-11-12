@@ -22,6 +22,7 @@ O fork deve evitar divergências desnecessárias do upstream: ajustes específic
 | Python dentro do Android | **Validado** | Python 3.14.10 no Termux x86_64 (Waydroid) |
 | Servidor HTTP Python dentro do Android | **Validado** | `python -m http.server 18443`, acessado por outro dispositivo com HTTP 200 |
 | Imports do backend Revival no Android | **Validados** | Código compactado (7,5 MB), conferido por SHA-256, compilado no Python 3.14 e imports de `serve`, `certs`, `capture_server`, `cryptography`, `PyYAML`, `Pillow` e `tzdata` sem erros |
+| Runner Termux `android/ffbe-termux` | **Prévia validada** | Diagnóstico e bloqueio de execução sem dados testados no Waydroid; [comandos e limites](../android/README.md) |
 | Motor Revival completo dentro do Android | **Pendente** | Dados, certificados, inicialização e atendimento ao cliente ainda não validados |
 | Jogo usando o backend local e sem internet | **Pendente** | Portas, DNS/encaminhamento e execução em segundo plano por resolver |
 
@@ -99,6 +100,7 @@ O `update` aceita alterações de código por fast-forward, cria backup consiste
 - [x] Validar batalha, recompensas e persistência no backend Linux.
 - [x] Instalar Termux e Python; servir uma página HTTP em porta alta no Android.
 - [x] Testar compilação e imports de `ios-server/` e `source/server/` no Termux, sem copiar dados ou saves.
+- [x] Disponibilizar CLI Termux com `setup`, `doctor`, `verify`, `fetch-data`, `start`, `stop` e `status`; testar proteção contra dados ausentes.
 - [ ] Validar a inicialização do motor com dados mínimos, sem alterar o servidor de referência.
 - [ ] Iniciar uma instância independente do motor Revival no Android, usando portas altas e estado de teste descartável.
 - [ ] Medir uso de RAM, CPU, armazenamento, estabilidade e operação com tela apagada; testar também Android ARM64 físico.

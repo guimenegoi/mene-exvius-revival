@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+# Standalone FFBE Revival runner for unprivileged Termux.
+set -Eeuo pipefail
+REPO="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+BASE="${FFBE_ANDROID_HOME:-$HOME/.local/share/mene-exvius-revival}"
+DATA="${FFBE_DATA_DIR:-$BASE/data}"
+STATE="${FFBE_SERVER_ROOT:-$BASE/server-root}"
+HTTPS="${FFBE_HTTPS_PORT:-18443}"
+HTTP="${FFBE_HTTP_PORT:-18080}"
+DNS="${FFBE_DNS_PORT:-15353}"
+MANIFEST="$REPO/data/latest.json"
+PIDFILE="$BASE/revival.pid"
+
+die() { printf 'ERRO: %s\n' "$*" >&2; exit 1; }
+require_python() { command -v python >/dev/null || die 'Python não instalado. Execute setup.'; }
+ports() {
+  local port
+  for port in "$HTTPS" "$HTTP" "$DNS"; do
+    [[ "$port" =~ ^[0-9]+$ ]] || die "Porta inválida: $port"
+    (( 10#$port >= 1024 && 10#$port <= 65535 )) || die "Porta fora do intervalo 1024..65535: $port"
+  done
+  [[ "$HTTPS" != "$HTTP" ]] || die 'Portas HTTP e HTTPS iguais.'
+}
+imports() {
+  require_python
+  PYTHONPATH="$REPO/ios-server:$REPO/source/server${PYTHONPATH:+:$PYTHONPATH}" \
+    python -c 'import serve, certs, capture_server, cryptography, PIL, yaml, tzdata'
+}
+assets_present() {
+  # The fetch-data manifest records pack hashes, but does not validate extraction.
+  # Require real decoded tables and the native versioned banks as a cheap guard.
+  [[ -s "$DATA/static/mst_decoded/F_UNIT_MST.ndjson" &&
+     -s "$DATA/static/mst_decoded/F_MISSION_MST.ndjson" &&
+     -s "$DATA/static/mst_decoded/F_ITEM_MST.ndjson" &&
+     -s "$DATA/static/client/shared_prefs/gamedata.xml" &&
+     -d "$DATA/native/common_lang" && -f "$DATA/installed.json" ]] || return 1
+  compgen -G "$DATA/native/mst/Ver*.dat" >/dev/null
+}
+verify() {
+  require_python
+  FFBE_DATA_DIR="$DATA" python "$REPO/ios-server/fetch_data.py" --verify --manifest "$MANIFEST"
+}
+running_pid() {
+  [[ -s "$PIDFILE" ]] || return 1
+  local pid command
+  pid="$(cat "$PIDFILE")"
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+  kill -0 "$pid" 2>/dev/null || return 1
+  if [[ -r "/proc/$pid/cmdline" ]]; then
+    command="$(tr '\0' ' ' <"/proc/$pid/cmdline")"
+  else
+    command="$(ps -p "$pid" -o args= 2>/dev/null || true)"
+  fi
+  [[ "$command" == *"$REPO/ios-server/serve.py"* ]] || return 1
+  printf '%s\n' "$pid"
+}
+doctor() {
+  printf 'FFBE Android: checkout=%s\n' "$REPO"
+  printf 'data=%s state=%s\n' "$DATA" "$STATE"
+  printf 'ports: HTTPS=%s HTTP=%s DNS=%s\n' "$HTTPS" "$HTTP" "$DNS"
+  ports
+  if imports; then echo 'Python/dependências/imports: OK'
+  else echo 'Python/dependências/imports: FALHA'; return 1; fi
+  if assets_present; then echo 'Diretórios de dados: OK'
+  else echo 'Diretórios de dados: AUSENTES (ainda não jogável)'; return 2; fi
+  verify || return 3
+}
+setup() {
+  command -v pkg >/dev/null || die 'setup deve ser executado no Termux.'
+  pkg install -y python python-cryptography python-pillow curl
+  python -m pip install PyYAML tzdata
+  imports && echo 'Dependências do backend disponíveis.'
+}
+free_bytes() {
+  python - "$DATA" <<'PY'
+import os, sys
+p=sys.argv[1]
+while not os.path.exists(p):
+    parent=os.path.dirname(p)
+    if parent==p: break
+    p=parent
+s=os.statvfs(p)
+print(s.f_bavail*s.f_frsize)
+PY
+}
+fetch_data() {
+  require_python
+  if verify; then echo 'Dados já instalados.'; return 0; fi
+  local bytes
+  bytes="$(free_bytes)"
+  (( bytes >= 22*1024*1024*1024 )) || die "Download inicial requer ~22 GiB livres; disponíveis: $((bytes/1024/1024/1024)) GiB."
+  mkdir -p "$DATA"
+  echo 'Instalando dados do manifesto, com verificação SHA-256. O processo pode baixar ~14,6 GB.'
+  FFBE_DATA_DIR="$DATA" python "$REPO/ios-server/fetch_data.py" --manifest "$MANIFEST"
+}
+start() {
+  ports
+  imports || die 'Instale dependências com setup.'
+  assets_present || die 'Dados ausentes: execute fetch-data ou importe dados da mesma revisão.'
+  verify || die 'Dados divergentes do manifesto.'
+  if running_pid >/dev/null; then die 'Revival já está rodando.'; fi
+  mkdir -p "$BASE" "$STATE"
+  export FFBE_ENGINE="$REPO/source/server" FFBE_DATA_DIR="$DATA"
+  export FFBE_SERVER_ROOT="$STATE" FFBE_ADVERTISE_IP="${FFBE_ADVERTISE_IP:-127.0.0.1}"
+  export FFBE_HTTPS_PORT="$HTTPS" FFBE_HTTP_PORT="$HTTP" FFBE_DNS_PORT="$DNS"
+  export EXVIUS_WIKI_REWARDS="${EXVIUS_WIKI_REWARDS:-0}"
+  export EXVIUS_IOS_HCA="${EXVIUS_IOS_HCA:-0}"
+  export EXVIUS_IOS_HCA_PLAIN="${EXVIUS_IOS_HCA_PLAIN:-0}"
+  export EXVIUS_TABLE_VERSION_OFFSET="${EXVIUS_TABLE_VERSION_OFFSET:-201000}"
+  export PYTHONUNBUFFERED=1
+  printf '%s\n' "$$" >"$PIDFILE"
+  echo "Revival local — HTTPS :$HTTPS / HTTP :$HTTP / DNS :$DNS"
+  echo 'Save isolado do Proxmox. Ctrl+C interrompe o processo.'
+  exec python -u "$REPO/ios-server/serve.py"
+}
+stop() {
+  local pid
+  if ! pid="$(running_pid)"; then echo 'Servidor local não está ativo.'; return; fi
+  kill -TERM "$pid" && echo "Parando processo local $pid."
+}
+status() {
+  local pid
+  if pid="$(running_pid)"; then echo "PID $pid ativo."
+  else echo 'Servidor local não está ativo.'; fi
+  FFBE_HTTP_PORT="$HTTP" python - <<'PY'
+import os,urllib.request
+url='http://127.0.0.1:%s/__exvius/hello'%os.environ['FFBE_HTTP_PORT']
+try:
+    with urllib.request.urlopen(url,timeout=3) as r: print('HTTP local:',r.status)
+except Exception as e: print('HTTP local indisponível:',type(e).__name__)
+PY
+}
+helptext() {
+  cat <<'HELP'
+Uso: ./android/ffbe-termux {setup|doctor|verify|fetch-data|start|stop|status}
+setup       Instala dependências no Termux.
+doctor      Verifica imports e dados sem iniciar o serviço.
+verify      Confere registro do manifesto instalado (não calcula hash de todos os arquivos).
+fetch-data  Baixa os recursos (~14,6 GB; exige 22 GiB livres).
+start       Inicia o motor em primeiro plano; Ctrl+C interrompe.
+stop        Encerra apenas o PID iniciado por este script.
+status      Consulta o processo e o endpoint HTTP local.
+
+Variáveis: FFBE_ANDROID_HOME, FFBE_DATA_DIR, FFBE_SERVER_ROOT,
+FFBE_HTTPS_PORT (18443), FFBE_HTTP_PORT (18080), FFBE_DNS_PORT (15353).
+Não configura redirecionamento do APK ou DNS global.
+HELP
+}
+case "${1:-help}" in
+  help|-h|--help) helptext ;;
+  setup) setup ;;
+  doctor) doctor ;;
+  verify) verify ;;
+  fetch-data) fetch_data ;;
+  start) start ;;
+  stop) stop ;;
+  status) status ;;
+  *) helptext >&2; exit 2 ;;
+esac
