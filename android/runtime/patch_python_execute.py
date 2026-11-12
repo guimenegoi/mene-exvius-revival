@@ -22,6 +22,12 @@ METHODS = r"""
 .method public static runDemo(Landroid/content/Context;)V
     .locals 3
     :try_start
+    const-string v2, "crypto_python"
+    invoke-static {v2}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V
+    const-string v2, "ssl_python"
+    invoke-static {v2}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V
+    const-string v2, "sqlite3_python"
+    invoke-static {v2}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V
     invoke-static {p0}, Lcom/mene/exvius/LocalPythonProbe;->execute(Landroid/content/Context;)Ljava/lang/String;
     move-result-object v1
     const-string v0, "FFBE-EmbeddedPython"

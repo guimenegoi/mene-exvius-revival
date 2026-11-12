@@ -3,6 +3,7 @@
  */
 #include <jni.h>
 #include <Python.h>
+#include "native_assets.h"
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 #include <android/log.h>
@@ -103,6 +104,13 @@ Java_com_mene_exvius_LocalPythonProbe_execute(JNIEnv *env, jclass unused,
         return (*env)->NewStringUTF(env, error);
     }
     if (Py_IsInitialized()) return (*env)->NewStringUTF(env, "already initialized");
+    char dynload[PATH_MAX];
+    char native_error[256] = {0};
+    if (ffbe_prepare_dynload(env, context, archive, dynload, sizeof(dynload),
+                             native_error, sizeof(native_error))) {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "native: %s", native_error);
+        return (*env)->NewStringUTF(env, native_error);
+    }
 
     PyConfig config;
     PyConfig_InitIsolatedConfig(&config);
@@ -114,6 +122,15 @@ Java_com_mene_exvius_LocalPythonProbe_execute(JNIEnv *env, jclass unused,
     if (!wide) return (*env)->NewStringUTF(env, "path decode failed");
     PyStatus status = PyWideStringList_Append(&config.module_search_paths, wide);
     PyMem_RawFree(wide);
+    if (!PyStatus_Exception(status)) {
+        wide = Py_DecodeLocale(dynload, NULL);
+        if (!wide) {
+            PyConfig_Clear(&config);
+            return (*env)->NewStringUTF(env, "Native module path decode failed");
+        }
+        status = PyWideStringList_Append(&config.module_search_paths, wide);
+        PyMem_RawFree(wide);
+    }
     if (PyStatus_Exception(status)) {
         __android_log_print(ANDROID_LOG_ERROR, TAG, "sys.path: %s", status.err_msg);
         PyConfig_Clear(&config);
@@ -130,11 +147,24 @@ Java_com_mene_exvius_LocalPythonProbe_execute(JNIEnv *env, jclass unused,
         "import sys\n"
         "assert sys.version_info[:3] == (3, 14, 10)\n"
         "assert 6 * 7 == 42\n"
+        "import zlib, binascii, ssl, sqlite3, socket, hashlib, json, zipfile\n"
+        "assert ssl.OPENSSL_VERSION\n"
+        "assert sqlite3.sqlite_version\n"
     );
     if (code) {
         __android_log_print(ANDROID_LOG_ERROR, TAG, "PyRun_SimpleString failed");
         return (*env)->NewStringUTF(env, "Python evaluation failed");
     }
-    __android_log_print(ANDROID_LOG_INFO, TAG, "CPython 3.14.10 initialized; code executed");
-    return (*env)->NewStringUTF(env, "PYTHON-EXECUTED-42");
+    __android_log_print(ANDROID_LOG_INFO, TAG, "CPython 3.14.10: zlib ssl sqlite3 socket hashlib zipfile OK");
+    int engine_status = PyRun_SimpleString(
+        "import ffbe_engine_bootstrap\n"
+        "ffbe_engine_bootstrap.probe()\n"
+    );
+    if (engine_status) {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Revival source import-only probe failed");
+        return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-IMPORT-FAILED");
+    }
+    __android_log_print(ANDROID_LOG_INFO, TAG,
+                        "Revival import-only probe: yaml serve capture_server OK");
+    return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-IMPORTS-OK");
 }

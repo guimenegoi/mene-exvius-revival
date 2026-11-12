@@ -40,6 +40,8 @@ class EmbeddedExecuteTests(unittest.TestCase):
             helper = (root / execute.PROBE_PATH).read_text()
             self.assertIn(" native execute(Landroid/content/Context;)", helper)
             self.assertIn(".catch Ljava/lang/Throwable;", helper)
+            for library in ("crypto_python", "ssl_python", "sqlite3_python"):
+                self.assertIn(f'const-string v2, "{library}"', helper)
 
     def test_double_patch_refused_before_changes(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -116,6 +118,36 @@ class EmbeddedExecuteTests(unittest.TestCase):
                 bundle.embed_asset(original, bad, out, library)
             self.assertFalse(out.exists())
 
+
+    def test_official_native_assets_manifest_and_elf(self):
+        from test_python_probe import fake_elf
+        with tempfile.TemporaryDirectory() as tmp:
+            prefix = Path(tmp)
+            folder = prefix / "lib/python3.14/lib-dynload"
+            folder.mkdir(parents=True)
+            (folder / "_ssl.cpython-314-aarch64-linux-android.so").write_bytes(fake_elf(183))
+            (folder / "zlib.cpython-314-aarch64-linux-android.so").write_bytes(fake_elf(183))
+            assets = bundle.native_assets(prefix, "arm64-v8a")
+            self.assertEqual(len(assets), 3)
+            self.assertIn(b"_ssl.cpython-314-aarch64-linux-android.so\n",
+                          assets[bundle.NATIVE_INDEX])
+            self.assertIn(b"zlib.cpython-314-aarch64-linux-android.so\n",
+                          assets[bundle.NATIVE_INDEX])
+            self.assertTrue(all(key.startswith("assets/ffbe_python/") for key in assets))
+            (folder / "zlib.cpython-314-aarch64-linux-android.so").write_bytes(fake_elf(62))
+            with self.assertRaisesRegex(ValueError, "ELF machine"):
+                bundle.native_assets(prefix, "arm64-v8a")
+
+    def test_native_asset_name_guard(self):
+        from test_python_probe import fake_elf
+        with tempfile.TemporaryDirectory() as tmp:
+            prefix = Path(tmp)
+            folder = prefix / "lib/python3.14/lib-dynload"
+            folder.mkdir(parents=True)
+            (folder / "_ssl.cpython-314-aarch64-linux-android.so").write_bytes(fake_elf(183))
+            (folder / "unsafe+module.so").write_bytes(fake_elf(183))
+            with self.assertRaisesRegex(ValueError, "Unsafe native module basename"):
+                bundle.native_assets(prefix, "arm64-v8a")
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

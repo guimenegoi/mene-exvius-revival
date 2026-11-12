@@ -103,6 +103,25 @@ class NativePythonProbeTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 build.embed_split(original, output, "arm64-v8a", native, libpy)
 
+    def test_split_additional_native_dependency_libraries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            original = root / "orig.apk"
+            modified = root / "changed.apk"
+            probe_so = root / build.SO
+            python_so = root / build.LIBPYTHON
+            ssl_so = root / "libssl_python.so"
+            for lib in (probe_so, python_so, ssl_so):
+                lib.write_bytes(fake_elf(183))
+            with zipfile.ZipFile(original, "w") as zf:
+                zf.writestr("lib/arm64-v8a/libgame.so", b"game unchanged")
+            build.embed_split(original, modified, "arm64-v8a", probe_so, python_so,
+                              {"libssl_python.so": ssl_so})
+            with zipfile.ZipFile(modified) as zf:
+                self.assertEqual(zf.read("lib/arm64-v8a/libssl_python.so"),
+                                 ssl_so.read_bytes())
+                self.assertEqual(zf.read("lib/arm64-v8a/libgame.so"), b"game unchanged")
+
     def test_mismatched_abi_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "example.so"

@@ -25,7 +25,11 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
 - [x] Testar layout de compartilhamento nativo/servidor sem duplicações em Linux.
 - [x] Executar código Python 3.14.10 ARM64 dentro do processo FFBE em laboratório:
       JNI, stdlib privada, `Py_InitializeFromConfig` e `PYTHON-EXECUTED-42`.
-      **Não** corresponde a servidor Revival executando ou runtime completo.
+- [x] Importar extensões oficiais nativas (67 módulos do CPython) no FFBE:
+      `ssl`, `zlib`, `sqlite3`, `socket`, `hashlib` e `zipfile`.
+- [x] Importar `yaml`, `serve` e `capture_server` **do Revival real** dentro
+      do FFBE com 172 fontes/recursos do Git e PyYAML puro, SHA-256 validado.
+      **Somente importação**: backend e runtime final ainda não iniciam.
 - [ ] Instalar/verificar os 19 pacotes **reais** no Android; confirmar os arquivos
       de tutorial, mapa, áudio e combate no armazenamento privado do cliente.
 - [ ] Verificar escrita, atualização e preservação de saves no layout real ARM64.
@@ -33,6 +37,8 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       `cryptography`, `Pillow`, `PyYAML`, `tzdata` para x86_64 e ARM64.
 - [ ] Integrar inicialização/desligamento do **motor Revival real** ao ciclo de
       vida do FFBE, com diagnóstico de readiness e falha segura.
+- [ ] Tirar extração/importações da thread principal da Activity; no teste
+      de laboratório a abertura ficou lenta e houve aviso de timeout Android.
 - [ ] Integrar o instalador de dados ao mesmo APK (sem acesso ao armazenamento
       privado por outro app).
 - [ ] Produzir APK assinado para testes com cliente, runtime e instalador
@@ -61,6 +67,30 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       depois do primeiro APK offline realmente jogável.
 
 ## Registro de execução
+
+### 2026-11-12 — extensões Python e imports do Revival dentro do FFBE
+
+- Empacotados **67 módulos `.so` oficiais** do CPython Android em assets,
+  extraídos com nomes controlados para pasta privada de somente leitura.
+  Dependências SSL/crypto/SQLite ligadas no split ARM64 original; `libgame.so`
+  preservada sem modificações.
+- Waydroid Android 13: logcat verificou `PYTHON-NATIVE-IMPORTS-OK` após
+  importações de `zlib`, `ssl`, `sqlite3`, `socket`, `hashlib` e `zipfile`.
+- Código versionado do Revival + PyYAML puro do sdist 6.0.3 (SHA-256 fixado)
+  empacotados em **172 arquivos / 80,4 MB**, com manifesto SHA-256 e
+  extração atômica sem tocar saves ou iniciar o servidor.
+- Waydroid: logcat confirmou `PYTHON-REVIVAL-IMPORTS-OK` e importação dos
+  módulos **reais** `yaml`, `serve`, `capture_server`; mesma prova na reabertura.
+- x86_64: ponte JNI compilada e 67 extensões verificadas por arquitetura,
+  **sem teste de execução no cliente Android x86_64**.
+- Testes automatizados: **26** de runtime, **4** de rede, **14** de dados
+  e smoke test; diffs do APK e split conferidos, assinatura de teste verificada.
+- A instalação/importação ainda ocorre na Activity principal e pode gerar
+  aviso de timeout de inicialização; exige thread/serviço próprio antes do uso.
+- **Pendente:** servidor real em `127.0.0.1:18080`, dependências Android
+  `cryptography`/`Pillow`/`tzdata`, dados dos 19 pacotes e jogo offline.
+- APK de laboratório revertido no Waydroid; instalação anterior preservada,
+  sem limpar dados. Binários não são versionados no Git.
 
 ### 2026-11-12 — CPython ARM64 executado no processo FFBE
 

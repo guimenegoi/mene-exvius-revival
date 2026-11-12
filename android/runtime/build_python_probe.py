@@ -75,14 +75,15 @@ def compile_probe(prefix: Path, ndk: Path, abi: str, output: Path) -> None:
         str(compiler), "-std=c11", "-O2", "-fPIC", "-shared",
         "-Wl,-z,relro", "-Wl,-z,now", f"-Wl,-soname,{SO}",
         "-I", str(headers), "-L", str(prefix / "lib"),
-        str(SOURCE), "-lpython3.14", "-landroid", "-llog", "-o", str(output),
+        str(SOURCE), str(SOURCE.parent / "native_assets.c"),
+        "-lpython3.14", "-landroid", "-llog", "-o", str(output),
     ]
     subprocess.run(command, check=True)
     verify_elf(output, abi)
 
 
 def embed_split(original: Path, output: Path, abi: str, native_so: Path,
-                python_so: Path) -> None:
+                python_so: Path, extra_libs: dict[str, Path] | None = None) -> None:
     """Preserve every original member and only add two ABI-matched libraries."""
     if output.exists():
         raise FileExistsError(f"Refusing to overwrite {output}")
@@ -94,6 +95,11 @@ def embed_split(original: Path, output: Path, abi: str, native_so: Path,
         f"lib/{abi}/{SO}": native_so.read_bytes(),
         f"lib/{abi}/{LIBPYTHON}": python_so.read_bytes(),
     }
+    for filename, source in (extra_libs or {}).items():
+        if filename not in {"libcrypto_python.so", "libssl_python.so", "libsqlite3_python.so"}:
+            raise ValueError("Unexpected Android Python dependency library")
+        verify_elf(source, abi)
+        new_members[f"lib/{abi}/{filename}"] = source.read_bytes()
     with zipfile.ZipFile(original) as src:
         names = src.namelist()
         if len(set(names)) != len(names) or any(n in names for n in new_members):
@@ -131,12 +137,17 @@ def main() -> None:
     parser.add_argument("--original-split", type=Path, required=True)
     parser.add_argument("--output-split", type=Path, required=True)
     parser.add_argument("--output-so", type=Path, required=True)
+    parser.add_argument("--extra-native-libs", action="store_true",
+                        help="embed official Python.org ssl/crypto/sqlite Android libs")
     args = parser.parse_args()
     verify_archive(args.python_archive, args.abi)
     compile_probe(args.python_prefix, args.ndk, args.abi, args.output_so)
+    extras = ({name: args.python_prefix / "lib" / name for name in
+               ("libcrypto_python.so", "libssl_python.so", "libsqlite3_python.so")}
+              if args.extra_native_libs else None)
     embed_split(
         args.original_split, args.output_split, args.abi,
-        args.output_so, args.python_prefix / "lib" / LIBPYTHON,
+        args.output_so, args.python_prefix / "lib" / LIBPYTHON, extras,
     )
     print("DEV PROBE ONLY: Python version/isolated-code test, no Revival server.")
 

@@ -91,23 +91,70 @@ A primeira tentativa com `ZIP_DEFLATED` falhou ao importar
 `encodings`, pois `zipimport` precisa de `zlib` para descompactar os
 módulos, e essa extensão nativa ainda não está disponível durante o startup.
 O ZIP **armazenado sem compressão** (cerca de 37,3 MB, 1.873 arquivos
-`.py`) corrigiu a inicialização. O tamanho é provisório; a integração
-completa deverá empacotar e carregar `lib-dynload` corretamente, com
-verificação de integridade, antes de otimizar o formato.
+`.py`) corrigiu a inicialização. O empacotador de laboratório agora acrescenta
+as 67 extensões oficiais de `lib-dynload` como assets e três bibliotecas
+auxiliares ao split ABI. O tamanho e os mecanismos de integridade ainda
+precisam ser refinados para produção.
+
+## Extensões nativas e código real do Revival — 12/11/2026
+
+A prova adicional verificou dentro do FFBE Android ARM64 os imports de
+`ssl`, `sqlite3`, `zlib`, `socket`, `hashlib` e `zipfile` (`PYTHON-NATIVE-IMPORTS-OK`).
+A biblioteca padrão permanece no ZIP de bootstrap; os 67 módulos nativos
+oficiais são extraídos para uma pasta privada com nomes restritos e
+permissão somente leitura. `libcrypto_python.so`, `libssl_python.so` e
+`libsqlite3_python.so` são incluídas no split ARM64 sem alterar `libgame.so`.
+
+O novo empacotador `package_engine_probe.py` acrescenta ao ZIP a árvore
+**versionada** de `ios-server/` e `source/server/`, junto do PyYAML 6.0.3
+**puro** extraído de um sdist verificado por SHA-256. O helper
+`ffbe_engine_bootstrap.py` instala arquivos na pasta privada usando manifesto
+SHA-256, arquivos temporários e substituição atômica, sem utilizar o diretório
+de saves. Foi validada a instalação incremental: uma segunda execução não
+reinstalou nenhum arquivo íntegro.
+
+Reprodução adicional (continuando após a geração do `stdlib.zip` e do
+`base-dex-unsigned.apk` descritos acima):
+
+```bash
+python3 android/runtime/build_python_probe.py --abi arm64-v8a \
+  --python-archive "$PYTHON_ARCHIVE" --python-prefix "$PYTHON_PREFIX" \
+  --ndk "$ANDROID_NDK" --original-split "$ORIGINAL_ARM64_SPLIT" \
+  --output-split "$TMP/arm64-with-native-unsigned.apk" \
+  --output-so "$TMP/libffbe_python_probe.so" --extra-native-libs
+
+python3 android/runtime/package_engine_probe.py --repo "$PWD" \
+  --pyyaml-sdist "$PY_YAML_603_TARBALL" \
+  --stdlib "$TMP/stdlib.zip" --out-stdlib "$TMP/stdlib-with-engine.zip" \
+  --python-archive "$PYTHON_ARCHIVE" --python-prefix "$PYTHON_PREFIX" \
+  --abi arm64-v8a --original-apk "$ORIGINAL_BASE_APK" \
+  --dex-apk "$TMP/dex-only.apk" --out-apk "$TMP/base-with-engine-unsigned.apk"
+```
+
+O sdist PyYAML 6.0.3 é obtido do PyPI e tem SHA-256
+`d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f`.
+O pacote incorpora a licença do PyYAML e não inclui dados de jogo de terceiros.
+Assine os dois APKs e use os demais splits de teste com o mesmo certificado.
+No Waydroid, o logcat deve registrar `PYTHON-REVIVAL-IMPORTS-OK`.
+
+**Prova obtida:** 172 fontes e recursos do Revival + PyYAML importados de dentro
+do processo do FFBE, após extração com SHA-256, incluindo `yaml`, `serve`
+e `capture_server`. A reabertura do jogo repetiu os imports. **Não houve**
+chamada a `serve.main()`, HTTP em `18080` ou acesso aos saves.
 
 ## Limites e pendências reais
 
-- O Python executou código dentro do FFBE, mas **não** roda
-  `ios-server/serve.py` nem `source/server/`. O listener 18081 não é o
-  backend Revival em 18080.
-- Falta incorporar os módulos de extensão e dependências do backend
-  (`cryptography`, `Pillow`, `PyYAML`, `tzdata`) com suas ABIs.
-- A extração da stdlib é de laboratório: confere comprimento do asset, mas
-  **ainda não verifica SHA-256 dentro do dispositivo**. O fluxo final exige
-  atualização atômica, integridade, isolamento de saves e recuperação.
-- O teste de inicialização ocorre no thread da Activity e mantém o
-  interpretador ativo até o processo encerrar. O backend real precisará
-  serviço/lifecycle próprio e start/stop/readiness seguros.
+- O Python **importa** os módulos de `ios-server/` e `source/server/`, mas
+  **não inicia o servidor**, que ainda precisa ser integrado ao ciclo de vida.
+  O listener Java 18081 continua sendo uma sonda, não o backend 18080.
+- A stdlib nativa e o PyYAML puro foram validados; as dependências Android
+  `cryptography`, `Pillow` e `tzdata` ainda não foram incorporadas e testadas.
+- A extração da stdlib e dos módulos `.so` ainda confere comprimento, **não
+  SHA-256** no dispositivo. Os 172 arquivos do motor têm SHA-256 e atualização
+  atômica, mas a entrega final precisa validar todos os assets e tratar falhas.
+- A inicialização/importação ocorre na thread da Activity e levou vários
+  segundos, inclusive com timeout visual na primeira abertura. O backend real
+  precisa iniciar em thread/serviço próprio, com start/stop/readiness seguros.
 - Waydroid hospeda o split ARM64; Android ARM64 físico e fluxo x86_64 real
   continuam pendentes.
 - Ainda não foram instalados os 19 pacotes completos no Android,
