@@ -17,10 +17,15 @@ from pathlib import Path, PurePosixPath
 MANIFEST = "ffbe_engine_manifest.json"
 ROOT = "ffbe_engine/"
 ALLOWED = ("ios-server/", "source/server/", "vendor/yaml/", "vendor/tzdata/",
-           "vendor/PIL/", "vendor/LICENSE-pillow.txt",
+           "vendor/PIL/", "vendor/cffi/", "vendor/cryptography/",
+           "vendor/pycparser/", "vendor/_cffi_backend.",
+           "vendor/LICENSE-pillow.txt", "vendor/LICENSE-cffi.txt",
+           "vendor/LICENSE-libffi.txt", "vendor/LICENSE-pycparser.txt",
+           "vendor/LICENSE-cryptography.txt", "vendor/LICENSE-cryptography-apache.txt",
+           "vendor/LICENSE-cryptography-bsd.txt",
            "vendor/LICENSE-pyyaml.txt", "vendor/LICENSE-tzdata.txt",
            "vendor/LICENSE-tzdata-apache.txt")
-MAX_FILES = 1000
+MAX_FILES = 1300
 MAX_FILE_SIZE = 24 * 1024 * 1024
 MAX_TOTAL = 128 * 1024 * 1024
 
@@ -147,6 +152,29 @@ def probe(archive: Path | None = None, target_root: Path | None = None) -> dict:
         with pil.open(stream) as image:
             assert image.size == (2, 2) and image.getpixel((0, 0)) == (16, 32, 64)
         imports.append("PIL")
+    if (target_root / "vendor/cryptography/__init__.py").is_file():
+        crypto = importlib.import_module("cryptography")
+        if not Path(crypto.__file__).resolve().is_relative_to(target_root.resolve()):
+            raise RuntimeError("cryptography not loaded from app-private bundle")
+        cffi = importlib.import_module("cffi")
+        pycparser = importlib.import_module("pycparser")
+        assert cffi.FFI and pycparser.c_parser
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        # Independent NIST SP 800-38A AES-128-CBC known-answer vector.
+        key = bytes.fromhex("2b7e151628aed2a6abf7158809cf4f3c")
+        iv = bytes.fromhex("000102030405060708090a0b0c0d0e0f")
+        plain = bytes.fromhex("6bc1bee22e409f96e93d7e117393172a")
+        expected = bytes.fromhex("7649abac8119b246cee98e9b12e9197d")
+        cipher = Cipher(algorithms.AES(key), modes.CBC(iv)).encryptor()
+        assert cipher.update(plain) + cipher.finalize() == expected
+        from ffbe_crypto import backend, key16, cbc_encrypt, cbc_decrypt
+        assert backend() == "cryptography"
+        ffbe_key = key16("FFBEKey8")
+        ffbe_plain = b"FFBE internal AES-128-CBC"
+        assert cbc_decrypt(ffbe_key, cbc_encrypt(ffbe_key, ffbe_plain)) == ffbe_plain
+        from cryptography import x509
+        assert x509.CertificateBuilder
+        imports.append("cryptography")
     serve = importlib.import_module("serve")
     capture = importlib.import_module("capture_server")
     if not callable(serve.configure_engine) or not hasattr(capture, "Handler"):

@@ -160,12 +160,13 @@ Java_com_mene_exvius_LocalPythonProbe_execute(JNIEnv *env, jclass unused,
         "import ffbe_engine_bootstrap\n"
         "_result = ffbe_engine_bootstrap.probe()\n"
         "assert 'PIL' in _result['imports']\n"
+        "assert 'cryptography' in _result['imports']\n"
     );
     if (engine_status) {
         __android_log_print(ANDROID_LOG_ERROR, TAG, "Revival source import-only probe failed");
         return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-IMPORT-FAILED");
     }
     __android_log_print(ANDROID_LOG_INFO, TAG,
-                        "Revival imports: yaml tzdata/zoneinfo Pillow PNG serve capture_server OK");
-    return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-PILLOW-OK");
+                        "Revival imports: yaml tzdata Pillow PNG CFFI cryptography AES x509 serve capture_server OK");
+    return (*env)->NewStringUTF(env, "PYTHON-REVIVAL-CRYPTO-OK");
 }

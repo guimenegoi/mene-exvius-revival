@@ -137,6 +137,70 @@ class EngineBundleTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Android wheel tag"):
                 package_engine_probe.native_pillow(wheel, "x86_64")
 
+    def test_android_crypto_and_cffi_wheels_are_validated(self):
+        from test_python_probe import fake_elf
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            crypto = root / "cryptography-50.0.2-cp314-abi3-android_24_arm64_v8a.whl"
+            with zipfile.ZipFile(crypto, "w") as zf:
+                zf.writestr("cryptography-50.0.2.dist-info/WHEEL",
+                            "Wheel-Version: 1.0\nTag: cp314-abi3-android_24_arm64_v8a\n")
+                zf.writestr("cryptography/__init__.py", b"")
+                zf.writestr("cryptography/hazmat/bindings/_rust.abi3.so",
+                            fake_elf(183))
+                for name in ("LICENSE", "LICENSE.APACHE", "LICENSE.BSD"):
+                    zf.writestr("cryptography-50.0.2.dist-info/licenses/" + name,
+                                b"copyright")
+            result = package_engine_probe.native_cryptography(crypto, "arm64-v8a")
+            self.assertEqual(len(result), 5)
+            with self.assertRaisesRegex(ValueError, "Android wheel tag"):
+                package_engine_probe.native_cryptography(crypto, "x86_64")
+
+            cffi = root / "cffi-2.1.1-cp314-cp314-android_24_arm64_v8a.whl"
+            with zipfile.ZipFile(cffi, "w") as zf:
+                zf.writestr("cffi-2.1.1.dist-info/WHEEL",
+                            "Wheel-Version: 1.0\nTag: cp314-cp314-android_24_arm64_v8a\n")
+                zf.writestr("cffi/__init__.py", b"")
+                zf.writestr("_cffi_backend.cpython-314-aarch64-linux-android.so",
+                            fake_elf(183))
+                zf.writestr("cffi-2.1.1.dist-info/licenses/LICENSE", b"copyright")
+            bundled = package_engine_probe.native_cffi(cffi, "arm64-v8a")
+            self.assertEqual(len(bundled), 3)
+            self.assertTrue(all(embedded_engine.validate_relative(k) for k in bundled))
+            archive = root / "stdlib.zip"
+            make_archive(archive, {**result, **bundled})
+            engine = root / "engine"
+            self.assertEqual(embedded_engine.install(archive, engine), 8)
+            self.assertEqual(embedded_engine.install(archive, engine), 0)
+            rust = engine / "vendor/cryptography/hazmat/bindings/_rust.abi3.so"
+            self.assertEqual(rust.stat().st_mode & 0o777, 0o400)
+
+    def test_crypto_requires_complete_cffi_dependency_chain(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with patch.object(package_engine_probe, "git_tracked_engine",
+                              return_value={"ios-server/serve.py": b"stub"}), \
+                 patch.object(package_engine_probe, "pure_yaml",
+                              return_value={"vendor/yaml/__init__.py": b"stub"}):
+                with self.assertRaisesRegex(ValueError, "requires CFFI"):
+                    package_engine_probe.package_engine(
+                        root, root / "fake.tar.gz", root / "stdlib.zip",
+                        root / "out.zip", crypto_wheel=root / "crypto.whl",
+                    )
+            self.assertFalse((root / "out.zip").exists())
+
+    def test_pinned_pycparser_and_libffi_reject_tampering(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            p = root / "pycparser-3.12-py3-none-any.whl"
+            p.write_bytes(b"tampered")
+            with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+                package_engine_probe.pure_pycparser(p)
+            lib = root / "libffi-3.5.2.tar.gz"
+            lib.write_bytes(b"tampered")
+            with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+                package_engine_probe.libffi_license(lib)
+
     def test_py_yaml_hash_guard(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "pyyaml-6.0.3.tar.gz"

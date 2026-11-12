@@ -107,8 +107,10 @@ permissão somente leitura. `libcrypto_python.so`, `libssl_python.so` e
 
 O novo empacotador `package_engine_probe.py` acrescenta ao ZIP a árvore
 **versionada** de `ios-server/` e `source/server/`, junto do PyYAML 6.0.3
-**puro** extraído de um sdist e do `tzdata` 2026.6 (wheel universal),
-ambos verificados por SHA-256. O helper
+**puro** extraído de um sdist, `tzdata` 2026.6, Pillow 13.0.0,
+cryptography 50.0.2, cffi 2.1.1 e pycparser 3.12. As wheels nativas
+ARM64 foram compiladas no Actions do fork com fontes SHA-256 fixadas.
+O helper
 `ffbe_engine_bootstrap.py` instala arquivos na pasta privada usando manifesto
 SHA-256, arquivos temporários e substituição atômica, sem utilizar o diretório
 de saves. Foi validada a instalação incremental: uma segunda execução não
@@ -128,6 +130,10 @@ python3 android/runtime/package_engine_probe.py --repo "$PWD" \
   --pyyaml-sdist "$PY_YAML_603_TARBALL" \
   --tzdata-wheel "$TZDATA_2026_6_WHEEL" \
   --pillow-wheel "$PILLOW_13_CP314_ANDROID_ARM64_WHEEL" \
+  --crypto-wheel "$CRYPTO_50_CP314_ANDROID_ARM64_WHEEL" \
+  --cffi-wheel "$CFFI_211_CP314_ANDROID_ARM64_WHEEL" \
+  --pycparser-wheel "$PYC_PARSER_312_WHEEL" \
+  --libffi-sdist "$LIBFFI_352_TARBALL" \
   --stdlib "$TMP/stdlib.zip" --out-stdlib "$TMP/stdlib-with-engine.zip" \
   --python-archive "$PYTHON_ARCHIVE" --python-prefix "$PYTHON_PREFIX" \
   --abi arm64-v8a --original-apk "$ORIGINAL_BASE_APK" \
@@ -138,34 +144,39 @@ O sdist PyYAML 6.0.3 é obtido do PyPI e tem SHA-256
 `d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f`.
 A wheel universal `tzdata-2026.6-py2.py3-none-any.whl` tem SHA-256
 `0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec`.
-Ambos os pacotes são obtidos do PyPI e suas licenças são incorporadas.
-Não são incluídos dados de jogo de terceiros.
-Assine os dois APKs e use os demais splits de teste com o mesmo certificado.
-No Waydroid, com a wheel ARM64 de Pillow incorporada, o logcat deve registrar
-`PYTHON-REVIVAL-PILLOW-OK`.
+As wheels puras são obtidas do PyPI. O `pycparser-3.12-py3-none-any.whl`
+tem SHA-256 `a076f3f489b39b43ed13563a1dafe42447445bec2e294154ec5c57fcdda4c85e`;
+o tarball `libffi-3.5.2.tar.gz` tem SHA-256
+`f3a3082a23b37c293a4fcd1053147b371f2ff91fa7ea1b2a52e335676bac82dc`.
+As licenças de todas as dependências (incluindo libffi estática) são
+empacotadas. Não são incluídos dados de jogo de terceiros.
 
-**Prova obtida:** **912 arquivos** do Revival + PyYAML + `tzdata` + Pillow
-ARM64, extraídos com SHA-256. Incluem `yaml`, `tzdata`, `zoneinfo`,
-`PIL.Image`, `serve` e `capture_server`. Foram validados o fuso
-`America/Sao_Paulo` e a criação, gravação e reabertura de PNG em memória
-no processo Android do FFBE. A segunda abertura repetiu os testes.
-A wheel de Pillow 13.0.0 foi compilada no [Actions do fork](https://github.com/guimenegoi/mene-exvius-revival/actions/runs/43233327397)
-com libjpeg-turbo 3.2.1 estática, e validada por tag/ELF. A licença do
-Pillow é incorporada ao pacote. **Não houve**
-chamada a `serve.main()`, HTTP em `18080` ou acesso aos saves.
+A compilação ARM64 de Pillow foi [aprovada no Actions](https://github.com/guimenegoi/mene-exvius-revival/actions/runs/43233327397);
+cryptography (com `libpython3.14.so` em `DT_NEEDED`) foi [aprovada aqui](https://github.com/guimenegoi/mene-exvius-revival/actions/runs/43242186148)
+e CFFI com libffi estática [aqui](https://github.com/guimenegoi/mene-exvius-revival/actions/runs/43239493938).
+As wheels são artefatos temporários, não releases. Assine os dois APKs
+experimentais e use os demais splits com o mesmo certificado.
+
+**Prova obtida:** **1.063 arquivos / 93.764.953 bytes** do Revival e
+dependências, extraídos com manifesto SHA-256 para o armazenamento privado.
+No Waydroid ARM64, o logcat confirmou `PYTHON-REVIVAL-CRYPTO-OK`, após
+executar fuso horário, PNG em memória, NIST AES-128-CBC, cifrar/decifrar
+com `ffbe_crypto` e importar X.509, `serve` e `capture_server`.
+A reabertura repetiu as provas. **Não houve** chamada a `serve.main()`,
+HTTP Revival em `18080` ou gravação de saves.
 
 ## Limites e pendências reais
 
 - O Python **importa** os módulos de `ios-server/` e `source/server/`, mas
   **não inicia o servidor**, que ainda precisa ser integrado ao ciclo de vida.
   O listener Java 18081 continua sendo uma sonda, não o backend 18080.
-- A stdlib nativa, PyYAML, `tzdata` e **Pillow ARM64** foram validados.
-  `cryptography` ainda exige build Android compatível com **CPython 3.14**;
-  no primeiro cross-build, o Rust/CFFI não encontrou `Python.h` no include
-  do compilador. O índice Chaquopy consultado em 12/11/2026 oferece
-  wheels anteriores, mas não uma substituição cp314 válida.
+- A stdlib nativa, PyYAML, tzdata, Pillow, cryptography, cffi e pycparser
+  foram validados **em ARM64 no Waydroid**. Faltam os builds e testes reais
+  em x86_64 e um dispositivo ARM64 físico. X.509 importou, mas a emissão
+  de certificados ainda não foi comprovada. O OpenSSL indicou ausência de
+  seu *legacy provider*; AES-128-CBC passou no teste.
 - A extração da stdlib e dos módulos `.so` ainda confere comprimento, **não
-  SHA-256** no dispositivo. Os **912 arquivos** do motor e das dependências
+  SHA-256** no dispositivo. Os **1.063 arquivos** do motor e das dependências
   já empacotadas têm SHA-256 e atualização atômica, mas a entrega final precisa
   validar todos os assets e tratar falhas.
 - A inicialização/importação ocorre na thread da Activity e levou vários

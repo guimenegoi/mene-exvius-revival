@@ -33,17 +33,22 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       `America/Sao_Paulo` **com dados internos do APK**, inclusive após reabrir.
 - [x] Compilar **Pillow 13.0.0** para CPython 3.14 / Android ARM64;
       verificar wheel e ELF; incorporar ao APK e confirmar PNG gerado/reaberto
-      em memória no processo FFBE, inclusive após reinício. Pacote atual:
-      **912 arquivos** (Revival, PyYAML, tzdata e Pillow), com SHA-256.
-      **Somente importação**: backend e runtime final ainda não iniciam.
+      em memória no processo FFBE, inclusive após reinício.
+- [x] Compilar **cryptography 50.0.2**, **cffi 2.1.1** (libffi 3.5.2
+      estática) e empacotar pycparser 3.12 para Android ARM64/CPython 3.14.
+      Validar NIST AES-128-CBC, o cifrador real `ffbe_crypto` e imports de
+      X.509 **no processo FFBE, também após reabrir**. Pacote atual:
+      **1.063 arquivos** (Revival e dependências), com SHA-256.
+      **Servidor e jogo offline ainda não iniciados.**
 - [ ] Instalar/verificar os 19 pacotes **reais** no Android; confirmar os arquivos
       de tutorial, mapa, áudio e combate no armazenamento privado do cliente.
 - [ ] Verificar escrita, atualização e preservação de saves no layout real ARM64.
 - [ ] Empacotar runtime CPython incorporado, stdlib e dependências
       `cryptography`, `Pillow`, `PyYAML`, `tzdata` para x86_64 e ARM64.
-      **Já validados em ARM64:** CPython, stdlib, PyYAML, tzdata e Pillow.
-      **Bloqueadores:** build Android CPython 3.14 de `cryptography` e
-      execução da pilha inteira em x86_64 e Android ARM64 físico.
+      **Já validados em ARM64 no Waydroid:** CPython, stdlib, PyYAML,
+      tzdata, Pillow, cryptography, cffi e pycparser.
+      **Pendentes:** build e execução da pilha em x86_64, testes em Android
+      ARM64 físico e inicialização do servidor real.
 - [ ] Integrar inicialização/desligamento do **motor Revival real** ao ciclo de
       vida do FFBE, com diagnóstico de readiness e falha segura.
 - [ ] Tirar extração/importações da thread principal da Activity; no teste
@@ -76,6 +81,39 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       depois do primeiro APK offline realmente jogável.
 
 ## Registro de execução
+
+### 2026-11-12 — cryptography e CFFI ARM64 importados dentro do FFBE
+
+- [Build cryptography ARM64 + Python.h](https://github.com/guimenegoi/mene-exvius-revival/actions/runs/43237677799)
+  e [build cffi ARM64 com libffi estática](https://github.com/guimenegoi/mene-exvius-revival/actions/runs/43239493938)
+  passaram para CPython 3.14; libffi 3.5.2, cffi 2.1.1 e cryptography 50.0.2
+  foram fixados por versão e fonte SHA-256 no workflow manual.
+- A primeira wheel Rust falhou no Android com `PyExc_ValueError` indefinido:
+  não continha `libpython3.14.so` em `DT_NEEDED`. Corrigidas as flags
+  específicas de linkedição Cargo. O [build ARM64 corrigido](https://github.com/guimenegoi/mene-exvius-revival/actions/runs/43242186148)
+  passou e `llvm-readelf` confirmou `libpython3.14.so`, `libssl_python.so`
+  e `libcrypto_python.so` declaradas na extensão Rust.
+- Empacotadas também a wheel pura pycparser 3.12 e as licenças
+  cryptography, CFFI, libffi e pycparser. Pacote completo:
+  **1.063 arquivos, 93.764.953 bytes** sob manifesto SHA-256, instalado na
+  pasta privada do FFBE. Primeira extração e segunda passagem incremental
+  passaram no teste Linux; o arquivo original `libgame.so` não foi alterado.
+- **Waydroid Android 13:** `PYTHON-REVIVAL-CRYPTO-OK` apareceu no
+  processo FFBE após cálculo AES-128-CBC contra o vetor NIST SP 800-38A,
+  cifrar/decifrar via `ffbe_crypto` com backend `cryptography`, imports
+  de CFFI, pycparser, X.509, Pillow PNG e módulos Revival. Segunda abertura
+  repetiu a prova, sem instalar novamente o aplicativo.
+- **40 testes de runtime** aprovados; regressões de transporte, dados
+  e smoke test precisam ser reexecutadas no fechamento desta alteração.
+- O OpenSSL emitiu aviso de indisponibilidade do *legacy provider*;
+  AES-128-CBC passou, mas o uso de algoritmos legados precisa de auditoria.
+  **X.509 foi importado, mas emissão de certificados ainda não testada.**
+- A inicialização continua na thread da Activity e disparou aviso de timeout.
+  O HTTP Revival real em `18080` **não** foi iniciado, assim como os 19 pacotes
+  completos não foram testados em gameplay offline. Cliente de laboratório
+  anterior restaurado no Waydroid sem limpar dados.
+- O gate CI de `DT_NEEDED libpython3.14.so` foi testado contra a wheel
+  antiga (rejeitada) e a corrigida (aceita), impedindo regressões futuras.
 
 ### 2026-11-12 — build verificável de wheels nativas Android (em validação)
 

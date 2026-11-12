@@ -24,6 +24,8 @@ from package_stdlib_probe import embed_asset, native_assets, NATIVE_INDEX, NATIV
 PY_YAML_SHA256 = "d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f"
 PY_YAML_PREFIX = "pyyaml-6.0.3/lib/yaml/"
 TZDATA_SHA256 = "0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec"
+PYC_PARSER_SHA256 = "a076f3f489b39b43ed13563a1dafe42447445bec2e294154ec5c57fcdda4c85e"
+LIBFFI_352_SHA256 = "f3a3082a23b37c293a4fcd1053147b371f2ff91fa7ea1b2a52e335676bac82dc"
 TZDATA_LICENSES = {
     "tzdata-2026.6.dist-info/licenses/LICENSE": "vendor/LICENSE-tzdata.txt",
     "tzdata-2026.6.dist-info/licenses/licenses/LICENSE_APACHE":
@@ -148,11 +150,129 @@ def native_pillow(wheel: Path, abi: str) -> dict[str, bytes]:
     return result
 
 
+def native_cryptography(wheel: Path, abi: str) -> dict[str, bytes]:
+    """Copy the verified Android Rust extension, Python package and licenses."""
+    check_wheel(wheel, "cryptography", abi)
+    result = {}
+    licenses = {
+        "LICENSE": "vendor/LICENSE-cryptography.txt",
+        "LICENSE.APACHE": "vendor/LICENSE-cryptography-apache.txt",
+        "LICENSE.BSD": "vendor/LICENSE-cryptography-bsd.txt",
+    }
+    with zipfile.ZipFile(wheel) as source:
+        for member in source.infolist():
+            if member.is_dir():
+                continue
+            if stat.S_IFMT(member.external_attr >> 16) == stat.S_IFLNK:
+                raise ValueError("Symlink in cryptography wheel")
+            if member.filename.startswith("cryptography/"):
+                name = "vendor/" + member.filename
+            else:
+                name = licenses.get(member.filename.removeprefix(
+                    "cryptography-50.0.2.dist-info/licenses/"
+                )) if member.filename.startswith(
+                    "cryptography-50.0.2.dist-info/licenses/"
+                ) else None
+            if name is None:
+                continue
+            validate_relative(name)
+            if member.file_size > MAX_FILE_SIZE:
+                raise ValueError("Oversized cryptography wheel file")
+            result[name] = source.read(member)
+    mandatory = {"vendor/cryptography/__init__.py",
+                 "vendor/cryptography/hazmat/bindings/_rust.abi3.so",
+                 *licenses.values()}
+    if not mandatory.issubset(result):
+        raise ValueError("Incomplete cryptography Android package")
+    return result
+
+
+def native_cffi(wheel: Path, abi: str) -> dict[str, bytes]:
+    """Bundle CFFI, including its top-level CPython extension, with licensing."""
+    check_wheel(wheel, "cffi", abi)
+    result = {}
+    with zipfile.ZipFile(wheel) as source:
+        for member in source.infolist():
+            if member.is_dir():
+                continue
+            if stat.S_IFMT(member.external_attr >> 16) == stat.S_IFLNK:
+                raise ValueError("Symlink in CFFI wheel")
+            if member.filename.startswith("cffi/"):
+                name = "vendor/" + member.filename
+            elif (member.filename.startswith("_cffi_backend.")
+                  and member.filename.endswith(".so")):
+                name = "vendor/" + member.filename
+            elif member.filename == "cffi-2.1.1.dist-info/licenses/LICENSE":
+                name = "vendor/LICENSE-cffi.txt"
+            else:
+                continue
+            validate_relative(name)
+            if member.file_size > MAX_FILE_SIZE:
+                raise ValueError("Oversized CFFI wheel file")
+            result[name] = source.read(member)
+    if not {"vendor/cffi/__init__.py", "vendor/LICENSE-cffi.txt"}.issubset(result):
+        raise ValueError("Incomplete CFFI package")
+    if not any(name.startswith("vendor/_cffi_backend.") and name.endswith(".so")
+               for name in result):
+        raise ValueError("Missing CFFI native backend")
+    return result
+
+
+def pure_pycparser(wheel: Path) -> dict[str, bytes]:
+    """Load the pinned universal pycparser dependency (with its license)."""
+    if wheel.name != "pycparser-3.12-py3-none-any.whl" or (
+        hashlib.sha256(wheel.read_bytes()).hexdigest() != PYC_PARSER_SHA256
+    ):
+        raise ValueError("pycparser 3.12 wheel SHA-256 mismatch")
+    result = {}
+    with zipfile.ZipFile(wheel) as source:
+        names = source.namelist()
+        if len(names) != len(set(names)):
+            raise ValueError("Duplicate pycparser wheel members")
+        for member in source.infolist():
+            if member.is_dir():
+                continue
+            if stat.S_IFMT(member.external_attr >> 16) == stat.S_IFLNK:
+                raise ValueError("Symlink in pycparser wheel")
+            if member.filename.startswith("pycparser/"):
+                name = "vendor/" + member.filename
+            elif member.filename == "pycparser-3.12.dist-info/licenses/LICENSE":
+                name = "vendor/LICENSE-pycparser.txt"
+            else:
+                continue
+            validate_relative(name)
+            if member.file_size > MAX_FILE_SIZE:
+                raise ValueError("Oversized pycparser wheel file")
+            result[name] = source.read(member)
+    if not {"vendor/pycparser/__init__.py",
+            "vendor/LICENSE-pycparser.txt"}.issubset(result):
+        raise ValueError("Incomplete pycparser wheel")
+    return result
+
+
+def libffi_license(sdist: Path) -> dict[str, bytes]:
+    """Include the license of statically linked libffi 3.5.2."""
+    if hashlib.sha256(sdist.read_bytes()).hexdigest() != LIBFFI_352_SHA256:
+        raise ValueError("libffi 3.5.2 source SHA-256 mismatch")
+    with tarfile.open(sdist, "r:gz") as source:
+        member = source.getmember("libffi-3.5.2/LICENSE")
+        if not member.isfile() or member.size > 65536:
+            raise ValueError("libffi license invalid")
+        stream = source.extractfile(member)
+        if stream is None:
+            raise ValueError("libffi license missing")
+        return {"vendor/LICENSE-libffi.txt": stream.read()}
+
+
 def package_engine(repository: Path, pyyaml_sdist: Path,
                    original_stdlib: Path, output: Path,
                    tzdata_wheel: Path | None = None,
                    pillow_wheel: Path | None = None,
-                   abi: str = "arm64-v8a") -> dict[str, int]:
+                   abi: str = "arm64-v8a",
+                   crypto_wheel: Path | None = None,
+                   cffi_wheel: Path | None = None,
+                   pycparser_wheel: Path | None = None,
+                   libffi_sdist: Path | None = None) -> dict[str, int]:
     if output.exists():
         raise FileExistsError(output)
     data = git_tracked_engine(repository)
@@ -161,6 +281,14 @@ def package_engine(repository: Path, pyyaml_sdist: Path,
         data.update(pure_tzdata(tzdata_wheel))
     if pillow_wheel is not None:
         data.update(native_pillow(pillow_wheel, abi))
+    crypto_parts = (crypto_wheel, cffi_wheel, pycparser_wheel, libffi_sdist)
+    if any(part is not None for part in crypto_parts):
+        if any(part is None for part in crypto_parts):
+            raise ValueError("cryptography requires CFFI, pycparser and libffi license")
+        data.update(native_cryptography(crypto_wheel, abi))
+        data.update(native_cffi(cffi_wheel, abi))
+        data.update(pure_pycparser(pycparser_wheel))
+        data.update(libffi_license(libffi_sdist))
     if len(data) > MAX_FILES or sum(map(len, data.values())) > MAX_TOTAL:
         raise ValueError("Revival source bundle exceeds limits")
     manifest = {
@@ -209,6 +337,14 @@ def main() -> None:
                         help="pinned tzdata 2026.6 pure-Python wheel")
     parser.add_argument("--pillow-wheel", type=Path,
                         help="validated Pillow 13.0.0 CPython 3.14 Android wheel")
+    parser.add_argument("--crypto-wheel", type=Path,
+                        help="cryptography 50.0.2 Android ARM64 wheel")
+    parser.add_argument("--cffi-wheel", type=Path,
+                        help="CFFI 2.1.1 Android wheel")
+    parser.add_argument("--pycparser-wheel", type=Path,
+                        help="pinned pycparser 3.12 universal wheel")
+    parser.add_argument("--libffi-sdist", type=Path,
+                        help="pinned libffi 3.5.2 source for license")
     parser.add_argument("--stdlib", type=Path, required=True)
     parser.add_argument("--out-stdlib", type=Path, required=True)
     parser.add_argument("--python-archive", type=Path, required=True)
@@ -221,7 +357,9 @@ def main() -> None:
     verify_archive(args.python_archive, args.abi)
     result = package_engine(args.repo, args.pyyaml_sdist,
                             args.stdlib, args.out_stdlib, args.tzdata_wheel,
-                            args.pillow_wheel, args.abi)
+                            args.pillow_wheel, args.abi,
+                            args.crypto_wheel, args.cffi_wheel,
+                            args.pycparser_wheel, args.libffi_sdist)
     embed_asset(args.original_apk, args.dex_apk, args.out_apk,
                 args.out_stdlib, native_assets(args.python_prefix, args.abi))
     print("Tracked Revival files:", result["engine_files"],

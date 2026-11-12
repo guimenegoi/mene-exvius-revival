@@ -208,6 +208,19 @@ jobs:
           esac
           python android/runtime/verify_dependency_wheel.py \
             --wheel "${wheels[0]}" --package "$PACKAGE" --abi "$ABI"
+          if [ "$PACKAGE" = cryptography ]; then
+            # Android dlopen can't resolve CPython ABI symbols from a wheel
+            # which omits an explicit DT_NEEDED for libpython3.14.so.
+            python - "${wheels[0]}" "$RUNNER_TEMP/ffbe-rust.so" <<'PY'
+          import sys
+          import zipfile
+          with zipfile.ZipFile(sys.argv[1]) as source:
+              with open(sys.argv[2], "wb") as output:
+                  output.write(source.read("cryptography/hazmat/bindings/_rust.abi3.so"))
+          PY
+            "$ANDROID_HOME/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf" \
+              -d "$RUNNER_TEMP/ffbe-rust.so" | grep -F 'Shared library: [libpython3.14.so]'
+          fi
       - name: Upload wheel for isolated Android integration tests
         uses: actions/upload-artifact@v4
         with:
