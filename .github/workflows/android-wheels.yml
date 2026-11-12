@@ -117,15 +117,33 @@ jobs:
             # Keep the FFBE probe dependency-minimal, as its iOS build does.
             export CIBW_CONFIG_SETTINGS="raqm=disable imagequant=disable platform-guessing=disable"
             case "$TARGET_ABI" in
-              arm64_v8a) NDK_TRIPLE=aarch64-linux-android ;;
-              x86_64) NDK_TRIPLE=x86_64-linux-android ;;
+              arm64_v8a) NDK_TRIPLE=aarch64-linux-android; NDK_ABI=arm64-v8a ;;
+              x86_64) NDK_TRIPLE=x86_64-linux-android; NDK_ABI=x86_64 ;;
               *) exit 2 ;;
             esac
             # The Android cross-build overwrites CFLAGS and LDFLAGS.
             # Pillow's own setup.py explicitly scans C_INCLUDE_PATH and
             # LIBRARY_PATH for the NDK's zlib.h and libz.so.
             SYSROOT="$ANDROID_HOME/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
-            export CIBW_ENVIRONMENT="C_INCLUDE_PATH=$SYSROOT/usr/include LIBRARY_PATH=$SYSROOT/usr/lib/$NDK_TRIPLE/24"
+            NDK="$ANDROID_HOME/ndk/27.3.13750724"
+            JPEG_SOURCE="source/libjpeg-turbo-3.2.1.tar.gz"
+            curl -fsSL --retry 2 \
+              "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.1/libjpeg-turbo-3.2.1.tar.gz" \
+              -o "$JPEG_SOURCE"
+            echo "c27ad72a68da151177929aa969ae773a2da5ac2af9ce946079314fdac8cece7f  $JPEG_SOURCE" | sha256sum -c -
+            tar -xzf "$JPEG_SOURCE" -C source
+            cmake -S source/libjpeg-turbo-3.2.1 -B build/libjpeg-turbo \
+              -DCMAKE_TOOLCHAIN_FILE="$NDK/build/cmake/android.toolchain.cmake" \
+              -DANDROID_ABI="$NDK_ABI" -DANDROID_PLATFORM=android-24 \
+              -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/ffbe-deps" \
+              -DCMAKE_INSTALL_LIBDIR=lib -DENABLE_STATIC=ON -DENABLE_SHARED=OFF \
+              -DWITH_SIMD=OFF -DWITH_TURBOJPEG=OFF -DWITH_TOOLS=OFF -DWITH_TESTS=OFF
+            cmake --build build/libjpeg-turbo --parallel 2
+            cmake --install build/libjpeg-turbo
+            test -f "$GITHUB_WORKSPACE/ffbe-deps/include/jpeglib.h"
+            test -f "$GITHUB_WORKSPACE/ffbe-deps/lib/libjpeg.a"
+            # Pillow already reads JPEG_ROOT, C_INCLUDE_PATH and LIBRARY_PATH.
+            export CIBW_ENVIRONMENT="JPEG_ROOT=$GITHUB_WORKSPACE/ffbe-deps C_INCLUDE_PATH=$SYSROOT/usr/include LIBRARY_PATH=$SYSROOT/usr/lib/$NDK_TRIPLE/24"
           fi
           python -m cibuildwheel --platform android --output-dir wheelhouse "source/$PACKAGE-$VERSION"
       - name: Validate Android wheel tags and ELF architecture
