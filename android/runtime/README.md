@@ -55,6 +55,8 @@ python3 android/network/patch_transport.py --apk "$ORIGINAL_BASE_APK" --decoded 
 python3 android/runtime/patch_bootstrap_probe.py --apk "$ORIGINAL_BASE_APK" --decoded "$TMP/decoded"
 python3 android/runtime/patch_python_probe.py --apk "$ORIGINAL_BASE_APK" --decoded "$TMP/decoded"
 python3 android/runtime/patch_python_execute.py --apk "$ORIGINAL_BASE_APK" --decoded "$TMP/decoded"
+# Teste atual: mover o JNI para uma thread Java privada, sem mudar o servidor.
+python3 android/runtime/patch_async_python.py --apk "$ORIGINAL_BASE_APK" --decoded "$TMP/decoded"
 
 java -jar apktool_3.0.3.jar b -o "$TMP/rebuilt.apk" "$TMP/decoded"
 python3 android/network/assemble_test_apk.py --apk "$ORIGINAL_BASE_APK" \
@@ -165,6 +167,38 @@ com `ffbe_crypto` e importar X.509, `serve` e `capture_server`.
 A reabertura repetiu as provas. **Não houve** chamada a `serve.main()`,
 HTTP Revival em `18080` ou gravação de saves.
 
+## Worker Java de inicialização — 12/11/2026
+
+O patch incremental `patch_async_python.py` transforma a **mesma** sonda
+JNI que já executava `Py_InitializeFromConfig` na thread principal em um
+`Runnable` chamado `FFBE-Python`. O `Lapis.onCreate` apenas agenda
+`startAsync(Context)`; o worker carrega as mesmas bibliotecas nativas,
+extrai/verifica os recursos e importa o backend do Revival.
+
+O patch usa `getApplicationContext()`, flag `synchronized` para impedir
+inicialização concorrente no processo e captura de exceções de criação.
+Requer que `patch_python_execute.py` já tenha sido aplicado à árvore smali
+decodificada. Não altera `libgame.so`, os saves, o transporte nem o JNI.
+O `classes.dex` e `classes3.dex` são os únicos DEX modificados.
+
+**Prova Waydroid:**
+- `Lapis.onCreate()` retornou na thread principal `8073/8073` às
+  **16:11:03.719**, enquanto `async worker started` apareceu em
+  `8073/8124` no mesmo instante.
+- `PYTHON-REVIVAL-CRYPTO-OK` apareceu em `8073/8124` às
+  **16:11:18.444**. A conclusão dos imports/AES não bloqueou a Activity.
+- Após `am force-stop`, segundo lançamento: thread UI `8322/8322`;
+  worker `8322/8371`; prova AES concluída às **16:12:10.956**.
+- Nenhum ANR ou timeout de lançamento foi encontrado nos logs examinados.
+  A instalação de referência foi restaurada sem limpar dados.
+- **45 testes de runtime** incluem os cinco contratos adicionais do patch;
+  os antigos modos e arquivos originais continuam preservados.
+
+**Limite:** isso ainda não é o lifecycle de produção. O worker termina
+após a prova; faltam inicialização e encerramento do motor real,
+readiness na porta 18080, controle da GIL, tratamento de reinício e
+dados completos do jogo.
+
 ## Limites e pendências reais
 
 - O Python **importa** os módulos de `ios-server/` e `source/server/`, mas
@@ -179,9 +213,9 @@ HTTP Revival em `18080` ou gravação de saves.
   SHA-256** no dispositivo. Os **1.063 arquivos** do motor e das dependências
   já empacotadas têm SHA-256 e atualização atômica, mas a entrega final precisa
   validar todos os assets e tratar falhas.
-- A inicialização/importação ocorre na thread da Activity e levou vários
-  segundos, inclusive com timeout visual na primeira abertura. O backend real
-  precisa iniciar em thread/serviço próprio, com start/stop/readiness seguros.
+- A inicialização/importação foi movida para a thread Java `FFBE-Python`
+  **somente no APK de prova**, sem bloquear a abertura. O backend real ainda
+  precisa de start/stop/readiness, tratamento da GIL e ciclo de vida robusto.
 - Waydroid hospeda o split ARM64; Android ARM64 físico e fluxo x86_64 real
   continuam pendentes.
 - Ainda não foram instalados os 19 pacotes completos no Android,

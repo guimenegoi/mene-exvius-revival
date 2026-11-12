@@ -51,8 +51,11 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       ARM64 físico e inicialização do servidor real.
 - [ ] Integrar inicialização/desligamento do **motor Revival real** ao ciclo de
       vida do FFBE, com diagnóstico de readiness e falha segura.
-- [ ] Tirar extração/importações da thread principal da Activity; no teste
-      de laboratório a abertura ficou lenta e houve aviso de timeout Android.
+- [x] Tirar extração/importações da thread principal da Activity **na prova
+      de laboratório**: worker Java `FFBE-Python`, usando o Context da
+      aplicação e guarda de inicialização única; início e imports confirmados
+      em TID diferente da UI, incluindo AES após reiniciar, sem timeout no log.
+      **Pendente para produção:** serviço, readiness, stop e servidor real.
 - [ ] Integrar o instalador de dados ao mesmo APK (sem acesso ao armazenamento
       privado por outro app).
 - [ ] Produzir APK assinado para testes com cliente, runtime e instalador
@@ -81,6 +84,30 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       depois do primeiro APK offline realmente jogável.
 
 ## Registro de execução
+
+### 2026-11-12 — inicialização CPython fora da thread da Activity
+
+- Patch incremental `android/runtime/patch_async_python.py` reaproveita a
+  ponte JNI aprovada; troca somente `runDemo(Context)` síncrono por
+  `startAsync(Context)` em `Lapis.onCreate`, cria `LocalPythonWorker.smali`
+  com `Runnable` e usa `getApplicationContext()` para não reter a Activity.
+- O agendamento é `synchronized`, protegido por flag de execução única no
+  processo; se a criação da thread falhar, a flag é restaurada. A execução
+  de Python e de criptografia continua dentro da biblioteca JNI existente.
+- Waydroid: `Lapis.onCreate()` no PID/TID `8073/8073` às 16:11:03.719;
+  o worker iniciou em `8073/8124` no mesmo instante; imports concluídos
+  às 16:11:18.444 com `PYTHON-REVIVAL-CRYPTO-OK`. **Não bloqueou a Activity.**
+- Segundo lançamento após `force-stop`: Activity `8322/8322` e worker
+  `8322/8371` às 16:12:00.654, com `PYTHON-REVIVAL-CRYPTO-OK` às
+  16:12:10.956. Sem ANR ou timeout de lançamento no log inspecionado.
+- APK recomposto com **apenas `classes.dex` e `classes3.dex` alterados**,
+  mais os 69 assets de Python; comparação de preservação aprovada,
+  `libgame.so` intocada e assinatura de teste verificada.
+- **45 testes de runtime** aprovados, inclusive os 5 contratos novos de
+  thread, contexto, guarda duplicada e preservação do patch aprovado.
+- Cliente de transporte de laboratório restaurado após o teste, usando
+  `install-multiple -r` sem limpar dados. **Ainda não** há servidor real
+  em 18080, lifecycle de produção, 19 pacotes completos ou jogo offline.
 
 ### 2026-11-12 — cryptography e CFFI ARM64 importados dentro do FFBE
 
