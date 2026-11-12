@@ -1,5 +1,7 @@
 # FFBE Android — entrega em aplicativo único
 
+Acompanhamento por prova e pendências: [checklist vivo](ANDROID_CHECKLIST.md).
+
 ## Requisito fechado
 
 A entrega para uso cotidiano deve instalar **somente o FFBE**. O jogador não deve

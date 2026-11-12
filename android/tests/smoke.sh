@@ -21,4 +21,5 @@ if env FFBE_ANDROID_HOME="$TMP" FFBE_HTTP_PORT=80 "$RUNNER" doctor >"$TMP/doctor
 fi
 grep -q 'Porta fora do intervalo' "$TMP/doctor.log"
 test ! -e "$TMP/server-root/state/campaign.json"
-echo 'OK: help, status, missing assets, privileged port guard, isolated state'
+python3 -m unittest discover -s "$ROOT/android/runtime" -p 'test_*.py' -q
+echo 'OK: help, status, missing assets, privileged port guard, isolated state, bootstrap contract tests'

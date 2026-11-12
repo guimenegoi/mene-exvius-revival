@@ -2,6 +2,8 @@
 
 Este documento descreve **o fork experimental [mene-exvius-revival](https://github.com/guimenegoi/mene-exvius-revival)**. A documentação principal da raiz é mantida do [Exvius Revival para iOS](https://github.com/CreamySeaman6/Exvius-revival-ios); **não** é um guia Android pronto para instalar.
 
+Acompanhe as etapas com evidências no [checklist vivo da entrega Android](ANDROID_CHECKLIST.md).
+
 ## Objetivo
 
 **Requisito de entrega:** um único aplicativo Android FFBE, sem depender de Termux,
