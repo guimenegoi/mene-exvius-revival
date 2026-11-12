@@ -29,10 +29,14 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
 - [x] Concluir cache SHA-256 dos **19 ZIPs upstream** no HD externo:
       **14.647.871.919 bytes (14,65 GB)**, conferidos contra o manifesto
       fixado. Isso não substitui a instalação privada no aparelho.
-- [ ] Integrar no APK a **tela de primeira execução**, retomada, instalação
-      dos pacotes, anexação de `game-assets.apk` e readiness do servidor.
-      Reutilizar mecanismos upstream (`DataDownloadActivity`, `DataUpdates`,
-      `DataPack`, `GameAssets`) após conciliar os formatos de recibo.
+- [x] Integrar **launcher da primeira execução**, com
+      `DataDownloadActivity`, `DataUpdates`, `DataPack` e `GameAssets` do
+      upstream v0.1.30: tela abriu no Waydroid sem travamento.
+      Manifesto de 19 pacotes fixado por commit upstream; `local_http.py`
+      aceita recibos Android e cria links nativos apenas após validação.
+- [ ] Validar download/extração reais dos 19 pacotes no Android, anexar
+      `game-assets.apk` e **aguardar readiness** do servidor antes de abrir
+      Lapis; a Activity atual ainda inicia o jogo imediatamente.
 - [x] Executar código Python 3.14.10 ARM64 dentro do processo FFBE em laboratório:
       JNI, stdlib privada, `Py_InitializeFromConfig` e `PYTHON-EXECUTED-42`.
 - [x] Importar extensões oficiais nativas (67 módulos do CPython) no FFBE:
@@ -48,7 +52,8 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       estática) e empacotar pycparser 3.12 para Android ARM64/CPython 3.14.
       Validar NIST AES-128-CBC, o cifrador real `ffbe_crypto` e imports de
       X.509 **no processo FFBE, também após reabrir**. Pacote atual:
-      **1.063 arquivos** (Revival e dependências), com SHA-256.
+      **1.065 arquivos** na variante com instalador (Revival, dependências
+      e integração de dados), com SHA-256.
       **Servidor e jogo offline ainda não iniciados.**
 - [ ] Instalar/verificar os 19 pacotes **reais** no Android; confirmar os arquivos
       de tutorial, mapa, áudio e combate no armazenamento privado do cliente.
@@ -99,6 +104,25 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
       depois do primeiro APK offline realmente jogável.
 
 ## Registro de execução
+
+### 2026-11-12 — launcher Android de primeira execução e compatibilidade
+
+- APK upstream público v0.1.30 (9/11/2026) auditado como referência de
+  laboratório; componentes do instalador isolados em `classes6.dex`.
+  `patch_first_run.py` recompila essa classe com URL do manifesto de
+  revisão 9 fixada no commit upstream `b0b73648ceb1a3783105ed2104600be651c9c515`,
+  acrescentando-a como `classes4.dex` sem mudar as classes do cliente.
+- Manifesto recompilado altera apenas a entrada `MAIN/LAUNCHER`,
+  preservando deep links e package original. A tela de download foi
+  exibida no Waydroid, sem ANR observado. A execução JNI direta
+  confirmou `PYTHON-REVIVAL-CRYPTO-OK` com porta 18080 fechada sem dados.
+- O adaptador de recibos aceita tanto a lista do Java quanto o
+  dicionário Python, verifica hashes dos 19 packs e do cliente,
+  cria os cinco links nativos reutilizando `offline_data` e mantém
+  saves e `installed.json` intactos. Coberto por testes sintéticos.
+- **Pendente:** primeira instalação real de 14,65 GB no Android,
+  espera de readiness em `18080`, reinício seguro e jogo desconectado.
+  A Activity upstream ainda abre Lapis antes de aguardar o Python.
 
 ### 2026-11-12 — cópia privada no armazenamento externo e instalação inicial
 

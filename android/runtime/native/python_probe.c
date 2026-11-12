@@ -158,6 +158,7 @@ Java_com_mene_exvius_LocalPythonProbe_execute(JNIEnv *env, jclass unused,
     __android_log_print(ANDROID_LOG_INFO, TAG, "CPython 3.14.10: zlib ssl sqlite3 socket hashlib zipfile OK");
     int check = PyRun_SimpleString(
         "import ffbe_local_http\n"
+        "_first_run_adapted, _first_run_reason = ffbe_local_http.reconcile_first_run()\n"
         "_http_ready, _http_reason = ffbe_local_http.preflight()\n"
     );
     if (check) {

@@ -55,6 +55,124 @@ def _read_json(path: Path, *, limit: int = 1 << 20) -> dict:
     return parsed
 
 
+
+# This asset is derived from the SHA-256-verified client-assets.zip
+# in manifest revision 9 (72 MB uncompressed APK).
+EXPECTED_CLIENT_SIZE = 71997144
+EXPECTED_CLIENT_PACK_SHA256 = "eb70867cc2a97251f01873d31b87702ca90e5612eb8a2f18257ed74cd7d36224"
+EXPECTED_CLIENT_SHA256 = "7791690815938dc4a45b2cfce65b0d7745be0f67c3854c7d020cd424bedf33ac"
+
+
+def _installed_hashes(receipt: dict) -> dict[str, str]:
+    """Accept one canonical pack inventory from either installer version.
+
+    The original Python installer writes {id: sha256}; the already-published
+    Android DataUpdates class stores packs [{id, sha256, unpackedSize}].
+    Neither representation is rewritten during startup.
+    """
+    if "packs" not in receipt:
+        return receipt
+    records = receipt["packs"]
+    if not isinstance(records, list) or len(records) != PACK_COUNT:
+        raise ValueError("Invalid Android installed pack inventory")
+    result = {}
+    for record in records:
+        if not isinstance(record, dict):
+            raise ValueError("Invalid Android installed pack record")
+        name = record.get("id")
+        digest = record.get("sha256")
+        if (not isinstance(name, str) or not name or name in result
+                or "/" in name or "\\" in name
+                or not isinstance(digest, str) or len(digest) != 64
+                or any(c not in "0123456789abcdef" for c in digest)
+                or not isinstance(record.get("unpackedSize"), int)
+                or record["unpackedSize"] <= 0):
+            raise ValueError("Invalid or duplicate Android pack entry")
+        result[name] = digest
+    return result
+
+
+def _manifest(archive: Path) -> dict:
+    with zipfile.ZipFile(archive) as zf:
+        entry = zf.getinfo(DATA_MANIFEST)
+        if entry.file_size > 65536 or entry.compress_type != zipfile.ZIP_STORED:
+            raise ValueError("embedded data manifest invalid")
+        manifest = json.loads(zf.read(entry))
+    if not isinstance(manifest, dict):
+        raise ValueError("invalid data manifest")
+    packs = manifest.get("packs", [])
+    if manifest.get("schema") != 1 or not isinstance(packs, list) or len(packs) != PACK_COUNT:
+        raise ValueError("pack manifest not supported")
+    return manifest
+
+
+def reconcile_first_run(archive: Path | None = None,
+                        app_files: Path | None = None) -> tuple[bool, str]:
+    """Finish the verified upstream install without changing installed.json.
+
+    Only the private five native symlinks and one asset receipt are written.
+    There are no writes to saves, and no HTTP server is opened here.
+    """
+    try:
+        archive = Path(archive) if archive is not None else embedded_archive()
+        files = Path(app_files) if app_files is not None else archive.parent.parent
+        data = files / "exvius/data"
+        if (files.is_symlink() or (files / "exvius").is_symlink()
+                or data.is_symlink() or (data / "static").is_symlink()
+                or (data / "static/client").is_symlink()
+                or not data.is_dir()):
+            return False, "private data unavailable"
+        installed = _read_json(data / "installed.json")
+        if "packs" not in installed:
+            return False, "Python installer already uses canonical receipts"
+        if preflight(archive, files)[0]:
+            return False, "upstream inventory already reconciled"
+        manifest = _manifest(archive)
+        if (installed.get("schema") != manifest["schema"]
+                or installed.get("revision") != manifest.get("revision")):
+            return False, "upstream revision differs from pinned installer"
+        installed_hashes = _installed_hashes(installed)
+        if any(not isinstance(pack, dict)
+               or installed_hashes.get(pack.get("id")) != pack.get("sha256")
+               for pack in manifest["packs"]):
+            return False, "not all pinned ZIPs were installed"
+        client = next(pack for pack in manifest["packs"]
+                      if pack.get("id") == "client-assets")
+        if (client.get("unpackedSize") != EXPECTED_CLIENT_SIZE
+                or client.get("sha256") != EXPECTED_CLIENT_PACK_SHA256):
+            return False, "pinned client ZIP changed"
+        asset = data / "static/client/game-assets.apk"
+        if (asset.is_symlink() or not asset.is_file()
+                or asset.stat().st_size != EXPECTED_CLIENT_SIZE):
+            return False, "client resource APK missing or wrong size"
+        hashed = hashlib.sha256()
+        with asset.open("rb") as stream:
+            for part in iter(lambda: stream.read(4 << 20), b""):
+                hashed.update(part)
+        if hashed.hexdigest() != EXPECTED_CLIENT_SHA256:
+            return False, "client asset SHA-256 mismatch"
+        target = archive.parent / "engine"
+        importlib.import_module("ffbe_engine_bootstrap").install(archive, target)
+        for relative in ("ios-server", "android/data"):
+            path = target / relative
+            if not path.is_dir():
+                return False, "bundled installer missing: " + relative
+            if str(path) not in sys.path:
+                sys.path.insert(0, str(path))
+        installer = importlib.import_module("offline_data")
+        installer.android_files_layout(data, files, create=True)
+        installer.atomic_json(data / "offline-client-assets.json", {
+            "archive_sha256": client["sha256"],
+            "file": "static/client/game-assets.apk",
+            "file_size": EXPECTED_CLIENT_SIZE,
+            "file_sha256": EXPECTED_CLIENT_SHA256,
+        })
+        return True, "Android first-run inventory reconciled"
+    except (OSError, ValueError, KeyError, TypeError,
+            zipfile.BadZipFile, json.JSONDecodeError, ImportError) as exc:
+        return False, "first-run adapter refused: " + type(exc).__name__
+
+
 def preflight(archive: Path | None = None,
               app_files: Path | None = None) -> tuple[bool, str]:
     """Read-only validation. Do not import capture_server or touch saves."""
@@ -70,18 +188,10 @@ def preflight(archive: Path | None = None,
                 or (data / "static/client").is_symlink()
                 or not data.is_dir()):
             return False, "private data root missing/unsafe"
-        with zipfile.ZipFile(archive) as zf:
-            entry = zf.getinfo(DATA_MANIFEST)
-            if entry.file_size > 65536 or entry.compress_type != zipfile.ZIP_STORED:
-                return False, "embedded data manifest invalid"
-            manifest = json.loads(zf.read(entry))
-        if not isinstance(manifest, dict):
-            return False, "invalid data manifest"
-        packs = manifest.get("packs", [])
-        if manifest.get("schema") != 1 or len(packs) != PACK_COUNT:
-            return False, "pack manifest not supported"
+        manifest = _manifest(archive)
+        packs = manifest["packs"]
         ids = set()
-        installed = _read_json(data / "installed.json")
+        installed = _installed_hashes(_read_json(data / "installed.json"))
         for pack in packs:
             if not isinstance(pack, dict):
                 return False, "invalid pack entry"

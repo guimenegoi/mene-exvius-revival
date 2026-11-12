@@ -234,6 +234,31 @@ isolamento em loopback, **não** as respostas reais do jogo.
 instalados), servir requisições de jogo e downloads, coordenar readiness,
 encerrar com segurança, validar saves e batalha sem conexão externa.
 
+## Instalador Android de primeira execução — laboratório
+
+O script `android/runtime/patch_first_run.py` incorpora o instalador
+nativo compilado do upstream **v0.1.30**, obtido separadamente e validado
+por SHA-256, sem versionar APK/DEX ou alterar `libgame.so`. Usa o APK
+original 9.1.0, o APK-base experimental já aprovado, um decode completo
+de recursos com apktool e o instalador upstream. Move o `MAIN/LAUNCHER`
+de `Lapis` para `DataDownloadActivity`, preservando deep links, e acrescenta
+somente `classes4.dex`. A URL do manifesto do downloader fica fixada em
+`b0b73648ceb1a3783105ed2104600be651c9c515` (revisão 9).
+
+O ZIP Python atual contém **1.065 arquivos** autenticados por SHA-256,
+incluindo `android/data/offline_data.py`. O início do worker executa
+`reconcile_first_run()` para reconhecer o inventário instalado pelo Java,
+validar o SHA-256 real do `client-assets` e reutilizar `android_files_layout()`
+para criar cinco symlinks privados e um recibo de assets, sem tocar em saves.
+O `preflight()` permanece somente leitura; sem dados não abre a porta.
+
+**Waydroid:** Activity de configuração exibida, início JNI assíncrono,
+`REVIVAL-DATA-NOT-READY` e `PYTHON-REVIVAL-CRYPTO-OK` no mesmo APK.
+Instalação integral e readiness HTTP não testados; o upstream ainda
+abre `Lapis` imediatamente após `GameAssets.attach()`. Antes de usar
+como jogo é obrigatória a espera segura de `18080` no launcher.
+O APK anterior foi restaurado com `install-multiple -r`, sem limpar dados.
+
 ## Limites e pendências reais
 
 - O Python **importa** os módulos de `ios-server/` e `source/server/`, mas
@@ -245,7 +270,7 @@ encerrar com segurança, validar saves e batalha sem conexão externa.
   de certificados ainda não foi comprovada. O OpenSSL indicou ausência de
   seu *legacy provider*; AES-128-CBC passou no teste.
 - A extração da stdlib e dos módulos `.so` ainda confere comprimento, **não
-  SHA-256** no dispositivo. Os **1.063 arquivos** do motor e das dependências
+  SHA-256** no dispositivo. Os **1.065 arquivos** do motor e das dependências
   já empacotadas têm SHA-256 e atualização atômica, mas a entrega final precisa
   validar todos os assets e tratar falhas.
 - A inicialização/importação foi movida para a thread Java `FFBE-Python`

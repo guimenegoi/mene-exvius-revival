@@ -5,6 +5,16 @@ pacotes de instalação no disco externo montado no LXC `workspace` (117):
 
 `/workspace/projects/ffbe-revival-distribution/`
 
+## Variante de primeira execução
+
+O HD externo também mantém `apk/first-run-experimental/`, sem substituir
+os cinco splits de `apk/`. Essa variante inclui `DataDownloadActivity`,
+o downloader upstream v0.1.30 com manifesto revisão 9 fixado e a ponte
+CPython/Revival. O launcher abriu no Waydroid e a sonda AES passou, mas
+**ainda não aguarda a prontidão HTTP 18080 antes de abrir o jogo**.
+Os 19 pacotes não foram instalados no Android de teste. Seu uso é
+**exclusivamente experimental** e não comprova gameplay offline.
+
 ## Estrutura
 
 - `apk/`: cinco splits Android **assinados com certificado de teste**, da

@@ -16,7 +16,8 @@ from pathlib import Path, PurePosixPath
 
 MANIFEST = "ffbe_engine_manifest.json"
 ROOT = "ffbe_engine/"
-ALLOWED = ("ios-server/", "source/server/", "vendor/yaml/", "vendor/tzdata/",
+ALLOWED = ("ios-server/", "source/server/", "android/data/",
+           "data/latest.json", "vendor/yaml/", "vendor/tzdata/",
            "vendor/PIL/", "vendor/cffi/", "vendor/cryptography/",
            "vendor/pycparser/", "vendor/_cffi_backend.",
            "vendor/LICENSE-pillow.txt", "vendor/LICENSE-cffi.txt",
