@@ -438,10 +438,27 @@ def run(archive: Path | None = None, app_files: Path | None = None,
     handler = serve.make_handler(capture, b"", b"")
     if port != PORT:
         raise ValueError("Android server must use the pinned loopback port")
+    # Backup is strictly opt-in: the import is absent in the stable build,
+    # and an unpaired worker never reads or transmits the campaign save.
+    backup = None
+    try:
+        from ffbe_backup import BackupCoordinator, wrap_handler
+    except ImportError:
+        pass
+    else:
+        backup = BackupCoordinator(
+            archive.parent / "private-backup",
+            files / "exvius/server-root/state",
+        )
+        handler = wrap_handler(handler, backup)
     server = serve.Server(("127.0.0.1", PORT), handler)
     server.tls = None
     try:
+        if backup is not None:
+            backup.start()
         print("FFBE-RevivalHTTP: READY 127.0.0.1:18080 (real Revival)", flush=True)
         server.serve_forever()
     finally:
         server.server_close()
+        if backup is not None:
+            backup.stop()

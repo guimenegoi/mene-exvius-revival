@@ -1,0 +1,25 @@
+[Unit]
+Description=FFBE Revival private save backup receiver
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=ffbe-backup
+Group=ffbe-backup
+Environment=PYTHONDONTWRITEBYTECODE=1
+WorkingDirectory=/opt/mene-exvius-revival-backup
+ExecStart=/usr/bin/python3 /opt/mene-exvius-revival-backup/android/backup/lxc_backup.py serve --bind 192.168.15.230 --port 18447 --store /var/lib/ffbe-save-backups --cert /etc/ffbe-backup/cert.pem --key /etc/ffbe-backup/key.pem --token-file /etc/ffbe-backup/token
+Restart=on-failure
+RestartSec=4
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/ffbe-save-backups
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
