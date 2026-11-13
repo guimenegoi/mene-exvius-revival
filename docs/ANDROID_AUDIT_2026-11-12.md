@@ -1,5 +1,13 @@
 # Auditoria de integração Android — 12/11/2026
 
+> **Atualização RC1 (12/11/2026):** este documento mantém as evidências e
+> os bloqueios **históricos** anteriores ao primeiro gameplay; os 404 de MST
+> foram reparados seletivamente e o menu Vortex já abriu no RC1. Consulte
+> [ANDROID_CHECKLIST.md](ANDROID_CHECKLIST.md), seção “RC1 instalável”, para
+> o estado mais recente e pendências. Não tratar as seções antigas de
+> diagnóstico como descrição do binário de entrega.
+
+
 ## Decisão de escopo
 
 **O motor e a progressão histórica do Revival são a base.** Não criar nova

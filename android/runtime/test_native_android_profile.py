@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "source/server"))
 sys.path.insert(0, str(ROOT / "ios-server"))
 
 import ffbe_battle  # noqa: E402
+import ios_tables  # noqa: E402
 
 # Do not pollute sys.modules["serve"]: local_http.run() expressly rejects a
 # server imported before its private FFBE_DATA_DIR is bound.
@@ -38,10 +39,11 @@ class NativeAndroidProfileTests(unittest.TestCase):
         }
         shipped = {
             "F_TEXT_TEXT_EN": "263", "F_MISSION_MST": "527",
-            "F_RESOURCE_MAP_CHECKSUM_MST": "322",
+            "F_RESOURCE_MAP_CHECKSUM_MST": "322", "F_AREA_MST": "611",
         }
         with patch.dict(os.environ, {"FFBE_ANDROID_EMBEDDED": "1"}, clear=False), \
                 patch.object(ffbe_battle, "version_table", return_value=shipped), \
+                patch.object(ios_tables, "android_vortex_bumps", return_value={"F_AREA_MST": 1777}), \
                 patch.object(ffbe_battle, "_note"):
             output = ffbe_battle.serve_version_table(input_reply)
         self.assertIsNot(output, input_reply)
@@ -52,8 +54,23 @@ class NativeAndroidProfileTests(unittest.TestCase):
             "F_APP_VERSION_AND": "1167",
             "F_MST_VERSION": "0",
             **shipped,
+            "F_AREA_MST": "2388",
         })
         self.assertNotIn("F_NEVER_SHIPPED", versions)
+
+    def test_vortex_patch_allowlist_does_not_activate_unrelated_ios_tables(self):
+        with patch.dict(os.environ, {"EXVIUS_IOS_HCA": "0",
+                                     "EXVIUS_IOS_HCA_PLAIN": "0",
+                                     "EXVIUS_IOS_DROP_UNVERSIONED": "0",
+                                     "EXVIUS_IOS_SOUND_REFETCH": ""}, clear=False):
+            allowed = ios_tables.ANDROID_VORTEX_TABLES
+            self.assertEqual(allowed, {"F_RESOURCE_MST",
+                                       "F_RESOURCE_VERSION_MST_LOCALIZE",
+                                       "F_RESOURCE_CHECKSUM_MST", "F_AREA_MST"})
+            self.assertTrue(ios_tables.android_vortex_wants(
+                "/mst/Ver611_Fvix6V0n.dat"))
+            self.assertFalse(ios_tables.android_vortex_wants(
+                "/mst/Ver527_24Eka6wL.dat"))
 
     def test_missing_shipped_registry_fails_closed(self):
         with patch.dict(os.environ, {"FFBE_ANDROID_EMBEDDED": "1"}, clear=False), \

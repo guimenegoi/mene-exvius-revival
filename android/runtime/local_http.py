@@ -260,6 +260,48 @@ def preflight(archive: Path | None = None,
         return False, "preflight failed: " + type(exc).__name__
 
 
+def preserve_native_mst_for_cdn(files: Path) -> int:
+    """Pin native MST content in Revival's existing CDN overlay via hardlinks.
+
+    The game's cache updater can unlink original files/mst entries before
+    fetching replacements. The CDN must not lose its only copy at that point.
+    Hardlinks share bytes and require no second download or 15 GB duplicate.
+    """
+    source = files / "mst"
+    overlay_root = files / "exvius/server-root/overlay"
+    target = overlay_root / "mst"
+    for folder in (files / "exvius", files / "exvius/server-root",
+                   overlay_root, target):
+        if folder.is_symlink():
+            raise ValueError("CDN overlay path is a symlink")
+    if source.is_symlink() or not source.is_dir():
+        raise ValueError("native MST cache is unavailable or unsafe")
+    target.mkdir(parents=True, exist_ok=True)
+    linked = 0
+    for current, dirs, names in os.walk(source, followlinks=False):
+        current_path = Path(current)
+        if any((current_path / name).is_symlink() for name in dirs + names):
+            raise ValueError("native MST cache contains symlink")
+        dest_dir = target / current_path.relative_to(source)
+        if dest_dir.is_symlink():
+            raise ValueError("CDN overlay contains symlink directory")
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        for name in names:
+            original = current_path / name
+            dest = dest_dir / name
+            if not original.is_file() or original.stat().st_size == 0:
+                raise ValueError("native MST cache contains invalid file")
+            if dest.is_symlink() or (dest.exists() and not dest.is_file()):
+                raise ValueError("CDN overlay contains invalid file")
+            if not dest.exists():
+                os.link(original, dest, follow_symlinks=False)
+                linked += 1
+    for name in ("Ver709_i5QEJpua.dat", "Ver9001_YW9MUm2H.dat"):
+        if not (target / name).is_file():
+            raise ValueError("CDN overlay lacks pinned MST " + name)
+    return linked
+
+
 def run(archive: Path | None = None, app_files: Path | None = None,
         port: int = PORT) -> None:
     """Block the dedicated Java/Python worker inside the *real* HTTP handler.
@@ -272,6 +314,8 @@ def run(archive: Path | None = None, app_files: Path | None = None,
     ok, reason = preflight(archive, files)
     if not ok:
         raise RuntimeError("Refusing Revival HTTP: " + reason)
+    count = preserve_native_mst_for_cdn(files)
+    print(f"FFBE-CDN-MST-OVERLAY: {count} immutable hardlinks added", flush=True)
     target = archive.parent / "engine"
     # The bootstrap module exists inside the signed stdlib ZIP, not as a
     # separate Android app, and uses the existing SHA-256 installer.
@@ -292,6 +336,10 @@ def run(archive: Path | None = None, app_files: Path | None = None,
     # Never advertise the iPhone-only table rewrites/large version offset.
     os.environ["FFBE_ANDROID_EMBEDDED"] = "1"
     os.environ["EXVIUS_TABLE_VERSION_OFFSET"] = "0"
+    os.environ["EXVIUS_IOS_HCA"] = "0"
+    os.environ["EXVIUS_IOS_HCA_PLAIN"] = "0"
+    os.environ["EXVIUS_IOS_DROP_UNVERSIONED"] = "0"
+    os.environ["EXVIUS_IOS_SOUND_REFETCH"] = ""
     serve = importlib.import_module("serve")
     serve.configure_engine()
     capture = serve.start_engine()

@@ -45,6 +45,8 @@ def sample(root: Path) -> tuple[Path, Path, dict]:
                                              target_is_directory=True)
     resources = {
         "mst/f_unit.dat": b"data",
+        "mst/Ver709_i5QEJpua.dat": b"data-pack-011",
+        "mst/Ver9001_YW9MUm2H.dat": b"story-movies-pack",
         "localized_texts/en/unit.dat": b"data",
         "en/sd/area/area.cpk": b"data",
         "common_lang/game.cpk": b"data",
@@ -134,6 +136,26 @@ class LocalHttpTests(unittest.TestCase):
             link.symlink_to("/tmp", target_is_directory=True)
             self.assertIn("native resource link invalid",
                           local_http.preflight(archive, files)[1])
+
+    def test_cdn_overlay_hardlinks_survive_client_cache_eviction(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _, files, _ = sample(Path(tmp))
+            original = files / "mst/Ver709_i5QEJpua.dat"
+            preserved = files / "exvius/server-root/overlay/mst/Ver709_i5QEJpua.dat"
+            count = local_http.preserve_native_mst_for_cdn(files)
+            self.assertEqual(count, 3)
+            self.assertTrue(os.path.samefile(original, preserved))
+            original.unlink()
+            self.assertEqual(preserved.read_bytes(), b"data-pack-011")
+            self.assertEqual(local_http.preserve_native_mst_for_cdn(files), 0)
+
+    def test_cdn_overlay_refuses_symlink_escape(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _, files, _ = sample(Path(tmp))
+            (files / "mst/f_unit.dat").unlink()
+            (files / "mst/f_unit.dat").symlink_to("/etc/passwd")
+            with self.assertRaisesRegex(ValueError, "contains symlink"):
+                local_http.preserve_native_mst_for_cdn(files)
 
     def test_loopback_server_delegates_to_engine_handler(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -628,13 +628,13 @@ class Handler(BaseHTTPRequestHandler):
         how = None
         # Tables the iPhone server serves patched: the resource table (the battle's packs moved into the first
         # download) and the two resource version tables (new sound file versions). See ios_tables.py.
-        # iOS-only patch tables can refer to source MST files not shipped in
-        # the standalone Android installer. Its native cache must be served
-        # intact, including the existing token/version fallback below.
-        if os.environ.get("FFBE_ANDROID_EMBEDDED") != "1":
-            import ios_tables
-            if ios_tables.wants(rel):
-                data, how = ios_tables.serve(rel, State.cdn_overlay, State.cdn_root)
+        # Reuse the Revival Vortex patch pipeline for both stock clients.
+        # Android is limited to the audited banner/area tables: all unrelated
+        # iPhone-specific rewrites are excluded, preserving native resources.
+        import ios_tables
+        android = os.environ.get("FFBE_ANDROID_EMBEDDED") == "1"
+        if (ios_tables.android_vortex_wants(rel) if android else ios_tables.wants(rel)):
+            data, how = ios_tables.serve(rel, State.cdn_overlay, State.cdn_root)
         # --- authored web content -------------------------------------------------
         # The client's ToS / policy screens are WebViews that fetch HTML, observed live as
         # `GET //en/content/userpolicysin/index_a.html`. Those pages are NOT in the shipped tree (the real

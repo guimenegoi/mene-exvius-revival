@@ -336,6 +336,30 @@ def _which(rel: str):
     return None
 
 
+# The stock Android client also needs the Vortex's area order and banner pack.
+# Keep iPhone-only rewrites OFF: sound formats, story packs, synthetic text, etc.
+# Existing patch(), patch_area_order(), patch_versions(), and ios_art are reused.
+ANDROID_VORTEX_TABLES = frozenset((
+    RESOURCE[0], RESOURCE_VERSION[0], RESOURCE_CHECKSUM[0], AREA[0],
+))
+
+
+def android_vortex_bumps() -> dict[str, int]:
+    """Only Android-compatible Vortex resource and priority table revisions."""
+    bumps = version_bumps()
+    return {name: value for name, value in bumps.items()
+            if name in ANDROID_VORTEX_TABLES}
+
+
+def android_vortex_wants(rel: str) -> bool:
+    """Select existing patch handler only for approved Android Vortex files."""
+    import ios_art
+    if ios_art.wants(rel):
+        return True
+    spec = _which(rel)
+    return spec is not None and spec[0] in ANDROID_VORTEX_TABLES
+
+
 def _chosen(row: dict, value: str) -> bool:
     if row.get(CLASS_FIELD):
         return False  # already downloaded up front

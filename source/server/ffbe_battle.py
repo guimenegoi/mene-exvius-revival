@@ -1362,13 +1362,20 @@ def serve_version_table(spec):
             and (r.get("a4hXTIm0") in GLOBAL_VERSION_ROWS
                  or not str(r.get("a4hXTIm0", "")).startswith("F_"))
         ]
+        # Apply only the Vortex fixes shared with Android; never the iOS
+        # +200000 offsets or unrelated synthetic MST versions.
+        import ios_tables
+        bumps = ios_tables.android_vortex_bumps()
         names = {r.get("a4hXTIm0") for r in globals_only}
         spec = dict(spec)
         spec["c1qYg84Q"] = globals_only + [
+            {"a4hXTIm0": name, "wM9AfX6I": str(int(value) + bumps.get(name, 0))}
+            if str(value).isdigit() else
             {"a4hXTIm0": name, "wM9AfX6I": value}
             for name, value in sorted(shipped.items()) if name not in names
         ]
-        _note(f"Android native version table: {len(shipped)} shipped rows, no iOS patch bumps")
+        _note(f"Android native version table: {len(shipped)} shipped rows; "
+              f"{len(bumps)} audited Vortex patches")
         return spec
     authored = [r for r in spec["c1qYg84Q"] if isinstance(r, dict)]
     have = {r.get("a4hXTIm0") for r in authored}

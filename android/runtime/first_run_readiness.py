@@ -11,7 +11,11 @@ READINESS_PATH = "smali_classes6/com/mene/exvius/RevivalReadiness.smali"
 ACTIVITY_PATH = "smali_classes6/com/exvius/local/DataDownloadActivity.smali"
 UPDATES_PATH = "smali_classes6/com/exvius/local/DataUpdates.smali"
 STALE_READY_FILE = "mst/Ver9001_YW9MUm2H.dat"
-PINNED_READY_FILE = "mst"
+PINNED_READY_FILE = "mst/Ver709_i5QEJpua.dat"
+PINNED_MST_PACKS = (
+    ("data-011", "Ver709_i5QEJpua.dat"),
+    ("story-movies-003", "Ver9001_YW9MUm2H.dat"),
+)
 GATE_METHOD = "Lcom/mene/exvius/RevivalReadiness;->start(Lcom/exvius/local/DataDownloadActivity;Landroid/content/Intent;)V"
 START_ACTIVITY = "    invoke-virtual {p0, v0}, Lcom/exvius/local/DataDownloadActivity;->startActivity(Landroid/content/Intent;)V"
 FINISH_ACTIVITY = "    invoke-virtual {p0}, Lcom/exvius/local/DataDownloadActivity;->finish()V"
@@ -231,10 +235,11 @@ def patch_activity(source: str) -> str:
 
 
 def patch_ready_asset(source: str) -> str:
-    """Check native MST directory instead of an impossible versioned filename.
+    """Require both pinned files in the client cache OR Revival CDN overlay.
 
-    DataUpdates validates installed receipts, the client APK and decoded MST;
-    embedded Python does the exhaustive 19-pack integrity check before Lapis.
+    A clean first-run must install their packs before Lapis is started. After
+    the CDN hardlinks are created, normal client cache evictions do not force
+    repeat downloads or require the internet on later launches.
     """
     signature = ".method public static ready(Landroid/content/Context;)Z"
     blocks = list(re.finditer(
@@ -244,17 +249,104 @@ def patch_ready_asset(source: str) -> str:
         raise ValueError("Expected one pinned DataUpdates.ready method")
     block = blocks[0].group()
     old = f'const-string v2, "{STALE_READY_FILE}"'
-    if block.count(old) != 1 or f'const-string v2, "{PINNED_READY_FILE}"' in block:
-        raise ValueError("Unsupported or already updated readiness sentinel")
     check = "invoke-virtual {v0}, Ljava/io/File;->isFile()Z"
-    if block.count(check) != 3 or block.rfind(check) < block.index(old):
-        raise ValueError("DataUpdates.ready missing native directory check")
-    last_check = block.rfind(check)
-    patched = block[:last_check] + block[last_check:].replace(
-        check, "invoke-virtual {v0}, Ljava/io/File;->isDirectory()Z", 1
-    )
-    patched = patched.replace(old, f'const-string v2, "{PINNED_READY_FILE}"', 1)
-    return source[:blocks[0].start()] + patched + source[blocks[0].end():]
+    if (block.count(old) != 1 or block.count(check) != 3
+            or ":mene_pin_0_ready" in block):
+        raise ValueError("Unsupported or already updated readiness sentinel")
+    old_begin = block.rfind("    new-instance v0, Ljava/io/File;", 0, block.index(old))
+    old_end = block.index("    const/4 v0, 0x1", block.index(old))
+    replaced = block[old_begin:old_end]
+    if (old_begin < 0 or replaced.count(old) != 1
+            or replaced.count(check) != 1
+            or "if-eqz v0, :cond_0" not in replaced):
+        raise ValueError("Pinned ready native file check changed")
+    guards = []
+    for i, (_pack, name) in enumerate(PINNED_MST_PACKS):
+        checks = []
+        for location in (f"mst/{name}", f"exvius/server-root/overlay/mst/{name}"):
+            checks.append(f"""    new-instance v0, Ljava/io/File;
+    invoke-virtual {{p0}}, Landroid/content/Context;->getFilesDir()Ljava/io/File;
+    move-result-object v1
+    const-string v2, "{location}"
+    invoke-direct {{v0, v1, v2}}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
+    invoke-virtual {{v0}}, Ljava/io/File;->isFile()Z
+    move-result v0""")
+        guards.append(checks[0] + f"""
+    if-nez v0, :mene_pin_{i}_ready
+""" + checks[1] + f"""
+    if-eqz v0, :cond_0
+    :mene_pin_{i}_ready
+""")
+    revised = block[:old_begin] + "\n".join(guards) + block[old_end:]
+    return source[:blocks[0].start()] + revised + source[blocks[0].end():]
+
+
+def patch_missing_pack_receipt(source: str) -> str:
+    """Invalidate only missing-pinned-pack receipts in memory, never saves.
+
+    If the corresponding file already exists in the preserved CDN overlay,
+    a client-side cache eviction does NOT trigger another download.
+    DataUpdates remains responsible for pack SHA-256 and extraction.
+    """
+    signature = ".method private static installed(Landroid/content/Context;)Lorg/json/JSONObject;"
+    blocks = list(re.finditer(
+        r"(?ms)^" + re.escape(signature) + r"\n.*?^\.end method$", source,
+    ))
+    if len(blocks) != 1:
+        raise ValueError("Expected exactly one pinned DataUpdates.installed method")
+    block = blocks[0].group()
+    anchor = "    :goto_0\n    return-object v1"
+    if (block.count("    .locals 3") != 1 or block.count(anchor) != 1
+            or ":mene_repair_0_done" in block):
+        raise ValueError("Unsupported or already patched installed receipt")
+    sections = []
+    for i, (pack, name) in enumerate(PINNED_MST_PACKS):
+        sections.append(f"""    # A pack receipt is trusted if its original OR its immutable CDN copy exists.
+    new-instance v0, Ljava/io/File;
+    invoke-virtual {{p0}}, Landroid/content/Context;->getFilesDir()Ljava/io/File;
+    move-result-object v2
+    const-string v3, "mst/{name}"
+    invoke-direct {{v0, v2, v3}}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
+    invoke-virtual {{v0}}, Ljava/io/File;->isFile()Z
+    move-result v0
+    if-nez v0, :mene_repair_{i}_done
+    new-instance v0, Ljava/io/File;
+    invoke-virtual {{p0}}, Landroid/content/Context;->getFilesDir()Ljava/io/File;
+    move-result-object v2
+    const-string v3, "exvius/server-root/overlay/mst/{name}"
+    invoke-direct {{v0, v2, v3}}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
+    invoke-virtual {{v0}}, Ljava/io/File;->isFile()Z
+    move-result v0
+    if-nez v0, :mene_repair_{i}_done
+    const-string v0, "packs"
+    invoke-virtual {{v1, v0}}, Lorg/json/JSONObject;->optJSONArray(Ljava/lang/String;)Lorg/json/JSONArray;
+    move-result-object v2
+    if-eqz v2, :mene_repair_{i}_done
+    const/4 v3, 0x0
+    :mene_repair_{i}_scan
+    invoke-virtual {{v2}}, Lorg/json/JSONArray;->length()I
+    move-result v4
+    if-ge v3, v4, :mene_repair_{i}_done
+    invoke-virtual {{v2, v3}}, Lorg/json/JSONArray;->optJSONObject(I)Lorg/json/JSONObject;
+    move-result-object v4
+    if-eqz v4, :mene_repair_{i}_skip
+    const-string v5, "id"
+    invoke-virtual {{v4, v5}}, Lorg/json/JSONObject;->optString(Ljava/lang/String;)Ljava/lang/String;
+    move-result-object v4
+    const-string v5, "{pack}"
+    invoke-virtual {{v5, v4}}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result v4
+    if-eqz v4, :mene_repair_{i}_skip
+    invoke-virtual {{v2, v3}}, Lorg/json/JSONArray;->remove(I)Ljava/lang/Object;
+    goto :mene_repair_{i}_done
+    :mene_repair_{i}_skip
+    add-int/lit8 v3, v3, 0x1
+    goto :mene_repair_{i}_scan
+    :mene_repair_{i}_done""")
+    guard = "    :goto_0\n" + "\n".join(sections) + "\n    return-object v1"
+    revised = block.replace("    .locals 3", "    .locals 6", 1)
+    revised = revised.replace(anchor, guard, 1)
+    return source[:blocks[0].start()] + revised + source[blocks[0].end():]
 
 
 def patch_smali(decoded) -> None:
@@ -265,7 +357,9 @@ def patch_smali(decoded) -> None:
     if gate.exists() or not activity.is_file() or not updates.is_file():
         raise ValueError("Unexpected upstream gate state")
     modified = patch_activity(activity.read_text(encoding="utf-8"))
-    revised_updates = patch_ready_asset(updates.read_text(encoding="utf-8"))
+    revised_updates = patch_missing_pack_receipt(
+        patch_ready_asset(updates.read_text(encoding="utf-8"))
+    )
     # All guards passed before any writes; preserve original source outside scratch.
     gate.parent.mkdir(parents=True, exist_ok=True)
     activity.write_text(modified, encoding="utf-8")

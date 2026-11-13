@@ -13,7 +13,7 @@ from types import SimpleNamespace
 from first_run_readiness import (
     ACTIVITY_PATH, READINESS_PATH, READINESS_CLASS, UPDATES_PATH,
     STALE_READY_FILE, PINNED_READY_FILE, GATE_METHOD,
-    patch_activity, patch_ready_asset, patch_smali,
+    patch_activity, patch_ready_asset, patch_missing_pack_receipt, patch_smali,
 )
 
 SOURCE = """.class public final Lcom/exvius/local/DataDownloadActivity;
@@ -55,10 +55,25 @@ UPDATES = """.class public Lcom/exvius/local/DataUpdates;
     move-result v0
     invoke-virtual {v0}, Ljava/io/File;->isFile()Z
     move-result v0
+    new-instance v0, Ljava/io/File;
+    invoke-virtual {p0}, Landroid/content/Context;->getFilesDir()Ljava/io/File;
+    move-result-object v1
     const-string v2, "mst/Ver9001_YW9MUm2H.dat"
+    invoke-direct {v0, v1, v2}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
     invoke-virtual {v0}, Ljava/io/File;->isFile()Z
     move-result v0
+    if-eqz v0, :cond_0
+    const/4 v0, 0x1
+    goto :goto_0
+    :cond_0
+    const/4 v0, 0x0
+    :goto_0
     return v0
+.end method
+.method private static installed(Landroid/content/Context;)Lorg/json/JSONObject;
+    .locals 3
+    :goto_0
+    return-object v1
 .end method
 """
 
@@ -103,8 +118,8 @@ class FirstRunReadinessTests(unittest.TestCase):
             self.assertEqual((root / READINESS_PATH).read_text(), READINESS_CLASS)
             self.assertIn(GATE_METHOD, activity.read_text())
             self.assertIn(f'const-string v2, "{PINNED_READY_FILE}"', updates.read_text())
-            self.assertEqual(updates.read_text().count("->isDirectory()Z"), 1)
-            self.assertNotIn(STALE_READY_FILE, updates.read_text())
+            self.assertIn("exvius/server-root/overlay/mst/Ver709", updates.read_text())
+            self.assertIn(STALE_READY_FILE, updates.read_text())
             self.assertEqual(other.read_text(), "keep")
             with self.assertRaisesRegex(ValueError, "gate state"):
                 patch_smali(root)
@@ -112,17 +127,31 @@ class FirstRunReadinessTests(unittest.TestCase):
     def test_pinned_ready_sentry_is_exact_and_fails_closed(self):
         patched = patch_ready_asset(UPDATES)
         self.assertEqual(patched.count(f'const-string v2, "{PINNED_READY_FILE}"'), 1)
-        self.assertEqual(patched.count("->isDirectory()Z"), 1)
-        self.assertEqual(patched.count("->isFile()Z"), 2)
-        self.assertNotIn(STALE_READY_FILE, patched)
+        self.assertEqual(patched.count("->isDirectory()Z"), 0)
+        self.assertEqual(patched.count("->isFile()Z"), 6)
+        self.assertIn(STALE_READY_FILE, patched)
         with self.assertRaisesRegex(ValueError, "already updated"):
             patch_ready_asset(patched)
         with self.assertRaisesRegex(ValueError, "Unsupported"):
             patch_ready_asset(UPDATES.replace(STALE_READY_FILE, "mst/not-shipped.dat"))
-        with self.assertRaisesRegex(ValueError, "native directory check"):
+        with self.assertRaisesRegex(ValueError, "Unsupported or already updated"):
             patch_ready_asset(UPDATES.replace("->isFile()Z", "->exists()Z"))
         with self.assertRaisesRegex(ValueError, "Expected one"):
             patch_ready_asset("no upstream ready method")
+
+    def test_pack_011_repair_only_invalidates_memory_receipt(self):
+        result = patch_missing_pack_receipt(UPDATES)
+        self.assertIn('const-string v5, "data-011"', result)
+        self.assertIn('const-string v3, "mst/Ver709_i5QEJpua.dat"', result)
+        self.assertIn('const-string v5, "story-movies-003"', result)
+        self.assertIn("exvius/server-root/overlay/mst/Ver9001", result)
+        self.assertEqual(result.count("Lorg/json/JSONArray;->remove(I)"), 2)
+        self.assertIn(":mene_repair_1_done", result)
+        self.assertIn(".locals 6", result)
+        with self.assertRaisesRegex(ValueError, "already patched"):
+            patch_missing_pack_receipt(result)
+        with self.assertRaisesRegex(ValueError, "Expected exactly one"):
+            patch_missing_pack_receipt("no installed method")
 
     def test_hello_handler_exposes_the_expected_readiness_reply(self):
         """Contract check using serve.py's real handler, not the game engine."""

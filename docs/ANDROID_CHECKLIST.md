@@ -18,6 +18,41 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
 - [ ] Comprovar que todos os caminhos necessários (inclusive nativos, se houver)
       deixam de atingir endpoints externos, sem interceptar conexões de outros apps.
 
+## RC1 instalável — 12/11/2026, verificação em Waydroid
+
+**Artefato de teste no desktop:** `~/Downloads/FFBE-Revival-RC1-2026-11-12.apks`
+(323.715.957 bytes; SHA-256
+`415b11cd61331d62ef457db7a50664d4c90528780767f1c9fb7ca6d527d747ad`).
+É um conjunto de cinco APKs assinados com chave DEBUG, não um APK universal.
+As cinco partes e o checksum estão em
+`~/Downloads/FFBE-Revival-RC1-2026-11-12/`; não publicar binários proprietários.
+
+- [x] RC1 recomposto usando o motor atualizado: 1.075 arquivos verificados
+  por SHA-256 (dez fontes ausentes incorporadas, 26 fontes atualizadas).
+  `assets/ffbe_python/stdlib.zip` e `classes4.dex` foram os **únicos**
+  membros internos alterados em relação à base aprovada de laboratório.
+- [x] Installer público compilado com o manifesto da revisão 9 fixado em
+  `21aa05a` do fork, URLs dos ZIPs no repositório público de dados e
+  downloader resumível existente. Nem manifesto nem ZIPs usam
+  `127.0.0.1:18082`; comprovada disponibilidade HTTP 200 do manifesto e
+  de dois recursos públicos. **Primeira instalação limpa ainda não testada**.
+- [x] `adb install-multiple -r` dos cinco APKs, **sem limpar saves**;
+  inicialização do Revival real, porta 18080 e chegada à Home no Waydroid.
+- [x] Reativadas de forma seletiva quatro tabelas originais do Revival para
+  Vortex Android (sem versões de iPhone e sem alterar áudio Android).
+  Quatro downloads HTTP 200; `F_AREA_MST` deu prioridade a 766 áreas.
+- [x] CDN serviu o pacote de banners reconstruído
+  `Ver3461_spdungeon1.cpk` (242.483.910 bytes, HTTP 200).
+  Vortex: telas **Event**, **Enhance** e **Special** abriram sem crash;
+  banners The Hanging Edge, The Big Bridge e Cactuar Dunes visíveis.
+  Primeira missão de The Hanging Edge abre a lista BGN sem erro.
+- [ ] Validar em ARM64 físico: instalação inicial completa de 19 ZIPs,
+  controles, batalha, recompensa, save e reabertura **em modo avião**.
+- [ ] Validar outras áreas Vortex e demais módulos do Revival (não assumir
+  paridade total após este primeiro patch Android).
+- [ ] Gerar um APK realmente universal sem splits e retirar certificado
+  DEBUG antes de release final. O arquivo `.apks` atual é apenas RC1.
+
 ## P0 — APK offline autossuficiente
 
 Estado de laboratório e bloqueadores em
