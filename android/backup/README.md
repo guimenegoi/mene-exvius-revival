@@ -54,3 +54,10 @@ python3 -m unittest discover -s android/runtime -p 'test_*.py' -q
 ```
 
 **Próximas validações:** backup após alterar o save, configuração editada no painel e aplicada após reinício, acesso fora da LAN, restauração controlada com cópia anterior e verificação de hash. Não publicar APKs ou dados proprietários.
+
+## Restauração offline (em desenvolvimento)
+- Novo núcleo android/backup/save_restore.py, sem integração ao APK ou endpoint HTTP.
+- Exige SHA-256 do ZIP, confirmação explícita, motor parado, pre-backup privado e diário de recuperação.
+- recover_pending precisa rodar antes de iniciar o jogo; o controlador Android ainda não existe.
+- 13 testes sintéticos aprovados em 13/11/2026. Consulte RESTORE_DESIGN.md.
+- Nenhum save real foi restaurado.
