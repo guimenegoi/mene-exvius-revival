@@ -39,6 +39,25 @@ class BackupTests(unittest.TestCase):
                                  {"manifest.json", "state/campaign.json", "state/replay.json"})
                 self.assertNotIn(b"not\x22: \x22exported", data)
 
+    def test_temporary_atomic_save_is_not_uploaded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = sample(Path(tmp))
+            (state / "campaign.json.tmp").write_text('{"incomplete":')
+            (state / "replay.json.tmp").write_text("partial write")
+            data = backup.snapshot(state)
+            self.assertEqual(backup.validate(data), ["campaign.json", "replay.json"])
+            with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                self.assertEqual(sorted(zf.namelist()),
+                                 ["manifest.json", "state/campaign.json", "state/replay.json"])
+            self.assertNotIn(b"partial write", data)
+
+    def test_symlink_atomic_temporary_save_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = sample(Path(tmp))
+            (state / "campaign.json.tmp").symlink_to(Path(tmp) / "outside")
+            with self.assertRaisesRegex(ValueError, "temporary"):
+                backup.snapshot(state)
+
     def test_snapshot_refuses_missing_campaign(self):
         with tempfile.TemporaryDirectory() as tmp:
             state = sample(Path(tmp))

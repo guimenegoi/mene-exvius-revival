@@ -72,6 +72,12 @@ def snapshot(state_dir: Path) -> bytes:
         raise ValueError("Too many save files")
     payloads = {}
     for path in files:
+        if path.name.endswith(".json.tmp") and FILENAME.fullmatch(path.name[:-4]):
+            # PlayerState.save() uses <slot>.json.tmp + os.replace().
+            # Ignore the in-progress write, but never silently accept symlinks.
+            if path.is_symlink() or not path.is_file():
+                raise ValueError("Unsafe temporary FFBE save file")
+            continue
         if not FILENAME.fullmatch(path.name):
             raise ValueError("Unexpected file in FFBE state: " + path.name)
         payloads[path.name] = _read_state(path)
