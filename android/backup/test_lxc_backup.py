@@ -295,6 +295,43 @@ class BackupTests(unittest.TestCase):
                 server.server_close()
                 worker.join(2)
 
+    def test_upload_rejects_oversized_https_acknowledgement(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state = sample(root)
+            cert, key = root / "server.pem", root / "server.key"
+            subprocess.run(["openssl", "req", "-x509", "-nodes", "-newkey", "rsa:2048",
+                            "-days", "1", "-keyout", str(key), "-out", str(cert),
+                            "-subj", "/CN=ffbe-test",
+                            "-addext", "subjectAltName=IP:127.0.0.1"],
+                           check=True, capture_output=True)
+            from http.server import BaseHTTPRequestHandler
+            class HugeReceipt(BaseHTTPRequestHandler):
+                def log_message(self, *args):
+                    pass
+                def do_POST(self):
+                    self.rfile.read(int(self.headers["Content-Length"]))
+                    body = b" " * 8193
+                    self.send_response(201)
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            context.load_cert_chain(str(cert), str(key))
+            server = ThreadingHTTPServer(("127.0.0.1", 0), HugeReceipt)
+            server.socket = context.wrap_socket(server.socket, server_side=True)
+            worker = threading.Thread(target=server.serve_forever, daemon=True)
+            worker.start()
+            try:
+                with patch.dict(os.environ, {"no_proxy": "127.0.0.1"}, clear=False):
+                    with self.assertRaisesRegex(ValueError, "acknowledgement too large"):
+                        backup.upload(state, f"https://127.0.0.1:{server.server_port}",
+                                      "b" * 32, cert, "phone", timeout=4)
+            finally:
+                server.shutdown()
+                server.server_close()
+                worker.join(2)
+
     def test_end_to_end_https_with_pinned_ca(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

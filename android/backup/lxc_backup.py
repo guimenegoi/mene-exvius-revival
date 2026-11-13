@@ -28,6 +28,7 @@ from pathlib import Path
 SCHEMA = 1
 MAX_FILE = 8 << 20
 MAX_PAYLOAD = 20 << 20
+MAX_RECEIPT = 8192
 MAX_FILES = 20
 RETAIN = 30
 FILENAME = re.compile(r"[a-zA-Z0-9_-]{1,64}\.json\Z")
@@ -273,7 +274,14 @@ def upload(state_dir: Path, url: str, token: str, cafile: Path, device: str,
     with opener.open(request, timeout=timeout) as reply:
         if reply.status != 201:
             raise RuntimeError("Server did not accept backup")
-        result = json.load(reply)
+        # A remote endpoint must not be able to exhaust client memory with
+        # an unbounded acknowledgement (even over authenticated HTTPS).
+        raw = reply.read(MAX_RECEIPT + 1)
+        if len(raw) > MAX_RECEIPT:
+            raise ValueError("Backup acknowledgement too large")
+        result = json.loads(raw)
+        if not isinstance(result, dict):
+            raise ValueError("Invalid backup acknowledgement")
     if not hmac.compare_digest(result.get("sha256", ""), hashlib.sha256(data).hexdigest()):
         raise RuntimeError("Backup server SHA-256 acknowledgement mismatch")
     return result

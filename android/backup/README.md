@@ -21,7 +21,8 @@
   operação antes de ler qualquer save quando essas condições falham.
 - Transporte **HTTPS com validação da CA/certificado**, token Bearer
   de no mínimo 32 caracteres no servidor, SHA-256 na requisição e
-  confirmação SHA-256 na resposta. Nenhum HTTP simples em produção.
+  confirmação SHA-256 na resposta, com recibo limitado a 8 KiB para
+  impedir consumo ilimitado de memória no cliente. Nenhum HTTP simples em produção.
 - Servidor aceita apenas `POST /v1/backups/<device>` e
   `GET /v1/backups/<device>` autenticados; bloqueia nomes e ZIPs
   arbitrários, symlinks, travessia e payloads maiores que 20 MiB.
