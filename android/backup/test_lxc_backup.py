@@ -75,6 +75,16 @@ class BackupTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "temporary"):
                 backup.snapshot(state)
 
+    def test_snapshot_refuses_hardlinked_save(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = sample(Path(tmp))
+            external = Path(tmp) / "outside.json"
+            external.write_text('{"secret": "synthetic"}')
+            (state / "replay.json").unlink()
+            os.link(external, state / "replay.json")
+            with self.assertRaisesRegex(ValueError, "hardlink"):
+                backup.snapshot(state)
+
     def test_snapshot_refuses_missing_campaign(self):
         with tempfile.TemporaryDirectory() as tmp:
             state = sample(Path(tmp))

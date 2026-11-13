@@ -10,6 +10,8 @@
   `campaign.json`, mais `replay.json`, `summon_rotation.json`
   e outros JSON top-level). Nunca `requests/`, `backups/`, certificados,
   APKs, pacotes, dados nativos ou chaves.
+- O snapshot recusa hardlinks de JSON, impedindo que um arquivo externo
+  ao diretório de state seja incluído por alias de inode.
 - O Revival já escreve o save com `os.replace` em `PlayerState.save`;
   o snapshot lê um arquivo inteiro sem modificá-lo e recusa leituras
   simultâneas à troca do arquivo. **Ainda não há consistência transacional

@@ -50,6 +50,8 @@ def _read_state(path: Path) -> bytes:
     if path.is_symlink() or not path.is_file():
         raise ValueError("Unsafe save file")
     before = path.stat()
+    if before.st_nlink != 1:
+        raise ValueError("Unsafe hardlinked save file")
     if before.st_size <= 0 or before.st_size > MAX_FILE:
         raise ValueError("Save file outside allowed size")
     with path.open("rb") as stream:
