@@ -4,7 +4,7 @@ O painel edita somente server-config.json do dispositivo samsung-android, sem mo
 
 ## Endereço e proteção
 - URL privada na Tailnet: https://proxmox.tailcf6a16.ts.net:8445/
-- Proxmox Tailscale Serve: HTTPS 8445 encaminha ao HTTP 192.168.15.230:18448.
+- Proxmox Tailscale Serve: HTTPS 8445 encaminha ao HTTPS interno 192.168.15.230:18448; o salto na LAN também é criptografado por TLS.
 - Não ativar Tailscale Funnel nem publicar portas no roteador.
 - Login independente do token de backup, com senha aleatória e PBKDF2-HMAC-SHA256, salt aleatório, cookies Secure/HttpOnly/SameSite=Strict, sessão de 8 h, proteção CSRF/Origin e limitação de tentativas.
 - Nenhum JavaScript externo, CDN ou token de backup enviado ao navegador.

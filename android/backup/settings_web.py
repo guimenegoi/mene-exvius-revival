@@ -11,9 +11,11 @@ import hashlib
 import hmac
 import html
 import json
+import ipaddress
 import os
 import re
 import secrets
+import ssl
 import threading
 import time
 from datetime import datetime, timezone
@@ -459,6 +461,8 @@ def main(argv=None):
     parser.add_argument("--port", type=int, default=18448)
     parser.add_argument("--store", required=True, type=Path)
     parser.add_argument("--auth", required=True, type=Path)
+    parser.add_argument("--cert", required=True, type=Path)
+    parser.add_argument("--key", required=True, type=Path)
     parser.add_argument("--public-origin", required=True)
     parser.add_argument("--device", default=DEVICE)
     parser.add_argument("--provision-auth", action="store_true")
@@ -467,10 +471,23 @@ def main(argv=None):
         provision_auth(args.auth)
         print("Panel authentication created; initial password stored in root-only file.")
         return 0
-    if not args.auth.is_file() or args.auth.is_symlink():
-        parser.error("Panel auth must be an existing regular private file")
+    if not args.auth.is_file() or args.auth.is_symlink() or args.auth.stat().st_mode & 0o007:
+        parser.error("Panel auth must be an existing private file")
+    address = ipaddress.ip_address(args.bind)
+    if address.is_unspecified or not (address.is_private or address.is_loopback):
+        parser.error("Panel must bind to a specific private address")
+    if any(p.is_symlink() or not p.is_file() for p in (args.cert, args.key)):
+        parser.error("TLS certificate and key must be regular files")
+    if args.key.stat().st_mode & 0o077:
+        parser.error("TLS key must be mode 0600")
     app = WebApp(args.store, args.auth, args.public_origin, args.device)
     server = ThreadingHTTPServer((args.bind, args.port), make_handler(app))
+    # Encrypt also the LAN hop between Proxmox and the LXC. Tailscale Serve
+    # handles public HTTPS and reverse-proxies to this private TLS listener.
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.minimum_version = ssl.TLSVersion.TLSv1_2
+    context.load_cert_chain(str(args.cert), str(args.key))
+    server.socket = context.wrap_socket(server.socket, server_side=True)
     print("FFBE-SETTINGS-WEB READY", args.bind, args.port, flush=True)
     try:
         server.serve_forever()
