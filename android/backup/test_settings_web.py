@@ -104,6 +104,40 @@ class SettingsWebTests(unittest.TestCase):
         self.assertEqual(code, 303)
         self.assertIn("Secure", cookie)
 
+    def test_lan_self_signed_browser_fetch_metadata(self):
+        self.app.allowed_origins.add("https://192.168.15.230:18448")
+        code, _, cookie, _, _ = self.request(
+            "POST", "/login", {"password": "correct horse battery staple"},
+            {"Origin": "null", "Sec-Fetch-Site": "same-origin",
+             "Host": "192.168.15.230:18448"})
+        self.assertEqual(code, 303)
+        self.assertIn("Secure", cookie)
+
+    def test_rejects_cross_site_fetch_metadata(self):
+        self.app.allowed_origins.add("https://192.168.15.230:18448")
+        for headers in (
+            {"Origin": "null", "Host": "192.168.15.230:18448"},
+            {"Origin": "null", "Sec-Fetch-Site": "cross-site",
+             "Host": "192.168.15.230:18448"},
+            {"Origin": "null", "Sec-Fetch-Site": "same-origin",
+             "Host": "elsewhere.example"},
+        ):
+            with self.subTest(headers=headers):
+                code, _, _, _, _ = self.request(
+                    "POST", "/login",
+                    {"password": "correct horse battery staple"}, headers)
+                self.assertEqual(code, 403)
+
+    def test_legacy_same_origin_referer(self):
+        self.app.allowed_origins.add("https://192.168.15.230:18448")
+        code, _, cookie, _, _ = self.request(
+            "POST", "/login",
+            {"password": "correct horse battery staple"},
+            {"Host": "192.168.15.230:18448",
+             "Referer": "https://192.168.15.230:18448/"})
+        self.assertEqual(code, 303)
+        self.assertIn("Secure", cookie)
+
     def test_origin_enforced_on_login_and_save(self):
         code, _, _, _, _ = self.request("POST", "/login", {"password": "correct horse battery staple"},
                                          {"Origin": "https://attacker.example"})

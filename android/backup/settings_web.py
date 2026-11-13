@@ -271,7 +271,7 @@ def make_handler(app: WebApp):
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Cache-Control", "no-store")
-            self.send_header("Referrer-Policy", "no-referrer")
+            self.send_header("Referrer-Policy", "same-origin")
             self.send_header("X-Frame-Options", "DENY")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Content-Security-Policy",
@@ -301,8 +301,23 @@ def make_handler(app: WebApp):
                 raise ValueError("Invalid form") from exc
 
         def _origin_ok(self):
-            # Only the private Tailscale origin can submit mutations.
-            return self.headers.get("Origin") in app.allowed_origins
+            # Some browsers omit Origin on HTTPS LAN forms after certificate
+            # exceptions. Accept only explicit origins or strong same-origin
+            # Fetch Metadata / Referer tied to the requested allowed host.
+            origin = self.headers.get("Origin")
+            if origin in app.allowed_origins:
+                return True
+            if origin not in (None, "null"):
+                return False
+            host = self.headers.get("Host", "")
+            if host not in {urlsplit(x).netloc for x in app.allowed_origins}:
+                return False
+            if self.headers.get("Sec-Fetch-Site") == "same-origin":
+                return True
+            if origin is None:
+                ref = urlsplit(self.headers.get("Referer", ""))
+                return f"{ref.scheme}://{ref.netloc}" in app.allowed_origins
+            return False
 
         def _layout(self, body):
             return ('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
