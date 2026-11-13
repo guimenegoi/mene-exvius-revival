@@ -166,8 +166,11 @@ Estado de laboratório e bloqueadores em
       e integração de dados), com SHA-256.
       **Servidor real iniciado no Android; jogo offline ainda não validado.**
 - [x] Instalar e verificar os recibos dos 19 pacotes **reais** no Waydroid.
-- [ ] Validar individualmente os recursos exigidos em gameplay; `F_BANNER_MST`
-      (Ver595_oB0YVw67.dat) retornou 404 apesar de estar em data-010.zip.
+- [x] Corrigir acesso a `F_BANNER_MST` (`Ver595_oB0YVw67.dat`):
+      o 404 da fase inicial foi resolvido com o mapeamento dos arquivos
+      nativos preservados, conforme as validações RC1/RC2 acima.
+- [ ] Validar os demais recursos exigidos durante gameplay completo,
+      além dos fluxos de título, Home e Vortex já examinados.
 - [ ] Verificar escrita, atualização e preservação de saves no layout real ARM64.
 - [ ] Empacotar runtime CPython incorporado, stdlib e dependências
       `cryptography`, `Pillow`, `PyYAML`, `tzdata` para x86_64 e ARM64.

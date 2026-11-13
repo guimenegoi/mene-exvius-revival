@@ -1,5 +1,22 @@
+# Python tooling and transient results
 __pycache__/
 *.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+.venv/
 .env
 
+# Local build output and downloads are not source artifacts
 /dist/
+/build/
+*.apk
+*.apks
+*.aab
+*.idsig
+*.part
+
+# Do not accidentally stage local signing credentials
+*.keystore
+*.jks
+*.p12

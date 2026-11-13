@@ -4,6 +4,46 @@ Este documento descreve **o fork experimental [mene-exvius-revival](https://gith
 
 Acompanhe as etapas com evidências no [checklist vivo da entrega Android](ANDROID_CHECKLIST.md).
 
+## Situação atual — RC2 (12/11/2026, após a integração Android)
+
+A **RC2 Android** é um APK único ARM64 com Python 3.14 e servidor Revival
+embarcados, instalado no Waydroid via `adb install -r`, sem limpar os dados.
+Ele não usa o LXC durante a partida: o servidor responde exclusivamente em
+`127.0.0.1:18080`, utilizando os recursos e saves privados do Android.
+
+O teste confirmou a inicialização de 19 pacotes **já instalados** no Waydroid,
+o título, a Home e as abas do Vortex. A integração reutiliza as correções
+originais de prioridade e banners do Revival; a segunda abertura não repetiu
+o download do pacote de banners de ~224 MB. Resta o aviso de download de 0 KB.
+
+O **instalador limpo em um celular ARM64 físico não foi testado**. Ele precisa
+de internet para baixar inicialmente os 19 pacotes (~14,65 GB comprimidos);
+a partida sem Wi-Fi, a batalha, a recompensa e a persistência do save ainda
+precisam ser validadas com a rede desligada. Por isso a versão é uma
+**release candidate de teste**, não uma release final.
+
+Fluxo de execução verificado no código atual:
+
+```text
+APK único (cliente FFBE + CPython + bibliotecas ARM64)
+  -> DataDownloadActivity / DataUpdates (primeira instalação dos recursos)
+  -> worker Python dedicado / local_http.run()
+  -> preflight de pacotes + CDN overlay com arquivos nativos preservados
+  -> serve.configure_engine() / serve.start_engine() (Revival original)
+  -> servidor 127.0.0.1:18080 -> cliente e cache/saves locais
+```
+
+A versão testada e os riscos restantes estão em
+[ANDROID_CHECKLIST.md](ANDROID_CHECKLIST.md) e o empacotamento está em
+[android/distribution/README.md](../android/distribution/README.md).
+O binário, os pacotes e os saves não são versionados no Git.
+
+## Histórico técnico anterior à RC2
+
+As seções abaixo registram testes em Termux, transporte externo e etapas
+**anteriores** à integração embarcada. Seus status são um retrato daquele
+momento, não uma negação dos resultados da RC2.
+
 ## Objetivo
 
 **Requisito de entrega:** um único aplicativo Android FFBE, sem depender de Termux,
@@ -15,7 +55,7 @@ Usar o mesmo motor de jogo `source/server/` do Revival no Android (FFBE Global),
 
 O fork deve evitar divergências desnecessárias do upstream: ajustes específicos Android devem ficar isolados; correções genéricas devem ser propostas ao projeto original.
 
-## Estado verificado — 12 de novembro de 2026
+## Estado histórico — 12 de novembro de 2026 (antes do RC2)
 
 | Verificação | Estado | Evidência / restrição |
 | --- | --- | --- |
@@ -41,9 +81,10 @@ O fork deve evitar divergências desnecessárias do upstream: ajustes específic
 | Aplicativo independente (sem apps auxiliares) | **Pendente** | CPython e imports do motor são provas de laboratório; faltam dependências externas completas, servidor local, recursos reais, lifecycle fora da UI e jogabilidade offline |
 | Jogo completamente offline | **Pendente** | Testar funcionamento sem Termux, Proxmox ou internet, com saves locais |
 
-**Cuidado:** a prova de transporte usou Termux somente como laboratório. O
-jogo ainda NÃO está offline; só a referência Linux tem todos os dados e o
-cliente Android não concluiu a inicialização com o conjunto parcial.
+**Nota histórica da fase Termux:** a prova de transporte então usou Termux
+como laboratório; o cliente ainda não havia concluído a inicialização com
+os recursos parciais. Na RC2, o servidor já é embarcado e título/Home/Vortex
+funcionam, conforme a seção atual no início deste documento.
 
 ## Arquitetura
 

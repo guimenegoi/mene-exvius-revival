@@ -1,10 +1,16 @@
 # Exvius Revival for iOS
 
-> **Fork experimental para Android:** este repositório também acompanha a adaptação do
-> cliente FFBE Global 9.1.0 e a pesquisa para executar o backend no próprio Android.
-> Veja **[Estado dos testes, arquitetura e próximos passos](docs/ANDROID.md)**.
-> **O guia abaixo é o README original do upstream, para iOS; não descreve um
-> instalador Android pronto.**
+> **Android — RC2 de teste (12/11/2026):** o fork tem um APK único ARM64
+> com o servidor Revival embarcado. O arquivo local está em
+> `~/Downloads/FFBE-Revival-RC2-ARM64-English.apk` no desktop de desenvolvimento
+> (não distribuído no Git). Título, Home e Vortex foram validados no Waydroid,
+> mas instalação limpa, batalha e save com rede desligada em celular real
+> **ainda não foram aprovados**. A primeira instalação exige baixar os 19 pacotes.
+> Veja o [checklist Android atualizado](docs/ANDROID_CHECKLIST.md) e as
+> [instruções de distribuição](android/distribution/README.md).
+>
+> **O guia abaixo é o README original do upstream, para iOS.** Não se aplica
+> à instalação Android e continua preservado para facilitar os merges.
 
 Play **Final Fantasy Brave Exvius** (Global) on an iPhone again, with the **unmodified App Store app**, against a game server you run yourself.
 

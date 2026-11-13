@@ -2,6 +2,14 @@
 
 Acompanhamento por prova e pendências: [checklist vivo](ANDROID_CHECKLIST.md).
 
+> **Situação atual (12/11/2026, RC2):** já existe APK único ARM64 com
+> CPython e o servidor Revival embarcados, testado até Home/Vortex no
+> Waydroid, sem depender de LXC durante a partida. Primeira instalação
+> limpa em celular físico, save/batalha em modo avião e lifecycle ainda
+> precisam de validação. A descrição de protótipos abaixo é histórica;
+> veja o [resumo atualizado](ANDROID.md) e as
+> [verificações da RC2](ANDROID_CHECKLIST.md).
+
 ## Requisito fechado
 
 A entrega para uso cotidiano deve instalar **somente o FFBE**. O jogador não deve
@@ -12,7 +20,7 @@ A fase de desenvolvimento pode usar Termux/Waydroid como bancada de testes.
 O runner `android/ffbe-termux` continua disponível apenas para testes e não integra
 a experiência ou a lista de requisitos da versão final.
 
-**Status em 12/11/2026: transporte Java, instalador de dados e CPython 3.14.10 ARM64 com Revival, PyYAML, tzdata, Pillow, cryptography, cffi e pycparser dentro do FFBE comprovados (PNG e AES-CBC do FFBE). Inicialização Python fora da thread principal **validada apenas em laboratório**; lifecycle de produção, geração de certificados, entrada HTTP Revival guardada por inventário de 19 pacotes (falha segura comprovada no Waydroid); servidor **real** ainda não iniciado com dados completos, testes x86_64/ARM64 físico e APK offline independente ainda NÃO concluídos.**
+**Registro histórico anterior ao RC2 (12/11/2026): transporte Java, instalador de dados e CPython 3.14.10 ARM64 com Revival, PyYAML, tzdata, Pillow, cryptography, cffi e pycparser dentro do FFBE comprovados (PNG e AES-CBC do FFBE). Inicialização Python fora da thread principal **validada apenas em laboratório**; lifecycle de produção, geração de certificados, entrada HTTP Revival guardada por inventário de 19 pacotes (falha segura comprovada no Waydroid); servidor **real** ainda não iniciado com dados completos, testes x86_64/ARM64 físico e APK offline independente ainda NÃO concluídos.**
 O pacote `mene-exvius-revival-termux-5a1afdc9.tar.gz` é um artefato de desenvolvimento,
 não é o instalador offline prometido.
 

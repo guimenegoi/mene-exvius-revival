@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-11-12: Android RC2 — APK único de teste
+
+- O fork Android agora tem APK único ARM64 para instalação direta, reunindo
+  base, bibliotecas ARM64, inglês e recursos mdpi, sem o split francês.
+- Revival executa no próprio processo Android em `127.0.0.1:18080`;
+  título, Home e Vortex foram verificados no Waydroid. A segunda abertura
+  não repetiu o download de ~224 MB.
+- O APK utiliza certificado de teste, não contém os 19 pacotes de dados e
+  ainda precisa ser validado em celular ARM64 físico, sem rede, incluindo
+  uma batalha e persistência do save. Não publicar binários proprietários.
+- A documentação iOS original abaixo permanece como histórico do upstream.
+
 Each entry is one update to this repo. To update: in your repo folder run `git pull`, then from `ios-server` run `docker compose build && docker compose up -d`. Your save isn't touched. Open the game twice afterwards so it picks up the new data.
 
 ## 2026-11-12: Items used in battle stay used

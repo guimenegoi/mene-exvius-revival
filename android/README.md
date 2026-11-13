@@ -1,14 +1,24 @@
-# mene-exvius-revival — runtime experimental para Android
+# mene-exvius-revival — runner Termux de desenvolvimento Android
 
+> **RC2 atual (12/11/2026):** o aplicativo Android único já integra
+> CPython e o servidor Revival; o teste Waydroid chegou à Home e ao Vortex.
+> Este guia descreve **somente o runner Termux histórico**, que não é mais
+> necessário para usar o APK. Acompanhe o [checklist de RC2](../docs/ANDROID_CHECKLIST.md)
+> e a [instalação do APK único](distribution/README.md).
+> Ainda faltam instalação limpa, batalha/save offline e validação no celular.
+>
 > **Dados para o aplicativo único:** [instalação integral dos 19 pacotes](data/README.md), com
-> SHA-256, atualização incremental e verificação sem internet. Esta ferramenta
-> é independente do Termux e será incorporada ao instalador do APK final.
+> SHA-256, atualização incremental e verificação sem internet. O mecanismo
+> independente de Termux já está integrado ao instalador da RC2.
 
 > **Somente laboratório:** a entrega final será um único aplicativo FFBE, sem
 > instalação de Termux, VPN ou servidor auxiliar. O alvo e os critérios estão em
 > [ANDROID_STANDALONE.md](../docs/ANDROID_STANDALONE.md).
 
-Esta pasta contém o **runner de desenvolvimento para Termux**. Ainda **não** é um APK nem uma versão do FFBE jogável sem rede. O propósito é iniciar o servidor Python original no Android com estado e dados próprios, sem root e sem alterar o backend do Proxmox.
+O runner descrito abaixo é uma **ferramenta de desenvolvimento para Termux**,
+não o APK RC2. O propósito é iniciar o servidor Python original em ambiente
+separado, sem alterar o backend do Proxmox. Os status dos comandos Termux
+não determinam a prontidão da versão embarcada.
 
 ## Requisitos
 

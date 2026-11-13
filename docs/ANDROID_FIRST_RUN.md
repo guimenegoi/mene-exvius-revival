@@ -1,8 +1,17 @@
 # FFBE Android — instalação automática na primeira abertura
 
+> **Atualização RC2 (12/11/2026):** o instalador foi integrado a um
+> **APK único sem splits**, e o servidor Revival local e a Home/Vortex
+> funcionaram no Waydroid. Os 19 pacotes foram instalados em laboratório,
+> mas a instalação limpa por internet em celular ARM64 físico não foi
+> validada. O antigo erro `F_BANNER_MST` foi resolvido; a prova completa
+> offline continua pendente. Veja
+> [checklist RC2](ANDROID_CHECKLIST.md). Os resultados de etapas
+> anteriores abaixo são mantidos como evidência histórica.
+
 ## Objetivo
 
-O usuário instala **um único APK com seus splits**, abre o FFBE com internet
+O usuário instala **o aplicativo Android** (RC2 em um único APK), abre o FFBE com internet
 na primeira execução e o próprio aplicativo baixa e valida os 19 pacotes
 fixados em `data/latest.json`. Depois da instalação, o cliente fala apenas
 com o motor Revival em `127.0.0.1:18080`, sem Termux, VPN ou servidor externo.

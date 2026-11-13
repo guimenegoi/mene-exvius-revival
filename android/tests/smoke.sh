@@ -21,5 +21,9 @@ if env FFBE_ANDROID_HOME="$TMP" FFBE_HTTP_PORT=80 "$RUNNER" doctor >"$TMP/doctor
 fi
 grep -q 'Porta fora do intervalo' "$TMP/doctor.log"
 test ! -e "$TMP/server-root/state/campaign.json"
-python3 -m unittest discover -s "$ROOT/android/runtime" -p 'test_*.py' -q
-echo 'OK: help, status, missing assets, privileged port guard, isolated state, bootstrap contract tests'
+# Reuse all existing Android test suites; no second test runner or APK build.
+for suite in runtime data distribution network; do
+  PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+    -s "$ROOT/android/$suite" -p 'test_*.py' -q
+done
+echo 'OK: CLI guards, isolated state, runtime, data, distribution and network tests'
