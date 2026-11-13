@@ -111,6 +111,9 @@ STAND_IN_SCENES = {"390001201": "211020111.cpk (the Crest scene)",
 # (GL 0x1c4cfa8 checks `Ver<version>_w5JFGPh3.dat`; the row index `mst/w5JFGPh3.i` it builds itself, and rebuilds when
 # the version changes, 2026-11-12). A new version makes it download the file. `EXVIUS_REFETCH_TABLES=0` turns it off.
 REFETCH = {"F_SACRIFICE_MST": "w5JFGPh3"}
+# 2000 since 2026-11-12 (was 1000): a phone that fetched Ver201291 once asks again, so the next phone test's
+# CONVERT-TABLE log line shows whether the phone asks for the table at all.
+REFETCH_STEP = 2000
 # Ability descriptions (`T7aEx3Mj`) of restored units still in Japanese (content/restored_unit_text.json; Kira's
 # variants, 2026-11-12). Token/key from libgame.
 ABILITY_EXPLAIN = ("F_ABILITY_EXPLAIN_MST", "7FGj2bCh", "B2Ka3kft")
@@ -307,12 +310,12 @@ def version_bumps() -> dict[str, int]:
         out[spec[0]] = table_bump(spec)
     if refetch_tables():
         for name in REFETCH:
-            out[name] = out.get(name, 0) + 1000
+            out[name] = out.get(name, 0) + REFETCH_STEP
     return {name: bump for name, bump in out.items() if bump}
 
 
 def refetch_tables() -> bool:
-    """EXVIUS_REFETCH_TABLES (default on; 0 = off): advertise the REFETCH tables 1000 higher."""
+    """EXVIUS_REFETCH_TABLES (default on; 0 = off): advertise the REFETCH tables REFETCH_STEP higher."""
     return os.environ.get("EXVIUS_REFETCH_TABLES", "1").strip().lower() not in ("0", "off", "false", "no")
 
 

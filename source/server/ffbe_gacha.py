@@ -615,7 +615,8 @@ def gacha_groups(banners: list) -> dict:
         if b.get('boxes'):
             from gacha_box import detail_id, box_id
             b = dict(b, detail_id=detail_id(State.player, b), box_id=box_id(State.player, b))
-        art = b.get("art") or {}
+        import summon_art
+        art = summon_art.resolve(b, b.get("art") or {})     # only names the phone can download (summon_art.py)
         schedule_art = art  # Keep every step image in the native carousel/download catalogue.
         steps = b.get("steps") or []
         step_index = State.player.gacha_step(b) if steps and State.player else 0

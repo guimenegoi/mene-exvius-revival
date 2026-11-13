@@ -4876,6 +4876,8 @@ class PlayerState:
         quests = self.data.get('exvius_map', {}).get('quests')
         if quests is not None:
             out['hQKAwj18'] = list(quests.values())
+            # The quest-level list (UserQuestInfoResponse) the Quest Report reads; see quest_report_rows.
+            out['XoPQ5Rs3'] = self.quest_report_rows()
         slots = self.data.get('exvius_party_register', {}).get('slots')
         if slots is not None:
             out['dEA91X0o'] = [{**{k: str(v) for k, v in slot.items()
@@ -4968,6 +4970,29 @@ class PlayerState:
             for tag in ('5Eb0Rig6', 'fqTUI1z6', 'GV7Ej6n0', 'zeucwm6H'):
                 out.pop(tag, None)
         return out
+
+    def quest_report_rows(self) -> list:
+        """`XoPQ5Rs3` (UserQuestInfoResponse, clear-and-rebuild): one row per quest the save has steps of,
+        `Z34jU7ue` quest id and `4kcAD9fW` state, 2 when every F_QUEST_SUB_MST step of it is completed, else 1.
+
+        The Quest Report reads only this list (`QuestReportListScene::initialize` -> `UserQuestInfoList::
+        getNewAndProgressList` / `getClearedList`, by F_QUEST_MST `AgoB52Ey` 1 = town quests, 2 = Episode, shown
+        when `rFd5CiV2` is set); the step rows (`hQKAwj18`) only fill in each quest's progress. Until 2026-11-12
+        it was never sent, so Ongoing showed 0 and Cleared and Episode were empty."""
+        steps = _load_ndjson('F_QUEST_SUB_MST.ndjson', '7Svg2kdT')
+        by_quest = {}
+        for row in steps.values():
+            if isinstance(row, dict):
+                by_quest.setdefault(str(row.get('Z34jU7ue')), []).append(str(row.get('7Svg2kdT')))
+        saved = (self.data.get('exvius_map') or {}).get('quests') or {}
+        out = {}
+        for sid, row in saved.items():
+            qid = str(row.get('Z34jU7ue') or '') if isinstance(row, dict) else ''
+            if not qid or qid not in by_quest or str(sid) not in by_quest[qid]:
+                continue
+            done = all(str((saved.get(x) or {}).get('4kcAD9fW')) == '2' for x in by_quest[qid])
+            out[qid] = {'Z34jU7ue': qid, '4kcAD9fW': '2' if done else '1'}
+        return [out[q] for q in sorted(out, key=int)]
 
     def friend_id(self) -> str:
         identity = self.data["identity"]

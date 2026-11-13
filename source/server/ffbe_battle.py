@@ -1418,6 +1418,9 @@ def serve_version_table(spec):
                 for r in rows]
     spec = dict(spec)  # never rewrite the loaded payload -- else the note below drifts on the 2nd request
     spec["c1qYg84Q"] = rows
+    sacrifice = next((r.get("wM9AfX6I") for r in rows if r.get("a4hXTIm0") == "F_SACRIFICE_MST"), None)
+    print(f"CONVERT-TABLE advertised F_SACRIFICE_MST version {sacrifice} (Ver{sacrifice}_w5JFGPh3.dat)"
+          if sacrifice else "CONVERT-TABLE F_SACRIFICE_MST is NOT in the version list", flush=True)
     _note(f"version table: {len(authored)} authored + {len(added)} from {VERSION_TABLE_XML} "
           f"= {len(rows)} rows" + (f"; forced {forced}" if forced else "")
           + (f"; every table advertised at +{offset}" if offset else ""))

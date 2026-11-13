@@ -93,7 +93,8 @@ def fetch(log=print) -> int:
     folder = data_paths.DEAL_ART_ROOT
     os.makedirs(folder, exist_ok=True)
     added = failed = 0
-    for name, url, title, size in _targets():
+    # Drawn stand-ins first and without a pause (they cost nothing remote), then the web downloads.
+    for name, url, title, size in sorted(_targets(), key=lambda t: bool(t[1])):
         path = os.path.join(folder, name)
         if os.path.isfile(path):
             continue
@@ -122,7 +123,8 @@ def fetch(log=print) -> int:
             fh.write(data)
         os.replace(path + '.tmp', path)
         added += 1
-        time.sleep(0.5)   # be gentle with the Wayback Machine
+        if url:
+            time.sleep(0.5)   # be gentle with the Wayback Machine
     if added:
         import ffbe_gacha
         ffbe_gacha._BANNER_ART_INDEX.clear()   # rebuilt on the next lookup, now with these files
