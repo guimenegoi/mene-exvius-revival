@@ -199,6 +199,17 @@ Estado de laboratório e bloqueadores em
 
 ## P1 — cobertura funcional e estabilidade
 
+- [ ] **Backup de save na LXC 117**, implementado e validado em
+      **branch independente**: exportar somente os arquivos de progresso
+      necessários de `exvius/server-root/state` (não os 19 pacotes nem
+      chaves privadas); envio autenticado e criptografado pela rede local,
+      com consentimento explícito, execução após save íntegro, checksum,
+      retenção de versões e indicação da última cópia bem-sucedida.
+      O modo avião e o gameplay offline não podem depender da LXC.
+      Implementar restauração separadamente, com prévia, escolha de versão,
+      confirmação e cópia local de segurança; nunca sobrescrever
+      automaticamente o save. Validar perda de rede, reinício e integridade
+      no aparelho ARM64 real antes de ativar por padrão.
 - [ ] World Map, exploração/encontros aleatórios, summons, inventário e quests,
       incluindo regressão de recompensas.
 - [ ] Investigar incompatibilidade de `EXVIUS_WIKI_REWARDS=1`; atualmente o
@@ -210,6 +221,14 @@ Estado de laboratório e bloqueadores em
 
 ## P2 — entregável e pós-estabilização
 
+- [ ] **Distribuição privada de APKs diretamente pela LXC 117**:
+      permitir baixar no navegador do celular um APK aprovado via LAN,
+      sem cabo USB ou app auxiliar; não expor repositório, arquivos
+      proprietários ou outros diretórios; exigir autenticação/acesso
+      temporário, acesso local, checksum SHA-256, cabeçalhos seguros e
+      suporte a retomada HTTP Range. Conferir assinatura, compatibilidade
+      de atualização `adb install -r` e preservação dos saves. Não publicar
+      binários em GitHub ou na internet sem revisão de direitos.
 - [ ] Permitir usar **opcionalmente a LXC 117 como origem dos 19 pacotes
       (~14,65 GB)** na instalação inicial ou em atualizações quando o
       celular estiver na rede doméstica. Reutilizar o cache e o servidor
@@ -235,6 +254,22 @@ Estado de laboratório e bloqueadores em
       a versão offline no aparelho. Branch de investigação independente.
 
 ## Registro de execução
+
+### 2026-11-12 — relato de jogo offline no Samsung e upstream recente
+
+- **Relato do teste em aparelho físico:** batalha em modo avião concluída
+  e summon realizado com sucesso. Ainda pendente comprovar, após fechar
+  e reabrir, a persistência do save, das recompensas e da unidade invocada;
+  não considerar gameplay completo validado somente com essas duas ações.
+- **Correção pontual testada no Samsung:** `d48563b` na branch
+  `fix/android-preflight-diagnostics`, com ajuste de alias
+  `/data/user/0` vs. `/data/data` e fallback de hardlinks proibidos.
+  APK atualizado sem limpeza de dados; 19 pacotes verificados, porta 18080,
+  Activity Lapis e requests atendidos. **Pendente integrar em main**.
+- **Upstream a avaliar em branch de integração:** `25f1226` corrige
+  download de arte na tela de summons; `61c6409` impede repetição de
+  quests concluídas e preenche o Quest Report. O fork ainda está em
+  `2ae0d99` e não incorpora esses dois commits.
 
 ### 2026-11-12 — gate de readiness real antes de abrir Lapis
 
