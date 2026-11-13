@@ -432,6 +432,20 @@ def run(archive: Path | None = None, app_files: Path | None = None,
     # installer. The iPhone's first-battle workaround must not trigger them.
     os.environ["EXVIUS_EARLY_RESOURCES"] = ""
     os.environ["EXVIUS_IOS_SOUND_REFETCH"] = ""
+    # A local, schema-validated config is applied BEFORE serve/capture_server
+    # bind any environment flags. The sync worker never changes a live engine.
+    try:
+        import config_model
+    except ImportError:
+        pass  # Existing signed stable APKs don't carry this optional module.
+    else:
+        report = config_model.apply_on_boot(
+            archive.parent / "private-config",
+            files / "exvius/server-root/state/replay.json",
+        )
+        print("FFBE-CONFIG: " + str(report["reason"])
+              + "; active=" + str(report["applied"])
+              + "; staged=" + str(report["staged"]), flush=True)
     serve = importlib.import_module("serve")
     serve.configure_engine()
     capture = serve.start_engine()
@@ -450,6 +464,15 @@ def run(archive: Path | None = None, app_files: Path | None = None,
             archive.parent / "private-backup",
             files / "exvius/server-root/state",
         )
+        try:
+            from config_sync import ConfigSync
+        except ImportError:
+            pass
+        else:
+            def config_connection():
+                return (backup._load(), backup.ca_file) if backup.enabled() else None
+            backup.config_sync = ConfigSync(
+                archive.parent / "private-config", config_connection)
         handler = wrap_handler(handler, backup)
     server = serve.Server(("127.0.0.1", PORT), handler)
     server.tls = None

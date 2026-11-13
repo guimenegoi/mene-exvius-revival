@@ -71,6 +71,9 @@ def build(repo: Path, base: Path, output: Path, *, with_backup=False) -> dict:
     if with_backup:
         replacements["ffbe_backup.py"] = (repo / "android/backup/embedded_client.py").read_bytes()
         replacements["ffbe_backup_transport.py"] = (repo / "android/backup/lxc_backup.py").read_bytes()
+        replacements["config_model.py"] = (repo / "android/backup/config_model.py").read_bytes()
+        replacements["config_service.py"] = (repo / "android/backup/config_service.py").read_bytes()
+        replacements["config_sync.py"] = (repo / "android/backup/config_sync.py").read_bytes()
         if "BackupCoordinator" not in replacements["ffbe_backup.py"].decode("utf-8"):
             raise ValueError("Expected experimental Android backup client")
 
@@ -130,7 +133,9 @@ def build(repo: Path, base: Path, output: Path, *, with_backup=False) -> dict:
                 if embedded.read("ffbe_engine_bootstrap.py") != replacements["ffbe_engine_bootstrap.py"]:
                     raise ValueError("APK bootstrap not replaced")
                 if with_backup and not all(k in embedded.namelist()
-                                           for k in ("ffbe_backup.py", "ffbe_backup_transport.py")):
+                                           for k in ("ffbe_backup.py", "ffbe_backup_transport.py",
+                                                     "config_model.py", "config_service.py",
+                                                     "config_sync.py")):
                     raise ValueError("Missing embedded backup dependencies")
         temporary_output.replace(output)
     finally:

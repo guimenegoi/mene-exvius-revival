@@ -215,6 +215,9 @@ class BackupCoordinator:
     def _loop(self) -> None:
         while not self._stop.is_set():
             self.poll_once()
+            sync = getattr(self, "config_sync", None)
+            if sync is not None:
+                sync.poll()
             self._wake.wait(self.interval)
             self._wake.clear()
 
@@ -233,6 +236,11 @@ def wrap_handler(base, coordinator: BackupCoordinator):
         def do_GET(self):
             if self.path == STATUS_PATH:
                 return self._backup_json(200, coordinator.status())
+            if self.path == "/__exvius/config/status":
+                sync = getattr(coordinator, "config_sync", None)
+                if sync is None:
+                    return self._backup_json(200, {"state": "unavailable"})
+                return self._backup_json(200, sync.status())
             return super().do_GET()
 
         def do_POST(self):
