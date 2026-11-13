@@ -25,7 +25,8 @@
   impedir consumo ilimitado de memória no cliente. Nenhum HTTP simples em produção.
 - Servidor aceita apenas `POST /v1/backups/<device>` e
   `GET /v1/backups/<device>` autenticados; bloqueia nomes e ZIPs
-  arbitrários, symlinks, travessia e payloads maiores que 20 MiB.
+  arbitrários, symlinks, travessia, manifestos maiores que 8 KiB
+  (recusados antes da leitura) e payloads maiores que 20 MiB.
   Armazena arquivos de modo 0600 em diretórios 0700, em
   `storage-media` na LXC. Retém as últimas 30 cópias por dispositivo.
   **Não implementa endpoint de remoção ou restauração automática.**

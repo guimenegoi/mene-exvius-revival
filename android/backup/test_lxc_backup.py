@@ -128,6 +128,18 @@ class BackupTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Compressed"):
                 backup.validate(buffer.getvalue())
 
+    def test_oversized_manifest_is_rejected_before_reading(self):
+        # The archive is synthetic. An oversized manifest must be rejected
+        # from ZIP metadata, before materializing untrusted contents.
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr("manifest.json", b"x" * 8193)
+            zf.writestr("state/campaign.json", b"{}")
+        with patch.object(zipfile.ZipFile, "read",
+                          side_effect=AssertionError("read oversized manifest")):
+            with self.assertRaisesRegex(ValueError, "Oversized manifest"):
+                backup.validate(buffer.getvalue())
+
     def test_server_store_retention_private_permissions(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

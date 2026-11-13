@@ -117,7 +117,10 @@ def validate(data: bytes) -> list[str]:
             names = [m.filename for m in members]
             if len(names) != len(set(names)) or "manifest.json" not in names:
                 raise ValueError("Duplicate or absent archive manifest")
-            record = json.loads(zf.read("manifest.json"))
+            manifest = zf.getinfo("manifest.json")
+            if manifest.file_size > 8192:
+                raise ValueError("Oversized manifest")
+            record = json.loads(zf.read(manifest))
             if (not isinstance(record, dict) or record.get("schema") != SCHEMA
                     or not isinstance(record.get("files"), dict)):
                 raise ValueError("Invalid snapshot manifest")
