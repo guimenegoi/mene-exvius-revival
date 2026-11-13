@@ -5,6 +5,7 @@ proving the real 19-pack Revival engine or offline gameplay.
 """
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
@@ -114,6 +115,37 @@ class LocalHttpTests(unittest.TestCase):
             self.assertFalse(local_http.preflight(archive, files)[0])
             self.assertFalse((files / "exvius/server-root").exists())
 
+    def test_malformed_android_receipt_reports_the_rejected_record(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive, files, manifest = sample(Path(tmp))
+            records = [
+                dict(pack, unpackedSize=10) for pack in manifest["packs"]
+            ]
+            records[8]["unpackedSize"] = 0
+            (files / "exvius/data/installed.json").write_text(json.dumps({
+                "schema": 1, "revision": 9, "packs": records,
+            }))
+            ready, reason = local_http.preflight(archive, files)
+            self.assertFalse(ready)
+            self.assertIn("ValueError", reason)
+            self.assertIn("index 8", reason)
+            self.assertIn("unpackedSize=0", reason)
+            self.assertFalse((files / "exvius/server-root").exists())
+
+    def test_missing_receipt_reports_prior_reconciliation_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive, files, _ = sample(Path(tmp))
+            (files / "exvius/data/offline-client-assets.json").unlink()
+            import __main__
+            with patch.object(__main__, "_first_run_reason",
+                              "first-run adapter refused: ValueError: failed to link",
+                              create=True):
+                ready, reason = local_http.preflight(archive, files)
+            self.assertFalse(ready)
+            self.assertIn("offline-client-assets.json", reason)
+            self.assertIn("failed to link", reason)
+            self.assertFalse((files / "exvius/server-root").exists())
+
     def test_client_hash_and_file_inventory_guards(self):
         with tempfile.TemporaryDirectory() as tmp:
             archive, files, manifest = sample(Path(tmp))
@@ -152,6 +184,35 @@ class LocalHttpTests(unittest.TestCase):
             original.unlink()
             self.assertEqual(preserved.read_bytes(), b"data-pack-011")
             self.assertEqual(local_http.preserve_native_mst_for_cdn(files), 0)
+
+    def test_cdn_overlay_falls_back_to_atomic_copy_when_hardlinks_denied(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _, files, _ = sample(Path(tmp))
+            original = files / "mst/Ver709_i5QEJpua.dat"
+            pinned = files / "exvius/server-root/overlay/mst/Ver709_i5QEJpua.dat"
+            cpk = files / "en/sd/area/Ver461_spdungeon1.cpk"
+            pinned_cpk = files / "exvius/server-root/overlay/en/sd/area/Ver461_spdungeon1.cpk"
+            with patch.object(local_http.os, "link",
+                              side_effect=PermissionError(errno.EACCES, "Android denies hardlinks")):
+                self.assertEqual(local_http.preserve_native_mst_for_cdn(files), 4)
+            self.assertEqual(original.read_bytes(), pinned.read_bytes())
+            self.assertNotEqual(original.stat().st_ino, pinned.stat().st_ino)
+            self.assertEqual(cpk.read_bytes(), pinned_cpk.read_bytes())
+            self.assertNotEqual(cpk.stat().st_ino, pinned_cpk.stat().st_ino)
+            self.assertFalse(pinned.with_name(pinned.name + ".copying").exists())
+            original.unlink()
+            cpk.unlink()
+            self.assertEqual(pinned.read_bytes(), b"data-pack-011")
+            self.assertEqual(pinned_cpk.read_bytes(), b"original-cpk")
+
+    def test_cdn_overlay_does_not_hide_unrelated_hardlink_io_errors(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _, files, _ = sample(Path(tmp))
+            with patch.object(local_http.os, "link",
+                              side_effect=OSError(errno.EIO, "disk failure")):
+                with self.assertRaises(OSError):
+                    local_http.preserve_native_mst_for_cdn(files)
+            self.assertFalse((files / "exvius/server-root/overlay/mst/f_unit.dat").exists())
 
     def test_cdn_overlay_refuses_symlink_escape(self):
         with tempfile.TemporaryDirectory() as tmp:
