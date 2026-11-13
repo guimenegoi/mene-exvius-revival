@@ -144,7 +144,9 @@ para a LXC (sem enviá-lo ao Git e sem usar o diretório de saves):
 python3 android/distribution/apk_lan.py \
   --apk /workspace/projects/ffbe-revival-distribution/apk/private/FFBE-Approved.apk \
   --sha256 <sha256-confirmado-do-apk> \
-  --bind 192.168.15.209 --port 18448 --minutes 30
+  --bind 192.168.15.209 --cert /caminho/certificado-com-SAN-IP.pem \
+  --key /caminho/chave-privada-modo-0600.pem \
+  --port 18448 --minutes 30
 ```
 
 O comando verifica o arquivo inteiro antes de abrir a porta. Ele imprime
@@ -153,11 +155,12 @@ pelo navegador do celular na mesma rede Wi-Fi. Suporta `GET`, `HEAD`
 e `Range: bytes=N-`; após expirar, encerra o listener. Sem listagem
 de diretórios, sem rotas de dados/ZIPs e sem acesso público configurado.
 
-**Limite de segurança:** o link atual é HTTP simples; o token e o APK
-não estão criptografados na rede. Usar apenas em LAN confiável, jamais
-com port forwarding ou exposição à internet. Não guardar/compartilhar
-o link, e verificar assinatura e SHA-256 antes de instalar. Para uso
-frequente, preferir TLS com certificado confiável e autenticação.
+**Segurança:** o link exige HTTPS com certificado contendo SAN para o IP
+da LXC e chave privada protegida (modo 0600). O dispositivo precisa
+confiar no certificado/CA para abrir o link sem alerta. A URL contém um
+token secreto temporário: não guardar/compartilhar o link e nunca abrir
+port forwarding ou expor a porta à internet. Verificar assinatura e
+SHA-256 antes de instalar. O transporte não publica APKs automaticamente.
 
 **Estado:** ferramenta de prova em branch; não é um serviço permanente
 nem foi configurada no celular. Nenhum arquivo de jogo será entregue

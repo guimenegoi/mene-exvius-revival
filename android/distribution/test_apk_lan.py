@@ -4,6 +4,8 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import io
+import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -41,6 +43,39 @@ class PrivateLanApkTests(unittest.TestCase):
             invalid = root / "../escape.apk"
             with self.assertRaises(ValueError):
                 validated_artifact(invalid, digest)
+
+    def test_cli_refuses_missing_tls_configuration(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            apk = Path(tmp) / "Test.apk"
+            apk.write_bytes(b"synthetic")
+            digest = hashlib.sha256(b"synthetic").hexdigest()
+            result = subprocess.run([
+                sys.executable, str(Path(__file__).parent / "apk_lan.py"),
+                "--apk", str(apk), "--sha256", digest,
+                "--bind", "192.168.15.209",
+            ], capture_output=True, text=True, timeout=5)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("--cert", result.stderr)
+            self.assertIn("--key", result.stderr)
+
+    def test_cli_refuses_world_readable_tls_private_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            apk = root / "Test.apk"
+            apk.write_bytes(b"synthetic")
+            cert = root / "cert.pem"
+            key = root / "key.pem"
+            cert.write_text("synthetic cert (never parsed)")
+            key.write_text("synthetic key (never parsed)")
+            key.chmod(0o644)
+            digest = hashlib.sha256(b"synthetic").hexdigest()
+            result = subprocess.run([
+                sys.executable, str(Path(__file__).parent / "apk_lan.py"),
+                "--apk", str(apk), "--sha256", digest,
+                "--bind", "192.168.15.209", "--cert", str(cert), "--key", str(key),
+            ], capture_output=True, text=True, timeout=5)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("key must be mode 0600", result.stderr)
 
     def test_apk_access_token_range_metadata_and_no_cache_routes(self):
         with tempfile.TemporaryDirectory() as tmp:
