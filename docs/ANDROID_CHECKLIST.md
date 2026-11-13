@@ -255,6 +255,45 @@ Estado de laboratório e bloqueadores em
 
 ## Registro de execução
 
+### 2026-11-13 — provas TLS na LXC e recuperação do Waydroid
+
+- **Backup do save — protótipo, não integrado ao aplicativo:**
+  branch `feature/lxc-save-backup`, commits `dbd7e1c` e `bf4dd0d`.
+  O último corrigiu a leitura concorrente de arquivos `.json.tmp` que
+  `PlayerState.save()` utiliza; teste de regressão falhou antes e passou
+  depois (10 testes de backup + 105 existentes). Uma prova de ponta a
+  ponta enviou **três JSONs sintéticos** por HTTPS do Mene-Desktop à LXC
+  117, verificou o SHA-256 do recibo e do ZIP armazenado (0600) e a
+  listagem autenticada. Nenhum save real foi copiado. Token, certificado,
+  snapshot e serviço temporários foram removidos. **Pendentes:** evento
+  de backup após o save íntegro, configuração de confiança no Android,
+  política de retenção implantada e restauração confirmada.
+- **Distribuição privada de APK — protótipo, sem binário real servido:**
+  branch `feature/lxc-apk-download`, commits `59bbf95` e `003cf11`.
+  O último tornou TLS com certificado e chave 0600 obrigatórios.
+  Prova de HTTPS com SAN do IP `192.168.15.209`, link temporário,
+  SHA-256, download completo, retomada por Range e negação de HTTP
+  simples, certificado não confiável e token inválido: **aprovada** com
+  APK sintético. Suíte Android: 112 testes. Serviço e artefato de teste
+  removidos; o cache `127.0.0.1:18082` permaneceu isolado.
+  **Pendente:** certificado confiável no celular, publicação privada
+  de APK aprovado e verificação de atualização/assinatura no aparelho.
+- **Waydroid — falha de infraestrutura isolada:** os tombstones mostram
+  abort de `hwcomposer.waydroid.so` seguido de `SurfaceFlinger`;
+  o socket `wayland-ffbe-test` estava ausente. Weston headless foi
+  reiniciado e a sessão Waydroid foi restaurada sem limpar dados:
+  `package`, `activity` e `SurfaceFlinger` responderam novamente.
+  A instalação atual é FFBE histórico **1.2.0/x86 (`versionCode 32`)**,
+  não a RC2 ARM64. **Não sobrescrever esse cliente com a RC3.**
+- **Candidata RC3 não aprovada:** branch
+  `integration/android-next-rc` contém patches Samsung + upstream
+  `61c6409`; 110 testes passaram. APK privado foi gerado/assinado
+  (SHA-256 `71546043d77cacfc0bf96268635be9abe3bb4a473771e251e4189990e7ef54c2`);
+  manifestou e extraiu 1.077 arquivos verificados. Tentativa no
+  Waydroid falhou durante a crise gráfica, logo **não há aprovação
+  Android da RC3**. O Samsung não foi alterado. Testar somente em
+  ambiente ARM64 isolado, preservando a instalação histórica do Waydroid.
+
 ### 2026-11-12 — relato de jogo offline no Samsung e upstream recente
 
 - **Relato do teste em aparelho físico:** batalha em modo avião concluída
