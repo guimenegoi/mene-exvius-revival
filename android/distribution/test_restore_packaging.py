@@ -59,6 +59,7 @@ class RestorePackagingTests(unittest.TestCase):
                 apk.open(repack.ASSET)) as inner:
             self.assertNotIn("ffbe_restore_startup.py", inner.namelist())
             self.assertNotIn("ffbe_save_restore.py", inner.namelist())
+            self.assertNotIn("ffbe_restore_request.py", inner.namelist())
             self.assertNotIn("ffbe_backup_transport.py", inner.namelist())
             self.assertIn("ffbe_local_http.py", inner.namelist())
         self.assertEqual(zipfile.ZipFile(self.base).read("AndroidManifest.xml"),
@@ -79,6 +80,7 @@ class RestorePackagingTests(unittest.TestCase):
                 ("ffbe_save_restore.py", REPO / "android/backup/save_restore.py"),
                 ("ffbe_backup_transport.py", REPO / "android/backup/lxc_backup.py"),
                 ("ffbe_backup.py", REPO / "android/backup/embedded_client.py"),
+                ("ffbe_restore_request.py", REPO / "android/backup/restore_request.py"),
             ):
                 member = inner.getinfo(name)
                 self.assertEqual(member.compress_type, zipfile.ZIP_STORED)

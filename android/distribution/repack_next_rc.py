@@ -76,6 +76,8 @@ def build(repo: Path, base: Path, output: Path, *, with_backup=False,
             repo / "android/runtime/restore_startup.py").read_bytes()
         replacements["ffbe_save_restore.py"] = (
             repo / "android/backup/save_restore.py").read_bytes()
+        replacements["ffbe_restore_request.py"] = (
+            repo / "android/backup/restore_request.py").read_bytes()
     if with_backup:
         replacements["ffbe_backup.py"] = (repo / "android/backup/embedded_client.py").read_bytes()
         replacements["ffbe_backup_transport.py"] = (repo / "android/backup/lxc_backup.py").read_bytes()
@@ -147,7 +149,8 @@ def build(repo: Path, base: Path, output: Path, *, with_backup=False,
                     raise ValueError("Missing embedded backup dependencies")
                 if with_restore and not all(k in embedded.namelist()
                                             for k in ("ffbe_restore_startup.py",
-                                                      "ffbe_save_restore.py")):
+                                                      "ffbe_save_restore.py",
+                                                      "ffbe_restore_request.py")):
                     raise ValueError("Missing experimental restore dependencies")
         temporary_output.replace(output)
     finally:

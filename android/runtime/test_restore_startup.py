@@ -20,6 +20,7 @@ if str(BACKUP) not in sys.path:
     sys.path.insert(0, str(BACKUP))
 import lxc_backup
 import save_restore
+import restore_request
 
 
 class RestoreBootGuardTests(unittest.TestCase):
@@ -105,6 +106,61 @@ class RestoreBootGuardTests(unittest.TestCase):
         self.assertEqual(outcome, "interrupted_restore_rolled_back")
         self.assertEqual(lxc_backup.snapshot(self.state), before)
         self.assertFalse((self.recovery / "pending-restore.json").exists())
+
+    def test_queued_request_applies_before_engine_starts(self):
+        self._setup_state()
+        source = self.files / "picked"
+        source.mkdir()
+        (source / "campaign.json").write_text('{"rank":4}')
+        (source / "replay.json").write_text('{"week":1}')
+        data = lxc_backup.snapshot(source)
+        digest = hashlib.sha256(data).hexdigest()
+        restore_request.stage_request(
+            data, self.state, self.recovery,
+            confirmation="RESTAURAR " + digest[:12])
+        with (patch.object(restore_startup, "_engine_stopped", return_value=True),
+              patch.dict(sys.modules, {"ffbe_restore_request": restore_request})):
+            result = restore_startup.recover_before_engine(self.files)
+        self.assertEqual(result, "restore_applied_" + digest[:12])
+        self.assertEqual(json.loads((self.state / "campaign.json").read_text())["rank"], 4)
+        self.assertFalse((self.recovery / restore_request.QUEUE).exists())
+
+    def test_queued_request_never_applies_with_active_engine(self):
+        self._setup_state()
+        source = self.files / "picked"
+        source.mkdir()
+        (source / "campaign.json").write_text('{"rank":4}')
+        data = lxc_backup.snapshot(source)
+        digest = hashlib.sha256(data).hexdigest()
+        restore_request.stage_request(
+            data, self.state, self.recovery,
+            confirmation="RESTAURAR " + digest[:12])
+        with patch.object(restore_startup, "_engine_stopped", return_value=False):
+            with self.assertRaisesRegex(RuntimeError, "may be running"):
+                restore_startup.recover_before_engine(self.files)
+        self.assertEqual(json.loads((self.state / "campaign.json").read_text())["rank"],20)
+        self.assertTrue((self.recovery / restore_request.QUEUE).exists())
+
+    def test_rollback_never_consumes_different_queued_request(self):
+        before = self._make_interrupted_restore()
+        source = self.files / "picked"
+        source.mkdir()
+        (source / "campaign.json").write_text('{"rank":4}')
+        data = lxc_backup.snapshot(source)
+        digest = hashlib.sha256(data).hexdigest()
+        # Simulate a request arriving after the interrupted transaction.
+        (self.recovery / ("request-" + digest + ".zip")).write_bytes(data)
+        doc = {"schema":1, "archive":"request-" + digest + ".zip",
+               "sha256":digest, "confirmation":"RESTAURAR " + digest[:12]}
+        (self.recovery / restore_request.QUEUE).write_text(json.dumps(doc))
+        os.chmod(self.recovery / restore_request.QUEUE, 0o600)
+        with (patch.object(restore_startup, "_engine_stopped", return_value=True),
+              patch.dict(sys.modules, {"ffbe_save_restore": save_restore,
+                                      "ffbe_restore_request": restore_request})):
+            result = restore_startup.recover_before_engine(self.files)
+        self.assertEqual(result, "interrupted_restore_rolled_back")
+        self.assertEqual(lxc_backup.snapshot(self.state), before)
+        self.assertTrue((self.recovery / restore_request.QUEUE).exists())
 
     def test_tampered_journal_fails_closed(self):
         self._make_interrupted_restore()

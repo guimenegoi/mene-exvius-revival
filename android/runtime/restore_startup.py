@@ -49,17 +49,35 @@ def recover_before_engine(app_files: Path) -> str:
         return "no_restore_journal"
     if not recovery_dir.is_dir():
         raise RuntimeError("Restore recovery path is not a directory")
-    pending = recovery_dir / "pending-restore.json"
-    if not pending.exists() and not pending.is_symlink():
+    markers = tuple(recovery_dir / name for name in (
+        "pending-restore.json", "restore-request.json", "restore-processing.json"
+    ))
+    if not any(path.exists() or path.is_symlink() for path in markers):
         return "no_restore_journal"
     if not _engine_stopped():
-        raise RuntimeError("Refusing pending recovery: Revival engine may be running")
+        raise RuntimeError("Refusing restore: Revival engine may be running")
 
-    # Import only when a pending journal exists, to avoid any save-related
-    # dependencies or initialization cost in the common startup path.
-    from ffbe_save_restore import recover_pending
-    if recover_pending(
-        state_dir, recovery_dir, game_stopped=_engine_stopped,
-    ):
+    # Import only if there is an interrupted transaction or explicit request.
+    # Never load restore modules or read saves during an ordinary boot.
+    pending = markers[0]
+    if pending.exists() or pending.is_symlink():
+        from ffbe_save_restore import recover_pending
+        if not recover_pending(
+            state_dir, recovery_dir, game_stopped=_engine_stopped,
+        ):
+            raise RuntimeError("Pending journal disappeared during recovery")
+        # An interrupted requested restore has been rolled back; consume only
+        # its stale processing marker and never re-apply it on this startup.
+        if markers[2].exists() or markers[2].is_symlink():
+            from ffbe_restore_request import consume_request
+            cleanup = consume_request(
+                state_dir, recovery_dir, game_stopped=_engine_stopped,
+            )
+            if cleanup != "interrupted_restore_request_discarded":
+                raise RuntimeError("Unexpected restore recovery cleanup state")
+        # Never execute a different queued restore in the same boot as a
+        # rollback: the player must see the recovered game state first.
         return "interrupted_restore_rolled_back"
-    raise RuntimeError("Pending restore unexpectedly disappeared")
+
+    from ffbe_restore_request import consume_request
+    return consume_request(state_dir, recovery_dir, game_stopped=_engine_stopped)

@@ -18,7 +18,7 @@
 
 | Ação | Pronto quando |
 |---|---|
-| **Restauração controlada** | Núcleo offline testado; guarda de recuperação pré-motor e empacotamento opt-in implementados em LAB; faltam UI Android, controle do ciclo de vida para restauração solicitada, teste em aparelho e aprovação do save real |
+| **Restauração controlada** | Núcleo offline, agendamento com confirmação e guarda de cold start testados; tela nativa Java de LAB criada (ainda sem DEX Android); pendentes compilação e integração da UI, validação em dispositivo e aprovação do save real |
 | **Segundo backup real** | Após alterar o progresso, surge outro snapshot no ZFS; manifesto, integridade, SHA-256 e versão do save conferidos |
 | **Aplicação de configuração remota** | Uma alteração reversível feita no painel é recebida como `pending_restart`, aplicada no próximo início e confirmada no jogo; depois é revertida |
 | **Conectividade externa e retries** | Backup/configuração testados fora da LAN via Tailscale; falha transitória não corrompe save e retry se recupera |

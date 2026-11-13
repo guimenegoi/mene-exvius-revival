@@ -85,3 +85,23 @@ interrupção simulada, recuperação por diário e checkpoint adulterado.
 Teste automatizado: 10 novos testes de restore_startup, teste de ordem
 no local_http e 3 novos testes de contrato de empacotamento. Teste
 real de reinicio Android e interface de confirmacao permanecem pendentes.
+
+## Marco de preparo do restore e interface Android (13/11/2026)
+
+Foi adicionado restore_request.py ao empacotamento experimental, sob o nome
+ffbe_restore_request.py. A UI futura cria restore-request.json e o ZIP local
+request-<SHA256>.zip na pasta privada restore-private. O pedido inclui schema=1,
+arquivo, SHA-256 completo e a frase de confirmação; a gravação é atômica.
+
+- O pedido agendado não altera o save durante o gameplay.
+- No próximo início, antes do motor, restore_startup valida o ZIP e o pedido,
+  renomeia-o para restore-processing.json e inicia restore_offline().
+- Após uma falha, recover_pending() desfaz a restauração interrompida.
+  O marcador processing impede reexecutar automaticamente o mesmo pedido.
+- Se uma transação antiga foi recuperada, NÃO se executa outro pedido
+  aguardando na mesma inicialização.
+- Pedido inválido bloqueia a inicialização até ser cancelado ou corrigido.
+- Java de laboratório para a tela e o protocolo privado está em
+  android/native-ui; ainda não foi compilado/injetado em DEX Android.
+  Consulte android/native-ui/README.md.
+- Os testes são sintéticos e não tocam nenhum snapshot real ou APK instalado.
