@@ -223,8 +223,16 @@ Estado de laboratório e bloqueadores em
       logs úteis e CI/release de build reproduzível.
 - [ ] Rever direitos de redistribuição do upstream e dos recursos proprietários;
       não publicar APK original, recursos de jogo, saves ou chaves no Git.
-- [ ] Retomar fidelidade histórica mais estrita (incluindo junho de 2016) só
-      depois do primeiro APK offline realmente jogável.
+- [ ] **Investigar em branch isolada a viabilidade de iniciar o replay no
+      lançamento Global (junho de 2016), antes de Noctis (16/12/2016)**:
+      inventariar banners, unidades, eventos/Vortex, quests, recompensas,
+      lojas e datas de junho a dezembro; comparar os registros existentes
+      com uma cronologia confiável do Global, identificando ausências e
+      aproximações. Exercitar `EXVIUS_REPLAY_START` com estado de teste
+      separado, sem apagar/reancorar saves nem modificar a RC2 aprovada.
+      Registrar o que já funciona, as lacunas e uma estratégia de migração
+      da âncora histórica sem afetar progressos; só integrar após validar
+      a versão offline no aparelho. Branch de investigação independente.
 
 ## Registro de execução
 
