@@ -24,11 +24,28 @@ PY
 cp -p "$dest" "$rollback"
 install -o root -g root -m 0555 "$src" "$dest"
 
-if systemctl restart ffbe-save-backup.service   && systemctl is-active --quiet ffbe-save-backup.service   && [ "$(curl --noproxy '*' --cacert /etc/ffbe-backup/cert.pem -sS --max-time 8         -o /dev/null -w '%{http_code}'         https://192.168.15.230:18447/v1/backups/samsung-android)" = 401 ]; then
+# systemd can report 'active' before the Python TLS listener binds. Give the
+# receiver a short, bounded readiness window instead of a false rollback.
+ready=false
+if systemctl restart ffbe-save-backup.service; then
+  for attempt in $(seq 1 20); do
+    status="$(curl --noproxy '*' --cacert /etc/ffbe-backup/cert.pem \
+      --silent --connect-timeout 2 --max-time 3 \
+      -o /dev/null -w '%{http_code}' \
+      https://192.168.15.230:18447/v1/backups/samsung-android || true)"
+    if systemctl is-active --quiet ffbe-save-backup.service && [ "$status" = 401 ]; then
+      ready=true
+      break
+    fi
+    sleep 0.5
+  done
+fi
+
+if [ "$ready" = true ]; then
   echo "SUCCESS: ffbe-save-backup active, TLS verified, protected API returns HTTP 401"
   echo "Rollback snapshot: $rollback"
 else
-  echo "FAILED: restoring previous receiver" >&2
+  echo "FAILED: receiver was not ready; restoring previous version" >&2
   install -o root -g root -m 0555 "$rollback" "$dest"
   systemctl restart ffbe-save-backup.service || true
   exit 1
