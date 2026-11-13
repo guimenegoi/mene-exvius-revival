@@ -210,6 +210,15 @@ Estado de laboratório e bloqueadores em
 
 ## P2 — entregável e pós-estabilização
 
+- [ ] Permitir usar **opcionalmente a LXC 117 como origem dos 19 pacotes
+      (~14,65 GB)** na instalação inicial ou em atualizações quando o
+      celular estiver na rede doméstica. Reutilizar o cache e o servidor
+      HTTP Range existentes em `android/distribution`, sem depender de
+      túnel ADB/SSH; oferecer configuração/seleção segura da origem local,
+      com fallback para os releases públicos do GitHub. Preservar os
+      mesmos IDs, tamanhos e SHA-256 do manifesto fixado, com retomada
+      de downloads; validar instalação em celular real dentro e fora da
+      rede doméstica. **Não tornar a LXC obrigatória para jogar offline.**
 - [ ] Instalação em aparelho limpo sem apps auxiliares; backup, recuperação,
       logs úteis e CI/release de build reproduzível.
 - [ ] Rever direitos de redistribuição do upstream e dos recursos proprietários;
