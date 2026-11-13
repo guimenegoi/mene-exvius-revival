@@ -342,13 +342,19 @@ def _which(rel: str):
 ANDROID_VORTEX_TABLES = frozenset((
     RESOURCE[0], RESOURCE_VERSION[0], RESOURCE_CHECKSUM[0], AREA[0],
 ))
+# Manifest revision 9, verified against the original 19 ZIPs. The game caches
+# patched versions beside these: NEVER use a patched one as the source again.
+ANDROID_VORTEX_SOURCES = {
+    RESOURCE[1]: 329, RESOURCE_VERSION[1]: 735,
+    RESOURCE_CHECKSUM[1]: 436, AREA[1]: 611,
+}
 
 
 def android_vortex_bumps() -> dict[str, int]:
-    """Only Android-compatible Vortex resource and priority table revisions."""
+    """Stable Android versions, above the RC1 cached self-repatch versions."""
     bumps = version_bumps()
-    return {name: value for name, value in bumps.items()
-            if name in ANDROID_VORTEX_TABLES}
+    return {name: value + (10000 if name != AREA[0] else 0)
+            for name, value in bumps.items() if name in ANDROID_VORTEX_TABLES}
 
 
 def android_vortex_wants(rel: str) -> bool:
@@ -373,7 +379,13 @@ def _chosen(row: dict, value: str) -> bool:
 
 
 def source_table(*roots: str | None, token: str = RESOURCE[1]) -> str | None:
-    """The newest shipped copy of a table, looked up in each data root in turn."""
+    """The shipped table, never a previously patched Android download."""
+    if os.environ.get("FFBE_ANDROID_EMBEDDED") == "1" and token in ANDROID_VORTEX_SOURCES:
+        pinned = f"Ver{ANDROID_VORTEX_SOURCES[token]}_{token}.dat"
+        for root in roots:
+            if root and os.path.isfile(os.path.join(root, "mst", pinned)):
+                return os.path.join(root, "mst", pinned)
+        return None  # refuse to reprocess a higher cached version
     for root in roots:
         if not root:
             continue

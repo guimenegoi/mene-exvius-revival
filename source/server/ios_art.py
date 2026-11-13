@@ -163,6 +163,9 @@ def source_pack(*roots) -> str | None:
     for root in roots:
         if root:
             hits = glob.glob(os.path.join(root, "en", "sd", "area", f"Ver*_{PACK}"))
+            if os.environ.get("FFBE_ANDROID_EMBEDDED") == "1":
+                # Exact original from data-010.zip, never an earlier build.
+                hits = [p for p in hits if os.path.basename(p) == "Ver461_spdungeon1.cpk"]
             if hits:
                 return max(hits, key=lambda p: int(re.search(r"Ver(\d+)_", os.path.basename(p)).group(1)))
     return None
@@ -309,7 +312,10 @@ def built_pack(cache_dir: str, *roots) -> tuple[str, int, int] | None:
                     os.remove(old)   # packs built under an older setting
             print(f"[ios-art] built {os.path.basename(path)}: {info['files']} files, {info['added']} archive "
                   f"banners added, {info['size']} bytes", flush=True)
-    return path, base + 1000 + int(signature, 16) % 1000, os.path.getsize(path)
+    # RC1 Android erroneously compounded resource versions each launch.
+    # Use a new stable generation greater than any earlier test version.
+    generation = 10000 if os.environ.get("FFBE_ANDROID_EMBEDDED") == "1" else 1000
+    return path, base + generation + int(signature, 16) % 1000, os.path.getsize(path)
 
 
 _PATH = re.compile(r"(^|/)en/sd/area/Ver(\d+)_" + re.escape(PACK) + r"$")

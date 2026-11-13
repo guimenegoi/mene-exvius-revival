@@ -49,6 +49,7 @@ def sample(root: Path) -> tuple[Path, Path, dict]:
         "mst/Ver9001_YW9MUm2H.dat": b"story-movies-pack",
         "localized_texts/en/unit.dat": b"data",
         "en/sd/area/area.cpk": b"data",
+        "en/sd/area/Ver461_spdungeon1.cpk": b"original-cpk",
         "common_lang/game.cpk": b"data",
         "homeMarquee/banner.cpk": b"data",
     }
@@ -143,7 +144,10 @@ class LocalHttpTests(unittest.TestCase):
             original = files / "mst/Ver709_i5QEJpua.dat"
             preserved = files / "exvius/server-root/overlay/mst/Ver709_i5QEJpua.dat"
             count = local_http.preserve_native_mst_for_cdn(files)
-            self.assertEqual(count, 3)
+            self.assertEqual(count, 4)
+            pinned_pack = files / "exvius/server-root/overlay/en/sd/area/Ver461_spdungeon1.cpk"
+            self.assertTrue(os.path.samefile(
+                pinned_pack, files / "en/sd/area/Ver461_spdungeon1.cpk"))
             self.assertTrue(os.path.samefile(original, preserved))
             original.unlink()
             self.assertEqual(preserved.read_bytes(), b"data-pack-011")

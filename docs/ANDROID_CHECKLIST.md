@@ -18,6 +18,42 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
 - [ ] Comprovar que todos os caminhos necessários (inclusive nativos, se houver)
       deixam de atingir endpoints externos, sem interceptar conexões de outros apps.
 
+## RC2 para teste — 12/11/2026 (substitui RC1)
+
+**Artefato recomendado:** `~/Downloads/FFBE-Revival-RC2-2026-11-12.apks`
+(323.720.053 bytes, SHA-256:
+`a8c3a2703a013667e59bafcba501dcbef01e8c838ce346068466055090bc5e69`).
+Cinco APKs assinados com chave DEBUG, reunidos em um .apks. Os cinco
+arquivos, instrucoes e hashes individuais estao na pasta homonima em
+Downloads. Nao publicar binarios com recursos proprietarios no Git.
+
+- [x] Diagnostico do RC1: as versoes de tabelas/CPKs baixadas pelo proprio
+  jogo eram escolhidas como fontes da proxima geracao. Segunda abertura
+  recriou versoes e pediu novamente ~224 MB.
+- [x] RC2 fixa `Ver329_ZQqB38Ns.dat`, `Ver735_A1L1GlaQ.dat`,
+  `Ver436_9Hwur83G.dat`, `Ver611_Fvix6V0n.dat` e
+  `Ver461_spdungeon1.cpk` como fontes originais, conferidas contra
+  `data-010.zip` e `data-011.zip`; acrescenta hardlink do CPK no overlay
+  e nao reprocessa arquivos gerados pelo cliente.
+- [x] Android nao antecipa `resources_common.cpk` nem `resources.cpk`
+  por causa de ajustes exclusivos do iPhone; apenas o banner pack usa TUTO.
+- [x] Instalado com `adb install-multiple -r` sem remover dados:
+  servidor Revival e Home abriram. Primeira inicializacao baixou
+  `Ver10654_spdungeon1.cpk` (242.483.910 bytes, HTTP 200).
+  **Segunda inicializacao: aviso de download de 0 KB**, sem nova transferencia
+  desse pacote, e Home alcancada. O popup de 0 KB ainda e incoveniente.
+- [x] 76 testes de runtime Android aprovados, incluindo fonte fixa do
+  Vortex e preservacao dos arquivos no overlay; `git diff --check` passou.
+- [ ] Primeiro uso completo em celular ARM64 fisico, partida e recompensa,
+  saves persistidos, modo aviao e ausencia de novo popup de 0 KB.
+- [ ] Validar que a experiencia Vortex/menus ainda segue o Revival original
+  em outros eventos e epocas; testes de Event/Enhance/Special feitos no RC1.
+- [ ] Empacotar um APK unico sem splits e assinar com chave de release
+  se houver permissao legal para distribui-lo.
+
+O registro RC1 abaixo permanece como historico; nao recomendar RC1 para
+instalacao nova porque ele refaz o download de banners ao reiniciar.
+
 ## RC1 instalável — 12/11/2026, verificação em Waydroid
 
 **Artefato de teste no desktop:** `~/Downloads/FFBE-Revival-RC1-2026-11-12.apks`

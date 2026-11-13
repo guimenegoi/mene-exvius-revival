@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT / "ios-server"))
 
 import ffbe_battle  # noqa: E402
 import ios_tables  # noqa: E402
+import ios_art  # noqa: E402
 
 # Do not pollute sys.modules["serve"]: local_http.run() expressly rejects a
 # server imported before its private FFBE_DATA_DIR is bound.
@@ -71,6 +72,38 @@ class NativeAndroidProfileTests(unittest.TestCase):
                 "/mst/Ver611_Fvix6V0n.dat"))
             self.assertFalse(ios_tables.android_vortex_wants(
                 "/mst/Ver527_24Eka6wL.dat"))
+
+    def test_pinned_android_vortex_sources_do_not_repatch_downloads(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            mst = home / "mst"
+            mst.mkdir()
+            area = home / "en/sd/area"
+            area.mkdir(parents=True)
+            (mst / "Ver735_A1L1GlaQ.dat").write_bytes(b"original")
+            (mst / "Ver3447_A1L1GlaQ.dat").write_bytes(b"modified")
+            (area / "Ver461_spdungeon1.cpk").write_bytes(b"original")
+            (area / "Ver5107_spdungeon1.cpk").write_bytes(b"modified")
+            with patch.dict(os.environ, {"FFBE_ANDROID_EMBEDDED": "1"}, clear=False):
+                self.assertEqual(
+                    Path(ios_tables.source_table(str(home), token="A1L1GlaQ")).name,
+                    "Ver735_A1L1GlaQ.dat")
+                self.assertEqual(
+                    Path(ios_art.source_pack(str(home))).name,
+                    "Ver461_spdungeon1.cpk")
+                with patch.object(ios_tables, "version_bumps", return_value={
+                    "F_RESOURCE_MST": 1000,
+                    "F_RESOURCE_VERSION_MST_LOCALIZE": 2000,
+                    "F_RESOURCE_CHECKSUM_MST": 1500,
+                    "F_AREA_MST": 1700,
+                    "F_MISSION_MST": 1600,
+                }):
+                    self.assertEqual(ios_tables.android_vortex_bumps(), {
+                        "F_RESOURCE_MST": 11000,
+                        "F_RESOURCE_VERSION_MST_LOCALIZE": 12000,
+                        "F_RESOURCE_CHECKSUM_MST": 11500,
+                        "F_AREA_MST": 1700,
+                    })
 
     def test_missing_shipped_registry_fails_closed(self):
         with patch.dict(os.environ, {"FFBE_ANDROID_EMBEDDED": "1"}, clear=False), \

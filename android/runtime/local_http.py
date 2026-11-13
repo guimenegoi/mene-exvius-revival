@@ -299,6 +299,24 @@ def preserve_native_mst_for_cdn(files: Path) -> int:
     for name in ("Ver709_i5QEJpua.dat", "Ver9001_YW9MUm2H.dat"):
         if not (target / name).is_file():
             raise ValueError("CDN overlay lacks pinned MST " + name)
+    # Same hardlink mechanism for the original Vortex CPK: never rebuild a
+    # generated banner pack on top of another generated banner pack.
+    base_pack = files / "en/sd/area/Ver461_spdungeon1.cpk"
+    pinned_pack = overlay_root / "en/sd/area/Ver461_spdungeon1.cpk"
+    for folder in (overlay_root / "en", overlay_root / "en/sd",
+                   overlay_root / "en/sd/area"):
+        if folder.is_symlink():
+            raise ValueError("CDN overlay pack directory is a symlink")
+        folder.mkdir(parents=True, exist_ok=True)
+    if pinned_pack.is_symlink() or base_pack.is_symlink():
+        raise ValueError("CDN source pack is a symlink")
+    if not pinned_pack.exists():
+        if not base_pack.is_file() or base_pack.stat().st_size == 0:
+            raise ValueError("original Vortex resource pack unavailable")
+        os.link(base_pack, pinned_pack, follow_symlinks=False)
+        linked += 1
+    if not pinned_pack.is_file() or pinned_pack.stat().st_size == 0:
+        raise ValueError("CDN overlay has an invalid Vortex resource pack")
     return linked
 
 
@@ -339,6 +357,9 @@ def run(archive: Path | None = None, app_files: Path | None = None,
     os.environ["EXVIUS_IOS_HCA"] = "0"
     os.environ["EXVIUS_IOS_HCA_PLAIN"] = "0"
     os.environ["EXVIUS_IOS_DROP_UNVERSIONED"] = "0"
+    # These two resource packs are already installed by the Android data
+    # installer. The iPhone's first-battle workaround must not trigger them.
+    os.environ["EXVIUS_EARLY_RESOURCES"] = ""
     os.environ["EXVIUS_IOS_SOUND_REFETCH"] = ""
     serve = importlib.import_module("serve")
     serve.configure_engine()
