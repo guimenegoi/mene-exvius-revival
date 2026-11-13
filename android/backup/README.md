@@ -8,6 +8,8 @@
 
 ## Servidor
 - Unit: ffbe-save-backup.service; usuario: ffbe-backup.
+- Execucao remodelada: /usr/local/libexec/ffbe-backup/lxc_backup.py, fora dos worktrees Git.
+- A unit exige RequiresMountsFor e ExecStartPre mountpoint -q /var/lib/ffbe-save-backups, impedindo gravação silenciosa no disco interno se o ZFS nao montar.
 - Dados: /var/lib/ffbe-save-backups (ZFS dedicado, diretorio 0700; arquivos 0600).
 - Credenciais e TLS: /etc/ffbe-backup/ (fora de Git e da distribuicao de APK).
 - Endereco Tailscale privado com TLS direto: https://proxmox.tailcf6a16.ts.net:18447
@@ -52,3 +54,12 @@ Nao instalar sobre o Samsung ate concluir testes de empacotamento e restauracao.
 - Backup real com hash confirmado na LXC; teste de save novo e reinicio.
 - Restauracao independente com o jogo fechado, pre-backup, confirmacao e hash.
 - Revisao de seguranca, expiracao de certificado e teste via Tailscale fora da LAN.
+
+## Auditoria da remodelacao de LXC 120 (2026-11-13)
+- IP 192.168.15.230, LXC unprivileged e onboot preservados.
+- mp0 e mp1 presentes; ZFS com cerca de 2,6 TB livres; rootfs interno 10% utilizado.
+- Receptor ativo e habilitado; fonte implantada tem o mesmo SHA-256 do codigo testado em android/backup/lxc_backup.py.
+- Escrita real de ZIP sintetico pelo usuario ffbe-backup no ZFS: permissao 0600, integridade SHA-256 verificada e fixture apagada.
+- Suite de 31 testes de backup aprovada; sem snapshots de save real registrados.
+- O Samsung alcancou o Proxmox atraves da VPN Tailscale, mas ainda nao foi pareado com o receptor.
+- Nunca incluir o token ou chave TLS no codigo, nas notas ou no APK.
