@@ -62,3 +62,26 @@ interrupção simulada, recuperação por diário e checkpoint adulterado.
    processo entre mudanças de arquivos.
 5. Somente depois realizar restauração do save real com aprovação específica
    e cópias adicionais verificadas.
+
+## Marco seguinte — guarda de recuperação antes do motor (13/11/2026)
+
+- android/runtime/restore_startup.py passa a ser empacotado como
+  ffbe_restore_startup.py apenas com a flag --experimental-restore,
+  obrigatoriamente acompanhada por --experimental-backup.
+- android/backup/save_restore.py vira ffbe_save_restore.py no APK LAB.
+- android/runtime/local_http.py chama recover_before_engine() antes de
+  importar serve/capture_server e antes de aplicar configuracoes do jogo.
+- Sem diretorio de recuperacao ou diario pendente: segue normalmente,
+  sem ler ou alterar o save. Com diario: so tenta recuperacao se o motor
+  ainda nao foi importado e a porta local 18080 nao estiver aberta.
+- Se o diario ou o checkpoint estiver incorreto, ou se o motor aparentar
+  estar em execucao, a inicializacao falha fechada. Nunca ignora erro.
+- Essa etapa e guarda de startup, NAO interface de escolha de snapshot
+  nem autorizacao de restauracao durante uma sessao ativa.
+- O APK gerado em build-cache/restore-boot-lab/ e apenas arquivo de
+  laboratorio NAO ASSINADO, nao instalavel como upgrade. O APK estavel
+  distribuido e o APK experimental instalado no Samsung nao foram tocados.
+
+Teste automatizado: 10 novos testes de restore_startup, teste de ordem
+no local_http e 3 novos testes de contrato de empacotamento. Teste
+real de reinicio Android e interface de confirmacao permanecem pendentes.

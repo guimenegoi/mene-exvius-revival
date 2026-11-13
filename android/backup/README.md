@@ -61,3 +61,14 @@ python3 -m unittest discover -s android/runtime -p 'test_*.py' -q
 - recover_pending precisa rodar antes de iniciar o jogo; o controlador Android ainda não existe.
 - 13 testes sintéticos aprovados em 13/11/2026. Consulte RESTORE_DESIGN.md.
 - Nenhum save real foi restaurado.
+
+## Guarda de boot para restauração interrompida (experimental)
+
+A flag de empacotamento --experimental-restore (apenas junto com
+--experimental-backup) inclui ffbe_restore_startup.py e ffbe_save_restore.py.
+O guard fica em local_http.run(), depois do preflight de recursos e antes
+de importar serve/capture_server. Na ausência de diário pendente,
+não toca o save. Com diário pendente, exige motor não iniciado e reverte
+o estado interrompido para o pré-backup; em erro, bloqueia o boot.
+O APK gerado é unsigned LAB, não foi instalado nem ativado no Samsung.
+Ver android/backup/RESTORE_DESIGN.md para limitações.

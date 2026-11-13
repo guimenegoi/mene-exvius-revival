@@ -23,7 +23,9 @@ from typing import Callable
 
 try:  # Android packaging uses this alias for the shared backup transport.
     import ffbe_backup_transport as backup
-except ModuleNotFoundError:
+except ModuleNotFoundError as exc:
+    if exc.name != "ffbe_backup_transport":
+        raise  # Do not hide a missing dependency within the backup module.
     import lxc_backup as backup
 
 SHA256 = re.compile(r"[a-f0-9]{64}\Z")

@@ -432,6 +432,17 @@ def run(archive: Path | None = None, app_files: Path | None = None,
     # installer. The iPhone's first-battle workaround must not trigger them.
     os.environ["EXVIUS_EARLY_RESOURCES"] = ""
     os.environ["EXVIUS_IOS_SOUND_REFETCH"] = ""
+    # Recovery is opt-in to the experimental restore package. It runs
+    # *before* importing serve/capture_server and before touching saved state
+    # from the real engine. No journal means no save read or write.
+    try:
+        from ffbe_restore_startup import recover_before_engine
+    except ModuleNotFoundError as exc:
+        if exc.name != "ffbe_restore_startup":
+            raise  # Broken experimental dependency: fail closed.
+    else:
+        recovery = recover_before_engine(files)
+        print("FFBE-RESTORE-BOOT: " + recovery, flush=True)
     # A local, schema-validated config is applied BEFORE serve/capture_server
     # bind any environment flags. The sync worker never changes a live engine.
     try:

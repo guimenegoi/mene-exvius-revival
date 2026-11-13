@@ -267,9 +267,17 @@ class LocalHttpTests(unittest.TestCase):
                 configure_engine=configure, start_engine=start_engine,
                 make_handler=make_handler, Server=factory,
             )
+
+            def recover_guard(app_files):
+                self.assertEqual(app_files, files)
+                engines.append("restore-before-engine")
+                return "no_restore_journal"
+
+            restore_stub = types.SimpleNamespace(recover_before_engine=recover_guard)
             errors = []
             before = list(sys.path)
-            with patch.object(local_http.importlib, "import_module", side_effect=fake_import), \
+            with patch.dict(sys.modules, {"ffbe_restore_startup": restore_stub}), \
+                    patch.object(local_http.importlib, "import_module", side_effect=fake_import), \
                     patch.dict(os.environ, {}, clear=False):
                 thread = threading.Thread(
                     target=lambda: self._run_and_catch(
@@ -287,7 +295,8 @@ class LocalHttpTests(unittest.TestCase):
                     with urllib.request.urlopen(url, timeout=2) as res:
                         self.assertEqual(res.read(), b"revival-handler-routed")
                     self.assertEqual(engines, [
-                        "configure", "real-engine-entrypoint", "handler"
+                        "restore-before-engine", "configure",
+                        "real-engine-entrypoint", "handler"
                     ])
                     self.assertEqual(used, ["verified-sha-installer"])
                     self.assertEqual(os.environ["FFBE_DATA_DIR"],

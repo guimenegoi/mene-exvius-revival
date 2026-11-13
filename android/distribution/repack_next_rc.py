@@ -54,7 +54,8 @@ def verify_pinned_downloads(embedded: dict, repository: dict) -> None:
     if len(embedded["packs"]) != len(repository["packs"]) or len(embedded["packs"]) != 19:
         raise ValueError("Expected exactly 19 pinned game packs")
 
-def build(repo: Path, base: Path, output: Path, *, with_backup=False) -> dict:
+def build(repo: Path, base: Path, output: Path, *, with_backup=False,
+          with_restore=False) -> dict:
     repo, base, output = map(Path, (repo, base, output))
     if base.resolve() == output.resolve():
         raise ValueError("Never overwrite base APK")
@@ -68,6 +69,13 @@ def build(repo: Path, base: Path, output: Path, *, with_backup=False) -> dict:
         "ffbe_engine_bootstrap.py": (repo / "android/runtime/embedded_engine.py").read_bytes(),
         "ffbe_local_http.py": (repo / "android/runtime/local_http.py").read_bytes(),
     })
+    if with_restore and not with_backup:
+        raise ValueError("Restore experiment requires the optional backup client")
+    if with_restore:
+        replacements["ffbe_restore_startup.py"] = (
+            repo / "android/runtime/restore_startup.py").read_bytes()
+        replacements["ffbe_save_restore.py"] = (
+            repo / "android/backup/save_restore.py").read_bytes()
     if with_backup:
         replacements["ffbe_backup.py"] = (repo / "android/backup/embedded_client.py").read_bytes()
         replacements["ffbe_backup_transport.py"] = (repo / "android/backup/lxc_backup.py").read_bytes()
@@ -137,6 +145,10 @@ def build(repo: Path, base: Path, output: Path, *, with_backup=False) -> dict:
                                                      "config_model.py", "config_service.py",
                                                      "config_sync.py")):
                     raise ValueError("Missing embedded backup dependencies")
+                if with_restore and not all(k in embedded.namelist()
+                                            for k in ("ffbe_restore_startup.py",
+                                                      "ffbe_save_restore.py")):
+                    raise ValueError("Missing experimental restore dependencies")
         temporary_output.replace(output)
     finally:
         nested.unlink(missing_ok=True)
@@ -147,6 +159,7 @@ def build(repo: Path, base: Path, output: Path, *, with_backup=False) -> dict:
         "sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
         "backend_files": len(sources),
         "backup_experimental": with_backup,
+        "restore_experimental": with_restore,
         "signed": False,
     }
 
@@ -156,8 +169,12 @@ def main(argv=None):
     p.add_argument("--base", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--experimental-backup", action="store_true")
+    p.add_argument("--experimental-restore", action="store_true",
+                   help="embed offline-only recovery guard; requires experimental backup")
     args = p.parse_args(argv)
-    print(json.dumps(build(args.repo, args.base, args.out, with_backup=args.experimental_backup),
+    print(json.dumps(build(args.repo, args.base, args.out,
+                           with_backup=args.experimental_backup,
+                           with_restore=args.experimental_restore),
                      indent=2), flush=True)
 
 if __name__ == "__main__":
