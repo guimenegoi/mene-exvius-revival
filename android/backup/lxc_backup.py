@@ -293,7 +293,12 @@ def main(argv=None):
             parser.error("Use an explicit private IP, not a public or wildcard address")
         if args.store.is_symlink() or args.cert.is_symlink() or args.key.is_symlink():
             parser.error("Refusing symlink service inputs")
-        if args.token_file.is_symlink() or args.token_file.stat().st_mode & 0o077:
+        if not args.cert.is_file() or not args.key.is_file():
+            parser.error("TLS certificate and key must be regular files")
+        if args.key.stat().st_mode & 0o077:
+            parser.error("TLS private key must be mode 0600")
+        if (args.token_file.is_symlink() or not args.token_file.is_file()
+                or args.token_file.stat().st_mode & 0o077):
             parser.error("Token file must be private (mode 0600)")
         token = args.token_file.read_text(encoding="utf-8").strip()
         if len(token) < 32:

@@ -1,5 +1,6 @@
 """Synthetic save-only contracts; never connects to the actual LXC or phone."""
 import hashlib
+from contextlib import redirect_stderr
 import io
 import json
 import os
@@ -179,6 +180,43 @@ class BackupTests(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
                 worker.join(2)
+
+    def test_receiver_refuses_insecure_tls_key_permissions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cert, key, token = root / "cert.pem", root / "key.pem", root / "token.txt"
+            cert.write_text("synthetic")
+            key.write_text("synthetic")
+            token.write_text("a" * 32)
+            key.chmod(0o644)
+            token.chmod(0o600)
+            errors = io.StringIO()
+            with redirect_stderr(errors), self.assertRaises(SystemExit) as exc:
+                backup.main(["serve", "--bind", "127.0.0.1",
+                             "--store", str(root / "stored"),
+                             "--cert", str(cert), "--key", str(key),
+                             "--token-file", str(token)])
+            self.assertEqual(exc.exception.code, 2)
+            self.assertIn("key must be mode 0600", errors.getvalue())
+
+    def test_receiver_refuses_symlink_tls_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cert, key, token = root / "cert.pem", root / "key.pem", root / "token.txt"
+            cert.write_text("synthetic")
+            (root / "real-key.pem").write_text("synthetic")
+            (root / "real-key.pem").chmod(0o600)
+            key.symlink_to(root / "real-key.pem")
+            token.write_text("a" * 32)
+            token.chmod(0o600)
+            errors = io.StringIO()
+            with redirect_stderr(errors), self.assertRaises(SystemExit) as exc:
+                backup.main(["serve", "--bind", "127.0.0.1",
+                             "--store", str(root / "stored"),
+                             "--cert", str(cert), "--key", str(key),
+                             "--token-file", str(token)])
+            self.assertEqual(exc.exception.code, 2)
+            self.assertIn("symlink", errors.getvalue())
 
     def test_client_rejects_http_even_on_local_network(self):
         with tempfile.TemporaryDirectory() as tmp:

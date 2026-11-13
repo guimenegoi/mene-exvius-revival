@@ -38,8 +38,8 @@ usa somente saves sintéticos. Não ativa portas da LXC.
 ## Contrato futuro de implantação (não executado)
 
 A LXC tem IP LAN `192.168.15.209` e ZFS `storage-media`;
-é preciso definir certificado com SAN para esse IP, segredo 0600 fora
-de Git/Syncthing e diretório de destino em
+é preciso definir certificado com SAN para esse IP, **chave TLS e
+segredo Bearer ambos em modo 0600** fora de Git/Syncthing e diretório de destino em
 `/workspace/projects/ffbe-revival-distribution/save-backups/`.
 **Não iniciar o serviço nem entregar certificado/segredo em repositório.**
 A configuração de Wi-Fi e a autorização do usuário vêm antes
