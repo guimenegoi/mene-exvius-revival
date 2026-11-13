@@ -251,6 +251,7 @@ def android_files_layout(data: Path, client_files: Path, create: bool) -> None:
     application-private files directory as the server's CDN_ROOT.
     """
     files = client_files.expanduser().resolve()
+    data = data.expanduser().resolve()
     required = files / "exvius" / "data"
     if data != required:
         raise ValueError(f"Expected --data {required} when --android-files is set")

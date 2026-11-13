@@ -8,10 +8,12 @@ This is still a lab integration, not a lifecycle-complete Android service.
 """
 from __future__ import annotations
 
+import errno
 import hashlib
 import importlib
 import json
 import os
+import shutil
 import sys
 import zipfile
 from pathlib import Path
@@ -76,9 +78,9 @@ def _installed_hashes(receipt: dict) -> dict[str, str]:
     if not isinstance(records, list) or len(records) != PACK_COUNT:
         raise ValueError("Invalid Android installed pack inventory")
     result = {}
-    for record in records:
+    for index, record in enumerate(records):
         if not isinstance(record, dict):
-            raise ValueError("Invalid Android installed pack record")
+            raise ValueError(f"Invalid Android installed pack record at index {index}")
         name = record.get("id")
         digest = record.get("sha256")
         if (not isinstance(name, str) or not name or name in result
@@ -87,7 +89,10 @@ def _installed_hashes(receipt: dict) -> dict[str, str]:
                 or any(c not in "0123456789abcdef" for c in digest)
                 or not isinstance(record.get("unpackedSize"), int)
                 or record["unpackedSize"] <= 0):
-            raise ValueError("Invalid or duplicate Android pack entry")
+            raise ValueError(
+                f"Invalid or duplicate Android pack entry at index {index}"
+                f" (id={str(name)[:64]!r}, unpackedSize={record.get('unpackedSize')!r})"
+            )
         result[name] = digest
     return result
 
@@ -170,7 +175,7 @@ def reconcile_first_run(archive: Path | None = None,
         return True, "Android first-run inventory reconciled"
     except (OSError, ValueError, KeyError, TypeError,
             zipfile.BadZipFile, json.JSONDecodeError, ImportError) as exc:
-        return False, "first-run adapter refused: " + type(exc).__name__
+        return False, f"first-run adapter refused: {type(exc).__name__}: {str(exc)[:180]}"
 
 
 def preflight(archive: Path | None = None,
@@ -257,7 +262,15 @@ def preflight(archive: Path | None = None,
             return False, f"file inventory incomplete: {counted}/{expected_count}"
         return True, "verified 19-pack private data layout"
     except (OSError, ValueError, KeyError, TypeError, zipfile.BadZipFile, json.JSONDecodeError) as exc:
-        return False, "preflight failed: " + type(exc).__name__
+        # Diagnostic detail is required on real devices: a generic ValueError
+        # hides a bad Android install receipt and strands the startup screen.
+        detail = f"preflight failed: {type(exc).__name__}: {str(exc)[:180]}"
+        # JNI stores the earlier reconciliation result in __main__; report
+        # it only when startup fails, without changing any validation rule.
+        adapter = getattr(sys.modules.get("__main__"), "_first_run_reason", None)
+        if isinstance(adapter, str) and adapter:
+            detail += "; first-run: " + adapter[:180]
+        return False, detail
 
 
 def preserve_native_mst_for_cdn(files: Path) -> int:
@@ -265,8 +278,29 @@ def preserve_native_mst_for_cdn(files: Path) -> int:
 
     The game's cache updater can unlink original files/mst entries before
     fetching replacements. The CDN must not lose its only copy at that point.
-    Hardlinks share bytes and require no second download or 15 GB duplicate.
+    Hardlinks share bytes. Android builds that forbid app-private hardlinks
+    use atomic copies of only the pinned MST and original Vortex CPK, not
+    all 19 resource packs. No network or game save writes are involved.
     """
+    def preserve(source_file: Path, target_file: Path) -> None:
+        try:
+            os.link(source_file, target_file, follow_symlinks=False)
+        except OSError as exc:
+            if exc.errno not in (errno.EACCES, errno.EPERM, errno.EXDEV):
+                raise
+            staging = target_file.with_name(target_file.name + ".copying")
+            if staging.is_symlink() or (staging.exists() and not staging.is_file()):
+                raise ValueError("Unsafe immutable overlay staging path")
+            try:
+                shutil.copyfile(source_file, staging, follow_symlinks=False)
+                if staging.stat().st_size != source_file.stat().st_size:
+                    raise ValueError("Incomplete immutable overlay copy")
+                with staging.open("rb") as written:
+                    os.fsync(written.fileno())
+                staging.replace(target_file)
+            finally:
+                staging.unlink(missing_ok=True)
+
     source = files / "mst"
     overlay_root = files / "exvius/server-root/overlay"
     target = overlay_root / "mst"
@@ -294,7 +328,7 @@ def preserve_native_mst_for_cdn(files: Path) -> int:
             if dest.is_symlink() or (dest.exists() and not dest.is_file()):
                 raise ValueError("CDN overlay contains invalid file")
             if not dest.exists():
-                os.link(original, dest, follow_symlinks=False)
+                preserve(original, dest)
                 linked += 1
     for name in ("Ver709_i5QEJpua.dat", "Ver9001_YW9MUm2H.dat"):
         if not (target / name).is_file():
@@ -313,7 +347,7 @@ def preserve_native_mst_for_cdn(files: Path) -> int:
     if not pinned_pack.exists():
         if not base_pack.is_file() or base_pack.stat().st_size == 0:
             raise ValueError("original Vortex resource pack unavailable")
-        os.link(base_pack, pinned_pack, follow_symlinks=False)
+        preserve(base_pack, pinned_pack)
         linked += 1
     if not pinned_pack.is_file() or pinned_pack.stat().st_size == 0:
         raise ValueError("CDN overlay has an invalid Vortex resource pack")
@@ -333,7 +367,7 @@ def run(archive: Path | None = None, app_files: Path | None = None,
     if not ok:
         raise RuntimeError("Refusing Revival HTTP: " + reason)
     count = preserve_native_mst_for_cdn(files)
-    print(f"FFBE-CDN-MST-OVERLAY: {count} immutable hardlinks added", flush=True)
+    print(f"FFBE-CDN-MST-OVERLAY: {count} immutable files preserved", flush=True)
     target = archive.parent / "engine"
     # The bootstrap module exists inside the signed stdlib ZIP, not as a
     # separate Android app, and uses the existing SHA-256 installer.

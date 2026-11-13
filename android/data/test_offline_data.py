@@ -204,6 +204,32 @@ class OfflineDataTests(unittest.TestCase):
                 offline_data.android_files_layout(data, files, create=True)
             self.assertFalse((data / "native").exists())
 
+    def test_android_layout_accepts_equivalent_data_user_alias(self):
+        # Samsung/Android: getFilesDir() may be spelled /data/user/0 or
+        # /data/data, although both identify the same app-private directory.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            canonical_parent = root / "data" / "data"
+            canonical_files = canonical_parent / "com.example.ffbe/files"
+            canonical_files.mkdir(parents=True)
+            user_parent = root / "data" / "user"
+            user_parent.mkdir(parents=True)
+            (user_parent / "0").symlink_to(canonical_parent, target_is_directory=True)
+            alias_files = user_parent / "0/com.example.ffbe/files"
+            data = alias_files / "exvius/data"
+            data.mkdir(parents=True)
+            save = data / "save.txt"
+            save.write_text("preserve existing save")
+
+            self.assertNotEqual(data, canonical_files / "exvius/data")
+            self.assertEqual(data.resolve(), canonical_files / "exvius/data")
+            offline_data.android_files_layout(data, alias_files, create=True)
+            for name in offline_data.fetch_data.NATIVE_TOPS:
+                self.assertTrue((data / "native" / name).is_symlink())
+                self.assertEqual((data / "native" / name).resolve(),
+                                 canonical_files / name)
+            self.assertEqual(save.read_text(), "preserve existing save")
+
     def test_android_layout_rejects_path_mismatch(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
