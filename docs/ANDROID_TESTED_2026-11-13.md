@@ -5,10 +5,10 @@
 - Os 19 pacotes foram verificados; Revival HTTP respondeu READY em 127.0.0.1:18080 e HTTP 200.
 - Home, Summon e batalha carregados no telefone; usuario concluiu batalha e invocacao.
 - 95 testes automatizados de runtime e dados Android passaram na LXC 120.
-- Backup e RESTAURACAO do save ainda NAO foram comprovados; nao declarar automatico.
+- Backup real foi confirmado posteriormente no APK experimental separado; restauração ainda NÃO foi implementada/validada. Não atribuir backup ao APK estável.
 
 ## APK privado de referencia
-- FFBE-Revival-NEXT-RC-CONSISTENT-ARM64-UPDATE.apk (na LXC 120, /srv/ffbe-distribution/releases/).
+- FFBE-Revival-Android-ARM64-stable-20261113.apk (na LXC 120, /srv/ffbe-distribution/releases/). O nome NEXT-RC-CONSISTENT continua apenas como link de compatibilidade.
 - SHA256: 2f2bd6e47616cc51031ebcac26d3f175c22816af6883d18270303c8195d79a5e
 - Certificado de assinatura SHA256: 1e08a903aef9c3a721510b64ec764d01d3d094eb954161b62544ea8f187b5953
 - Base de codigo: integration/android-next-rc (bae3a49), com a correcao de inventario nesta branch.
@@ -27,5 +27,8 @@
 
 ## Recuperacao e pendencias
 - Existe FFBE-Revival-RC2-ROLLBACK-ARM64.apk na LXC; a reversao ainda nao foi validada no aparelho e nao deve ser presumida.
-- A branch feature/lxc-save-backup e apenas um prototipo com testes sinteticos.
-- Prioridades: backup real/restauracao validada, empacotamento reproduzivel autonomo na LXC e separar trabalho historico.
+- O APK experimental ConfigSync foi pareado no Samsung e enviou o primeiro ZIP real ao ZFS em 13/11/2026, SHA-256 `176f08dc07b23d61cb69e34a1581b5d686c9005f856bfdae83acb0a5e5f47af8`, contendo `campaign.json` e `replay.json`. Integridade ZIP verificada.
+- Estado de configuração no experimental: `up_to_date`, sem erros; aplicação de alteração remota após reinício ainda não foi validada.
+- Restauração controlada do save não implementada nem testada; tampouco foi testado um segundo snapshot após mudar o progresso ou operação com app fechado.
+- O release estável e a variante experimental são builds diferentes: não trocar o estável pelo experimental sem validação específica.
+- Prioridades: restaurar com segurança, validar aplicação de configuração, reprodução de build autônoma na LXC e isolar a pesquisa histórica. Consulte `docs/PROJECT_STATUS_AND_NEXT_STEPS.md`.
