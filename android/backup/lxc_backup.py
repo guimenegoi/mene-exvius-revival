@@ -16,6 +16,7 @@ import json
 import os
 import re
 import secrets
+import socket
 import ssl
 import tempfile
 import threading
@@ -26,6 +27,34 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import config_service
+
+class ThreadingTLSHTTPServer(ThreadingHTTPServer):
+    """Handshake in worker threads, not the single accept loop.
+
+    Calling SSLContext.wrap_socket on the listening socket causes
+    SSLSocket.accept() to block the accept loop on a silent TLS client.
+    Tailscale Serve TCP proxies and Wi-Fi reconnects can leave such clients.
+    """
+    daemon_threads = True
+    request_queue_size = 32
+
+    def __init__(self, address, handler, context: ssl.SSLContext):
+        self.tls_context = context
+        super().__init__(address, handler)
+
+    def finish_request(self, request, client_address):
+        # ThreadingHTTPServer invokes this in a separate worker thread.
+        # A client that never sends ClientHello cannot starve other clients.
+        try:
+            request.settimeout(6)
+            with self.tls_context.wrap_socket(request, server_side=True) as secure:
+                secure.settimeout(30)
+                self.RequestHandlerClass(secure, client_address, self)
+        except (ssl.SSLError, TimeoutError, ConnectionError, OSError):
+            pass
+        finally:
+            request.close()
+
 
 SCHEMA = 1
 MAX_FILE = 8 << 20
@@ -364,8 +393,8 @@ def main(argv=None):
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.minimum_version = ssl.TLSVersion.TLSv1_2
         context.load_cert_chain(str(args.cert), str(args.key))
-        server = ThreadingHTTPServer((args.bind, args.port), make_handler(args.store, token))
-        server.socket = context.wrap_socket(server.socket, server_side=True)
+        server = ThreadingTLSHTTPServer((args.bind, args.port),
+                                        make_handler(args.store, token), context)
         print(f"SAVE-BACKUP HTTPS READY {args.bind}:{args.port}", flush=True)
         try:
             server.serve_forever()
