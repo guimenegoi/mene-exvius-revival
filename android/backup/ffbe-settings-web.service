@@ -1,0 +1,27 @@
+[Unit]
+Description=FFBE Revival private settings web panel
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/var/lib/ffbe-save-backups
+
+[Service]
+Type=simple
+User=ffbe-backup
+Group=ffbe-backup
+Environment=PYTHONDONTWRITEBYTECODE=1
+WorkingDirectory=/
+ExecStartPre=/usr/bin/mountpoint -q /var/lib/ffbe-save-backups
+ExecStart=/usr/bin/python3 /usr/local/libexec/ffbe-settings/settings_web.py --bind 192.168.15.230 --port 18448 --store /var/lib/ffbe-save-backups --auth /etc/ffbe-settings-web/auth.json --public-origin https://proxmox.tailcf6a16.ts.net:8445 --device samsung-android
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/ffbe-save-backups
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
