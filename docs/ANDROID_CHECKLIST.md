@@ -18,9 +18,39 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
 - [ ] Comprovar que todos os caminhos necessários (inclusive nativos, se houver)
       deixam de atingir endpoints externos, sem interceptar conexões de outros apps.
 
+## RC2 — APK único ARM64 em inglês (12/11/2026)
+
+**Artefato de teste mais simples:** `~/Downloads/FFBE-Revival-RC2-ARM64-English.apk`,
+assinado com certificado DEBUG (310.139.836 bytes, aprox. 296 MiB;
+SHA-256 `e761620f97fad6dac495a409ae6daa81f035ec432a5d97fc54eff4d9f3ad594e`).
+O arquivo `FFBE-Revival-RC2-ARM64-English.txt` contém instruções e checksum.
+
+- [x] APKEditor 1.4.9 verificado por SHA-256
+  (`a9cd40df818845456be6d696de6110c89edf4b0a0580cb83438ed6b25a366e67`)
+  fundiu **base + ARM64 + inglês + mdpi**; excluiu `config.fr`.
+  Arquivos `assets/cpk/fr` internos da base original foram preservados
+  para evitar mudanças funcionais fora do escopo. Não há dependência de SAI.
+- [x] Comparação por conteúdo: os quatro DEX e `ffbe_python/stdlib.zip`
+  idênticos ao RC2; oito bibliotecas ARM64 idênticas ao split original;
+  `resources.arsc` combinado; `res/xml/splits0.xml` retirado.
+  Assinatura v1/v2/v3 e zipalign verificados.
+- [x] `adb install -r` **sem limpar dados**: Android aceitou somente
+  `base.apk` como caminho de instalação (antes eram cinco); versão
+  `9101` mantida. Inicialização do CPython 3.14, 19 packs verificados,
+  Revival HTTP local na porta 18080, título, Home e entrada Vortex.
+- [ ] Instalação limpa e gameplay em Android ARM64 físico ainda não
+  verificados; popup residual de download de **0 KB** permanece.
+  Certificado DEBUG, portanto **não é release final assinada**.
+- [ ] Confirmar compatibilidade de atualizações entre outros certificados;
+  nunca desinstalar versões com saves sem backup prévio.
+
+**Reprodução do merge sem criar merger próprio:**
+[android/distribution/README.md](../android/distribution/README.md).
+Os APKs e recursos proprietários não entram no Git.
+
 ## RC2 para teste — 12/11/2026 (substitui RC1)
 
-**Artefato recomendado:** `~/Downloads/FFBE-Revival-RC2-2026-11-12.apks`
+**Artefato anterior com splits:** `~/Downloads/FFBE-Revival-RC2-2026-11-12.apks`
 (323.720.053 bytes, SHA-256:
 `a8c3a2703a013667e59bafcba501dcbef01e8c838ce346068466055090bc5e69`).
 Cinco APKs assinados com chave DEBUG, reunidos em um .apks. Os cinco

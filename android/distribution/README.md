@@ -1,5 +1,46 @@
 # FFBE Revival — distribuição de laboratório
 
+## Atualização — APK único RC2 ARM64/English (12/11/2026)
+
+O arquivo testado no desktop é
+`~/Downloads/FFBE-Revival-RC2-ARM64-English.apk` (assinado DEBUG,
+SHA-256 `e761620f97fad6dac495a409ae6daa81f035ec432a5d97fc54eff4d9f3ad594e`).
+Ele foi instalado no Waydroid com `adb install -r` sem limpar dados; o
+Android retornou apenas um APK em `pm path`, e o FFBE chegou à Home/Vortex
+com Revival HTTP local. **Não substitui teste em telefone ARM64 físico**.
+
+A fusão reaproveita o mecanismo oficial do **REAndroid APKEditor v1.4.9**,
+sem implementar outro merger. A entrada são exatamente quatro módulos do
+RC2 já aprovado: `base.apk`, `split_config.arm64_v8a.apk`,
+`split_config.en.apk` e `split_config.mdpi.apk`. **Não incluir
+`split_config.fr.apk`.** Recursos multilíngues internos da base original
+não são alterados para evitar perda de referências do cliente.
+
+Exemplo de reprodução em ambiente com Java 17:
+
+```bash
+# Somente quatro APKs de entrada verificados em input/
+# APKEditor-1.4.9.jar: SHA-256
+# a9cd40df818845456be6d696de6110c89edf4b0a0580cb83438ed6b25a366e67
+java -jar APKEditor-1.4.9.jar m -i input -o merged-unsigned.apk
+
+# Assinar com a MESMA chave de testes dos splits RC2,
+# para permitir atualizar sem perder os dados do app.
+java -jar uber-apk-signer-1.3.0.jar -a merged-unsigned.apk   --allowResign -o signed
+
+# Conferir antes de instalar: assinatura, CRCs dos quatro DEX,
+# ffbe_python/stdlib.zip, oito bibliotecas ARM64 e res.arsc.
+adb install -r signed/merged-unsigned-aligned-debugSigned.apk
+```
+
+O APK é específico para **ARM64** (não contém x86_64 nativo), tem
+certificado DEBUG e **não inclui os 19 pacotes de dados**: uma instalação
+limpa precisa baixá-los (~14,65 GB compactados), com SHA-256. O popup
+residual de 0 KB não foi removido. Não publicar arquivos proprietários
+do cliente ou dos pacotes em Git/releases públicos sem avaliar direitos.
+
+As seções históricas abaixo registram os estágios anteriores à RC2.
+
 Esta pasta documenta uma **cópia privada** dos APKs experimentais e dos
 pacotes de instalação no disco externo montado no LXC `workspace` (117):
 
