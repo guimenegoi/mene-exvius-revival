@@ -686,6 +686,11 @@ def mission_update(spec, req):
         masters = _mst('F_QUEST_MST.ndjson', 'Z34jU7ue')
         steps = _mst('F_QUEST_SUB_MST.ndjson', '7Svg2kdT')
         saved = block.setdefault('quests', {})
+        # Each step's own switches (F_QUEST_SUB_MST): `juA0Z4m7` when accepted, `dIPkNn61` when completed. The map
+        # and NPC scripts read them (Mitra's map: an event page conditioned on the completion switch); the phone's
+        # completion request doesn't send them, so until 2026-11-12 a completed quest was offered again after a
+        # restart. quest_switches.repair sets them for saves from before.
+        step_switches = []
         for token, completed in [('9YPZuB2i', True), ('i9han5Sz', False)]:
             pair = str(operation.get(token) or '')
             if not pair:
@@ -696,6 +701,7 @@ def mission_update(spec, req):
             quest, step = masters.get(qid), steps.get(sid)
             _require(quest and step and str(step['Z34jU7ue']) == qid, 'unknown quest step')
             old = saved.get(sid, {})
+            step_switches += _csv(step.get('dIPkNn61' if completed or old.get('4kcAD9fW') == '2' else 'juA0Z4m7'))
             if old.get('4kcAD9fW') == '2':
                 continue
             preceding = [r for r in steps.values() if r['Z34jU7ue'] == qid
@@ -714,7 +720,7 @@ def mission_update(spec, req):
                     if qid not in block.setdefault('rewarded', []):
                         _grant(_expedition_rewards(quest.get('dX6cor8j')))
                         block['rewarded'].append(qid)
-        switches = _csv(operation.get('dIPkNn61'))
+        switches = list(dict.fromkeys(_csv(operation.get('dIPkNn61')) + step_switches))
         _require(all(switch_position(s) is not None for s in switches), 'unknown quest switch')
         spec = _switches(spec, switches)
     _put("map", block)

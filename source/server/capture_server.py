@@ -723,6 +723,13 @@ class Handler(BaseHTTPRequestHandler):
             if hit:
                 data = open(hit, "rb").read()
                 how = how_art + " (" + os.path.relpath(hit, os.path.dirname(WORK)) + ")"
+        # SUMMON ART NEVER 404s (2026-11-12): a missing summon image failed the summon screen's whole download
+        # and sent the game to the title asking to re-download all data. Answer with a drawn stand-in instead.
+        if data is None and rel and ".." not in rel:
+            import summon_art
+            drawn = summon_art.fallback(rel)
+            if drawn:
+                data, how = drawn
         # LINE ENDINGS. The tables this project rebuilt were written on Windows with CRLF; the Android client's
         # base64 decoder skips the CR, but the iPhone client's does not, and reports LOAD_ERROR_DECODE_FAILED
         # (F_ABILITY_EXPLAIN_MST Ver404, F_LOCALIZED_TEXT_MST Ver710, from its own uploaded log, 2026-11-05).
@@ -741,6 +748,10 @@ class Handler(BaseHTTPRequestHandler):
         verdict = f"200 {n} B ({how})" if data is not None else f"404 ({how or 'not in the CDN root'})"
         print(f"CDN  {self.command} {self.path}  host={self.headers.get('Host')}  "
               f"ua={self.headers.get('User-Agent')}  -> {verdict}", flush=True)
+        if "w5JFGPh3" in self.path:
+            # The Convert screens' table (F_SACRIFICE_MST). One line per request, whatever version it names and
+            # whatever we answer, so a phone test settles whether the phone asks for it (2026-11-12).
+            print(f"CONVERT-TABLE request {self.command} {self.path} -> {verdict}", flush=True)
         try:
             if data is None:
                 self.send_response(404)

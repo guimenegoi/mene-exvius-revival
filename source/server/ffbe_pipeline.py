@@ -276,6 +276,9 @@ PIPELINE: tuple = (
          "state", "State.player.mailbox", "first-clear rewards of cleared quests never paid, by mail (first_clear.py)"),
     Step("register_guide", lambda c: __import__("guide").register(c.spec, c.reply_id),
          "state", "State.player.guide", "keep held units/items/gear/materia/cards in the Guide register (guide.py)"),
+    Step("repair_quest_switches", lambda c: __import__("quest_switches").step(c.spec, c.reply_id, State),
+         "state", "State.player.switches", "completed quest steps get their completion switches, once per save "
+         "(quest_switches.py); before serve_switches so the login carries them"),
     Step("deliver_chest_backpay", lambda c: __import__("chest_backpay").deliver(c.spec, c.reply_id),
          "state", "State.player.mailbox", "equipment/materia/key-item chests opened but never paid, by mail once "
          "(chest_backpay.py)"),
@@ -510,6 +513,8 @@ PIPELINE_EDGES: tuple = (
          "(`n69quiCJ`); project first and the header shows the PREVIOUS crest"),
     Edge("apply_emblem_setting", "save_state", "st.STATE_FILE",
          "the chosen emblem has to survive the restart that ends the run, or it silently reverts"),
+    Edge("repair_quest_switches", "serve_switches", "State.player.switches",
+         "the login's switch group must carry the repaired completion switches"),
     Edge("record_battle_carry", "save_state", "State.player.inventory.carry_items",
          "the lowered item set and bag are written by the battle-end request itself"),
     Edge("record_battle_carry", "apply_to_reply", "State.player.inventory.items",
