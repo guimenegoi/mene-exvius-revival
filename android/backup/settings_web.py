@@ -203,15 +203,18 @@ def field_html(item: tuple, saved: dict) -> str:
 
 class WebApp:
     def __init__(self, store: Path, auth_path: Path, public_origin: str,
-                 device: str = DEVICE):
+                 device: str = DEVICE, lan_origin: str | None = None):
         self.store = Path(store)
         self.auth = json.loads(Path(auth_path).read_text("utf-8"))
         self.public_origin = public_origin.rstrip("/")
+        self.allowed_origins = {self.public_origin}
+        if lan_origin:
+            self.allowed_origins.add(lan_origin.rstrip("/"))
         self.device = device
         if not re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", device):
             raise ValueError("Invalid device")
-        if not self.public_origin.startswith("https://"):
-            raise ValueError("Public URL must use HTTPS")
+        if any(not origin.startswith("https://") for origin in self.allowed_origins):
+            raise ValueError("All allowed origins must use HTTPS")
         self.sessions = {}
         self.failed = {}
         self.lock = threading.Lock()
@@ -299,7 +302,7 @@ def make_handler(app: WebApp):
 
         def _origin_ok(self):
             # Only the private Tailscale origin can submit mutations.
-            return self.headers.get("Origin") == app.public_origin
+            return self.headers.get("Origin") in app.allowed_origins
 
         def _layout(self, body):
             return ('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
@@ -464,6 +467,7 @@ def main(argv=None):
     parser.add_argument("--cert", required=True, type=Path)
     parser.add_argument("--key", required=True, type=Path)
     parser.add_argument("--public-origin", required=True)
+    parser.add_argument("--lan-origin", default=None)
     parser.add_argument("--device", default=DEVICE)
     parser.add_argument("--provision-auth", action="store_true")
     args = parser.parse_args(argv)
@@ -480,7 +484,8 @@ def main(argv=None):
         parser.error("TLS certificate and key must be regular files")
     if args.key.stat().st_mode & 0o077:
         parser.error("TLS key must be mode 0600")
-    app = WebApp(args.store, args.auth, args.public_origin, args.device)
+    app = WebApp(args.store, args.auth, args.public_origin, args.device,
+                 lan_origin=args.lan_origin)
     server = ThreadingHTTPServer((args.bind, args.port), make_handler(app))
     # Encrypt also the LAN hop between Proxmox and the LXC. Tailscale Serve
     # handles public HTTPS and reverse-proxies to this private TLS listener.

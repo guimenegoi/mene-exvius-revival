@@ -11,7 +11,7 @@ Group=ffbe-backup
 Environment=PYTHONDONTWRITEBYTECODE=1
 WorkingDirectory=/
 ExecStartPre=/usr/bin/mountpoint -q /var/lib/ffbe-save-backups
-ExecStart=/usr/bin/python3 /usr/local/libexec/ffbe-settings/settings_web.py --bind 192.168.15.230 --port 18448 --store /var/lib/ffbe-save-backups --auth /etc/ffbe-settings-web/auth.json --cert /etc/ffbe-backup/cert.pem --key /etc/ffbe-backup/key.pem --public-origin https://proxmox.tailcf6a16.ts.net:8445 --device samsung-android
+ExecStart=/usr/bin/python3 /usr/local/libexec/ffbe-settings/settings_web.py --bind 192.168.15.230 --port 18448 --store /var/lib/ffbe-save-backups --auth /etc/ffbe-settings-web/auth.json --cert /etc/ffbe-backup/cert.pem --key /etc/ffbe-backup/key.pem --public-origin https://proxmox.tailcf6a16.ts.net:8445 --lan-origin https://192.168.15.230:18448 --device samsung-android
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true

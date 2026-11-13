@@ -96,6 +96,14 @@ class SettingsWebTests(unittest.TestCase):
         code, _, _, _, _ = self.request("POST", "/login", {"password": "correct horse battery staple"})
         self.assertNotEqual(code, 303)
 
+    def test_lan_origin_explicitly_authorized(self):
+        self.app.allowed_origins.add("https://192.168.15.230:18448")
+        code, _, cookie, _, _ = self.request(
+            "POST", "/login", {"password": "correct horse battery staple"},
+            {"Origin": "https://192.168.15.230:18448"})
+        self.assertEqual(code, 303)
+        self.assertIn("Secure", cookie)
+
     def test_origin_enforced_on_login_and_save(self):
         code, _, _, _, _ = self.request("POST", "/login", {"password": "correct horse battery staple"},
                                          {"Origin": "https://attacker.example"})
