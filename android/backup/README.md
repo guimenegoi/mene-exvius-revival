@@ -1,68 +1,47 @@
-# FFBE: protótipo isolado de backup de save para LXC 117
+# FFBE Revival - backup privado de save (LXC 120)
 
-**Branch:** `feature/lxc-save-backup` (não integrado ao APK e não ativo no servidor).
-**Estado:** protocolo e testes sintéticos HTTPS; nenhuma cópia do save real.
+## Estado em 2026-11-13
 
-## Escopo e segurança
+- Branch: feature/lxc-save-backup. O cliente Android ainda NAO foi integrado e nenhum save real foi enviado.
+- Servidor receptor HTTPS implantado e iniciado automaticamente no LXC 120 (ffbe-revival-test; 192.168.15.230).
+- Unit: ffbe-save-backup.service (active e enabled, usuario isolado ffbe-backup).
+- Origem do servidor: /opt/mene-exvius-revival-backup/android/backup/lxc_backup.py.
+- Endpoint HTTPS interno: https://192.168.15.230:18447/v1/backups/<device>.
+- Endpoint Tailscale Serve privado: https://proxmox.tailcf6a16.ts.net:8444/v1/backups/<device> (tailnet only, nao Funnel).
+- Proxmox serve TLS publico para a tailnet e encaminha para TLS privado do LXC.
+- Segredos e certificado: /etc/ffbe-backup/ (0700; token e chave TLS 0600). NUNCA enviar segredo para Git.
+- Backups em /var/lib/ffbe-save-backups (0700, ffbe-backup), mp1 ZFS do host /storage-media/dev-projects/ffbe-revival-distribution/save-backups; cerca de 2,6 TB livres na montagem.
+- Protecao verificada: requisicoes GET e POST sem token retornam HTTP 401; a unidade continuou ativa apos reboot do LXC.
+- Testes sinteticos do protocolo: 20 testes aprovados. Envio autenticado ao servico implantado e restore real AINDA NAO testados.
 
-- Fonte: apenas os arquivos JSON regulares diretamente em
-  `getFilesDir()/exvius/server-root/state/` (necessariamente
-  `campaign.json`, mais `replay.json`, `summon_rotation.json`
-  e outros JSON top-level). Nunca `requests/`, `backups/`, certificados,
-  APKs, pacotes, dados nativos ou chaves.
-- O snapshot recusa hardlinks de JSON, impedindo que um arquivo externo
-  ao diretório de state seja incluído por alias de inode.
-- O Revival já escreve o save com `os.replace` em `PlayerState.save`;
-  o snapshot lê um arquivo inteiro sem modificá-lo e recusa leituras
-  simultâneas à troca do arquivo. **Ainda não há consistência transacional
-  de múltiplos JSON nem evento pós-save conectado ao motor Android.**
-- O cliente recusa redirecionamentos HTTP 3xx, impedindo o encaminhamento
-  acidental do token Bearer ou do payload de backup a outra origem.
-- O comando `push` também exige token local em arquivo regular privado
-  (modo 0600), sem symlink, com pelo menos 32 caracteres; recusa a
-  operação antes de ler qualquer save quando essas condições falham.
-- Transporte **HTTPS com validação da CA/certificado**, token Bearer
-  de no mínimo 32 caracteres no servidor, SHA-256 na requisição e
-  confirmação SHA-256 na resposta, com recibo limitado a 8 KiB para
-  impedir consumo ilimitado de memória no cliente. Nenhum HTTP simples em produção.
-- Servidor aceita apenas `POST /v1/backups/<device>` e
-  `GET /v1/backups/<device>` autenticados; bloqueia nomes e ZIPs
-  arbitrários, symlinks, travessia, manifestos maiores que 8 KiB
-  (recusados antes da leitura) e payloads maiores que 20 MiB.
-  Armazena arquivos de modo 0600 em diretórios 0700, em
-  `storage-media` na LXC. Retém as últimas 30 cópias por dispositivo.
-  **Não implementa endpoint de remoção ou restauração automática.**
-- Nenhuma dependência de servidor para rodar o jogo; backup opcional
-  e desligado até existir configuração explícita e implantação segura.
+## Contrato de seguranca
 
-## Prova local
+- Fonte: somente arquivos JSON regulares de getFilesDir()/exvius/server-root/state/, inclusive campaign.json.
+- Excluidos: APKs, saves de outros apps, pacotes de dados, certificados, requests, downloads e segredos.
+- Snapshot rejeita symlinks, hardlinks, arquivos concorrentes, ZIP traversal, manifestos grandes e payloads maiores que 20 MiB.
+- TLS verificado pelo cliente, Bearer token >= 32 caracteres, SHA-256 integral em pedido/resposta, sem redirecionamentos.
+- POST /v1/backups/<device> cria snapshot privado 0600; GET autenticado lista metadados. Retencao: 30 por dispositivo.
+- Nenhum endpoint para restaurar, sobrescrever ou apagar dados remotos; jamais restaurar com motor em execucao.
+- Nao embutir token administrativo em APK distribuido; implantar pareamento e config privada no Android antes de habilitar backups automaticos.
+- A API permanece desativada para o cliente Android ate concluir o emparelhamento; o servidor nao chama o aplicativo.
 
-```sh
+## Verificacoes em servidor
+
+ssh proxmox
+pct exec 120 -- systemctl status ffbe-save-backup.service
+pct exec 120 -- df -h /var/lib/ffbe-save-backups
+pct exec 120 -- journalctl -u ffbe-save-backup.service -n 30 --no-pager
+tailscale serve status
+
+Teste autorizado sem acessar token: um GET nao autenticado a /v1/backups/phone deve retornar HTTP 401.
+Teste unitario (na copia do branch):
 python3 -m unittest discover -s android/backup -p 'test_*.py' -v
-```
 
-O teste HTTPS gera certificado temporário em diretório descartável e
-usa somente saves sintéticos. Não ativa portas da LXC.
+## Pendencias
 
-## Contrato futuro de implantação (não executado)
+1. Enrolar um cliente por aparelho sem publicar o token; adicionar rotina Android opt-in, HTTPS verificado e retry sem afetar gameplay.
+2. Provar pelo menos um snapshot REAL da campaign.json no diretorio privado do servidor, com hash valido e reapertura do jogo.
+3. Implementar restore separado com aviso/confirmacao explicita, backup local anterior e motor parado; executar ensaio em dispositivo de teste.
+4. Documentar a politica de rotacao do token e do certificado TLS, que expira em novembro de 2027.
 
-A LXC tem IP LAN `192.168.15.209` e ZFS `storage-media`;
-é preciso definir certificado com SAN para esse IP, **chave TLS e
-segredo Bearer ambos em modo 0600** fora de Git/Syncthing e diretório de destino em
-`/workspace/projects/ffbe-revival-distribution/save-backups/`.
-**Não iniciar o serviço nem entregar certificado/segredo em repositório.**
-A configuração de Wi-Fi e a autorização do usuário vêm antes
-da primeira tentativa de envio; depois será necessário conectar
-o transportador a um evento pós-save sem bloquear o jogo.
-
-A restauração deve ter fluxo separado: listar snapshots, validar hash,
-mostrar data/slot e diferenças, fazer cópia local de segurança e pedir
-confirmação explícita **com o motor parado**. Nenhuma rotina de
-restauração foi implementada.
-
-## Comandos de bancada (sem conectar ao telefone)
-
-O script oferece `serve --bind --store --cert --key --token-file` e
-`push --state --url --device --ca --token-file`.
-Os testes exercitam o protocolo; não usar dados reais até concluir
-a autorização, o canal TLS na LAN e a integração do save no Android.
+Este documento registra um receptor implantado, nao uma promessa de backup automatico ja operacional.
