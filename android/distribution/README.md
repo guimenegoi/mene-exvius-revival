@@ -128,3 +128,37 @@ estimativa conservadora do projeto.
 
 Não publicar APK, recursos de jogo, saves ou chaves em releases públicos.
 O cliente e os assets originais pertencem aos seus respectivos titulares.
+
+## Download privado de APK diretamente da LXC (branch experimental)
+
+O protótipo `android/distribution/apk_lan.py` reaproveita o mesmo
+`make_handler` HTTP Range do cache, mas executa **em processo separado**,
+numa porta exclusiva para servir **um único APK**, com nome e SHA-256
+exatos. O serviço do instalador que só escuta `127.0.0.1:18082` não
+é modificado nem exposto à LAN.
+
+Exemplo para **bancada controlada**, depois de copiar um APK aprovado
+para a LXC (sem enviá-lo ao Git e sem usar o diretório de saves):
+
+```bash
+python3 android/distribution/apk_lan.py \
+  --apk /workspace/projects/ffbe-revival-distribution/apk/private/FFBE-Approved.apk \
+  --sha256 <sha256-confirmado-do-apk> \
+  --bind 192.168.15.209 --port 18448 --minutes 30
+```
+
+O comando verifica o arquivo inteiro antes de abrir a porta. Ele imprime
+um **link temporário com token criptograficamente aleatório**, acessível
+pelo navegador do celular na mesma rede Wi-Fi. Suporta `GET`, `HEAD`
+e `Range: bytes=N-`; após expirar, encerra o listener. Sem listagem
+de diretórios, sem rotas de dados/ZIPs e sem acesso público configurado.
+
+**Limite de segurança:** o link atual é HTTP simples; o token e o APK
+não estão criptografados na rede. Usar apenas em LAN confiável, jamais
+com port forwarding ou exposição à internet. Não guardar/compartilhar
+o link, e verificar assinatura e SHA-256 antes de instalar. Para uso
+frequente, preferir TLS com certificado confiável e autenticação.
+
+**Estado:** ferramenta de prova em branch; não é um serviço permanente
+nem foi configurada no celular. Nenhum arquivo de jogo será entregue
+automaticamente sem um comando explícito.

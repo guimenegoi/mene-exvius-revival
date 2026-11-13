@@ -8,10 +8,12 @@ All 19 original pack hashes, names, sizes and order remain unchanged.
 from __future__ import annotations
 
 import argparse
+import hmac
 import json
 import os
 import re
 import stat
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -47,12 +49,22 @@ def pinned_data(manifest: Path, packs: Path, base: str) -> tuple[bytes, dict]:
     return json.dumps(document, separators=(",", ":")).encode("utf-8"), output
 
 
-def make_handler(data: bytes, packs: dict):
+def make_handler(data: bytes, packs: dict, *,
+                 apk: tuple[Path, int, str] | None = None,
+                 token: str | None = None,
+                 expires_at: float | None = None):
+    """Reuse the existing byte-range sender for either lab packs or one APK.
+
+    APK mode has no pack or manifest routes. The ephemeral capability in
+    the path must never be logged or accepted after the monotonic deadline.
+    """
     class Handler(BaseHTTPRequestHandler):
         server_version = "FFBE-PrivateCacheLab/1"
 
         def log_message(self, fmt: str, *args) -> None:
-            print("cache: " + fmt % args, flush=True)
+            if apk is None:
+                print("cache: " + fmt % args, flush=True)
+            # APK URLs contain a secret; do not log them.
 
         def do_HEAD(self):
             self.serve(False)
@@ -65,7 +77,15 @@ def make_handler(data: bytes, packs: dict):
             if parsed.query or parsed.fragment:
                 self.send_error(404)
                 return
-            if parsed.path == "/data/latest.json":
+            is_apk = apk is not None
+            if is_apk:
+                if (not token or expires_at is None or time.monotonic() >= expires_at
+                        or not hmac.compare_digest(parsed.path,
+                            "/download/" + token + "/" + apk[0].name)):
+                    self.send_error(404)
+                    return
+                path, expected, checksum = apk
+            elif parsed.path == "/data/latest.json":
                 self.send_response(200)
                 self.send_header("Content-Length", str(len(data)))
                 self.send_header("Content-Type", "application/json")
@@ -74,11 +94,12 @@ def make_handler(data: bytes, packs: dict):
                 if body:
                     self.wfile.write(data)
                 return
-            match = re.fullmatch(r"/packs/([a-z0-9-]+)\.zip", parsed.path)
-            if match is None or match.group(1) not in packs:
-                self.send_error(404)
-                return
-            path, expected = packs[match.group(1)]
+            if not is_apk:
+                match = re.fullmatch(r"/packs/([a-z0-9-]+)\.zip", parsed.path)
+                if match is None or match.group(1) not in packs:
+                    self.send_error(404)
+                    return
+                path, expected = packs[match.group(1)]
             try:
                 descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
                 info = os.fstat(descriptor)
@@ -106,9 +127,15 @@ def make_handler(data: bytes, packs: dict):
                         return
                 self.send_response(206 if header else 200)
                 self.send_header("Content-Length", str(expected - offset))
-                self.send_header("Content-Type", "application/zip")
+                self.send_header("Content-Type", "application/vnd.android.package-archive"
+                                 if is_apk else "application/zip")
                 self.send_header("Accept-Ranges", "bytes")
                 self.send_header("Cache-Control", "no-store")
+                self.send_header("X-Content-Type-Options", "nosniff")
+                if is_apk:
+                    self.send_header("Content-Disposition",
+                                     'attachment; filename="' + path.name + '"')
+                    self.send_header("X-Checksum-SHA256", checksum)
                 if header is not None:
                     self.send_header("Content-Range", f"bytes {offset}-{expected - 1}/{expected}")
                 self.end_headers()
