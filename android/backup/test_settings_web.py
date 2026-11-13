@@ -163,16 +163,39 @@ class SettingsWebTests(unittest.TestCase):
         self.assertIn("EXVIUS_REPLAY_START", body)
         self.assertNotIn("correct horse battery staple", body)
 
+    def test_effective_defaults_are_visible_without_overrides(self):
+        self.login()
+        code, body, _, _, _ = self.request()
+        self.assertEqual(code, 200)
+        self.assertIn('value="2016-12-16"', body)
+        self.assertIn('value="3,2@2020-08-20"', body)
+        self.assertIn('value="150"', body)
+        self.assertIn('value="30"', body)
+        self.assertIn('Padrão · Ativado', body)
+        self.assertIn('Padrão desta versão', body)
+        self.assertIsNone(config_service.get(self.store, "phone"))
+
+    def test_submitting_effective_defaults_does_not_force_overrides(self):
+        self.login()
+        inputs = self.settings_form()
+        for key, value in web.EFFECTIVE_DEFAULTS.items():
+            kind = web.ALL_FIELDS[key][2]
+            if kind not in ("bool", "marquee"):
+                inputs[key] = str(value)
+        code, _, _, _, _ = self.request("POST", "/settings", inputs)
+        self.assertEqual(code, 303)
+        self.assertEqual(config_service.get(self.store, "phone")["document"]["settings"], {})
+
     def test_save_revision_and_optional_fields(self):
         self.login()
         fields = self.settings_form(EXVIUS_REPLAY_NOTICES="false",
-                                    EXVIUS_LAPIS_MULTIPLIER="5")
+                                    EXVIUS_LAPIS_MULTIPLIER="4")
         code, _, _, dest, _ = self.request("POST", "/settings", fields)
         self.assertEqual(code, 303)
         self.assertEqual(dest, "/?saved=1")
         stored = config_service.get(self.store, "phone")
         self.assertEqual(stored["document"]["settings"],
-                         {"EXVIUS_LAPIS_MULTIPLIER": 5, "EXVIUS_REPLAY_NOTICES": False})
+                         {"EXVIUS_LAPIS_MULTIPLIER": 4, "EXVIUS_REPLAY_NOTICES": False})
         self.assertEqual((self.store/"configs"/"phone.json").stat().st_mode & 0o777, 0o600)
 
     def test_replay_change_requires_explicit_acknowledgement(self):

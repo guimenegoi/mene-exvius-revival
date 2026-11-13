@@ -60,6 +60,30 @@ FIELDS = {
     ],
 }
 ALL_FIELDS = {item[0]: item for group in FIELDS.values() for item in group}
+# Effective defaults from the embedded Revival engine at this source revision:
+# ios-server/serve.py, source/server/replay.py, lapis_economy.py,
+# quest_trust.py, replay_notices.py, history_runs.py.
+# These are presentation defaults, NOT saved overrides.
+EFFECTIVE_DEFAULTS = {
+    "EXVIUS_REPLAY": True,
+    "EXVIUS_REPLAY_START": "2016-12-16",
+    "EXVIUS_REPLAY_PACE": "3,2@2020-08-20",
+    "EXVIUS_REPLAY_FULL_RUNS": True,
+    "EXVIUS_EVENT_ARCHIVE": True,
+    "EXVIUS_SUMMON_ARCHIVE": True,
+    "EXVIUS_REPLAY_NOTICES": True,
+    "EXVIUS_REPLAY_NOTICE_WEEKS": 8,
+    "EXVIUS_REPLAY_MARQUEE": True,
+    "MARQUEE_FLAG": "1",
+    "EXVIUS_LAPIS_MULTIPLIER": 5,
+    "EXVIUS_DAILY_QUEST_LAPIS": 150,
+    "EXVIUS_QUEST_TRUST": True,
+    "EXVIUS_QUEST_TRUST_CHANCE": 30,
+    "EXVIUS_QUEST_TRUST_POINTS": 10,
+    "EXVIUS_QUEST_TRUST_BIG_CHANCE": 5,
+    "EXVIUS_QUEST_TRUST_BIG_POINTS": 50,
+}
+assert set(EFFECTIVE_DEFAULTS) == set(ALL_FIELDS)
 CSS = """
 :root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#e9eff5;background:#0b121b}
 *{box-sizing:border-box}body{margin:0;line-height:1.48}a{color:inherit;text-decoration:none}
@@ -162,6 +186,9 @@ def parse_settings(form: dict) -> dict:
         raw = values[0]
         if raw == "":
             continue
+        # An unchanged inherited value is not a persistent override. A
+        # custom numeric/date/text value is saved only when different from
+        # the current engine default.
         if kind == "bool":
             if raw not in ("true", "false"):
                 raise ValueError("Invalid boolean: " + key)
@@ -172,33 +199,42 @@ def parse_settings(form: dict) -> dict:
             settings[key] = int(raw)
         else:
             settings[key] = raw
+        if key in settings and settings[key] == EFFECTIVE_DEFAULTS[key]:
+            settings.pop(key)
     return config_model.validate_document({"schema": 1, "settings": settings})
 
 
 def field_html(item: tuple, saved: dict) -> str:
     key, label, kind, description = item
-    value = saved.get(key)
+    custom = key in saved
+    value = saved.get(key, EFFECTIVE_DEFAULTS[key])
     name = esc(key)
+    default = EFFECTIVE_DEFAULTS[key]
+    default_text = ("Ativado" if default else "Desativado") if kind == "bool" else (
+        {"0": "Oculto", "1": "Normal", "flag": "Somente flag"}[default]
+        if kind == "marquee" else str(default))
     if kind == "bool":
-        options = [("", "Padrão"), ("true", "Ativado"), ("false", "Desativado")]
-        selected = "" if value is None else "true" if value else "false"
+        options = [("", "Padrão · " + default_text), ("true", "Ativado"), ("false", "Desativado")]
+        selected = ("true" if value else "false") if custom else ""
         control = f'<select name="{name}" id="{name}">' + "".join(
             f'<option value="{esc(v)}"{" selected" if v == selected else ""}>{esc(text)}</option>'
             for v, text in options) + "</select>"
     elif kind == "marquee":
-        options = [("", "Padrão"), ("0", "Oculto"), ("1", "Normal"), ("flag", "Somente flag")]
-        selected = "" if value is None else str(value)
+        options = [("", "Padrão · " + default_text), ("0", "Oculto"), ("1", "Normal"), ("flag", "Somente flag")]
+        selected = str(value) if custom else ""
         control = f'<select name="{name}" id="{name}">' + "".join(
             f'<option value="{v}"{" selected" if v == selected else ""}>{esc(text)}</option>'
             for v, text in options) + "</select>"
     else:
-        value_str = "" if value is None else str(value)
+        value_str = str(value)
         attrs = 'type="date" min="2016-06-30" max="2024-10-30"' if kind == "date" else (
             f'type="number" min="{config_model.RANGES[key][0]}" max="{config_model.RANGES[key][1]}" step="1"'
             if kind == "number" else 'type="text" maxlength="96" placeholder="3,2@2020-08-20"')
         control = f'<input {attrs} name="{name}" id="{name}" value="{esc(value_str)}">'
+    source = ("Personalizado" if custom else "Padrão desta versão")
     return (f'<div class="field"><div class="detail"><label for="{name}">{esc(label)}</label>'
-            f'<p>{esc(description)}</p></div><div class="control">{control}</div></div>')
+            f'<p>{esc(description)}</p><p class="sub">{esc(source)} · {esc(default_text) if not custom else "substitui o padrão"}</p>'
+            f'</div><div class="control">{control}</div></div>')
 
 
 class WebApp:
@@ -358,7 +394,7 @@ def make_handler(app: WebApp):
             for index, (group, items) in enumerate(FIELDS.items()):
                 panels.append(
                     f'<section class="panel" id="section-{index}"><h2>{esc(group)}</h2>'
-                    '<p class="explain">Em branco ou “Padrão”, o motor mantém seu comportamento original.</p>'
+                    '<p class="explain">Os valores padrão já aparecem preenchidos. Só alterações diferentes do padrão serão sincronizadas.</p>'
                     + "".join(field_html(item, settings) for item in items)
                     + '</section>')
             past = ('<ol class="history">' + "".join(
