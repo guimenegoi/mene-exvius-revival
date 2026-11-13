@@ -51,6 +51,22 @@ class BackupTests(unittest.TestCase):
                                  ["manifest.json", "state/campaign.json", "state/replay.json"])
             self.assertNotIn(b"partial write", data)
 
+    def test_temporary_files_do_not_consume_snapshot_slot_limit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = sample(Path(tmp))
+            for i in range(backup.MAX_FILES):
+                (state / f"stale_{i}.json.tmp").write_text("incomplete")
+            self.assertEqual(backup.validate(backup.snapshot(state)),
+                             ["campaign.json", "replay.json"])
+
+    def test_too_many_actual_saves_are_still_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = sample(Path(tmp))
+            for i in range(backup.MAX_FILES):
+                (state / f"extra_{i}.json").write_text("{}")
+            with self.assertRaisesRegex(ValueError, "Too many save files"):
+                backup.snapshot(state)
+
     def test_symlink_atomic_temporary_save_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             state = sample(Path(tmp))

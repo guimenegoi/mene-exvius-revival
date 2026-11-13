@@ -68,7 +68,9 @@ def snapshot(state_dir: Path) -> bytes:
     if state_dir.is_symlink() or not state_dir.is_dir():
         raise ValueError("Unsafe or absent FFBE state directory")
     files = sorted(p for p in state_dir.iterdir() if p.is_file() or p.is_symlink())
-    if len(files) > MAX_FILES:
+    # Count exported JSONs, not transient atomic-write files. Still bound
+    # directory scanning to prevent unbounded temporary-file accumulation.
+    if len(files) > 2 * MAX_FILES:
         raise ValueError("Too many save files")
     payloads = {}
     for path in files:
@@ -80,6 +82,8 @@ def snapshot(state_dir: Path) -> bytes:
             continue
         if not FILENAME.fullmatch(path.name):
             raise ValueError("Unexpected file in FFBE state: " + path.name)
+        if len(payloads) >= MAX_FILES:
+            raise ValueError("Too many save files")
         payloads[path.name] = _read_state(path)
     if "campaign.json" not in payloads:
         raise ValueError("Missing active campaign.json")
