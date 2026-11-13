@@ -323,9 +323,12 @@ def main(argv=None):
         finally:
             server.server_close()
         return 0
-    if args.token_file.is_symlink():
-        parser.error("Refusing symlink token file")
+    if (args.token_file.is_symlink() or not args.token_file.is_file()
+            or args.token_file.stat().st_mode & 0o077):
+        parser.error("Token file must be private (mode 0600)")
     token = args.token_file.read_text(encoding="utf-8").strip()
+    if len(token) < 32:
+        parser.error("Token must be at least 32 characters")
     print(json.dumps(upload(args.state, args.url, token, args.ca, args.device), indent=2))
     return 0
 

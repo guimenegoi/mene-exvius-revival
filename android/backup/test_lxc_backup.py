@@ -218,6 +218,36 @@ class BackupTests(unittest.TestCase):
             self.assertEqual(exc.exception.code, 2)
             self.assertIn("symlink", errors.getvalue())
 
+    def test_push_refuses_world_readable_bearer_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            token = root / "token.txt"
+            token.write_text("a" * 32)
+            token.chmod(0o644)
+            errors = io.StringIO()
+            with redirect_stderr(errors), self.assertRaises(SystemExit) as caught:
+                backup.main(["push", "--state", str(root / "absent-state"),
+                             "--url", "https://127.0.0.1:18447",
+                             "--device", "test", "--ca", str(root / "ca.pem"),
+                             "--token-file", str(token)])
+            self.assertEqual(caught.exception.code, 2)
+            self.assertIn("private", errors.getvalue())
+
+    def test_push_refuses_short_bearer_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            token = root / "token.txt"
+            token.write_text("short")
+            token.chmod(0o600)
+            errors = io.StringIO()
+            with redirect_stderr(errors), self.assertRaises(SystemExit) as caught:
+                backup.main(["push", "--state", str(root / "absent-state"),
+                             "--url", "https://127.0.0.1:18447",
+                             "--device", "test", "--ca", str(root / "ca.pem"),
+                             "--token-file", str(token)])
+            self.assertEqual(caught.exception.code, 2)
+            self.assertIn("32 characters", errors.getvalue())
+
     def test_client_rejects_http_even_on_local_network(self):
         with tempfile.TemporaryDirectory() as tmp:
             state = sample(Path(tmp))

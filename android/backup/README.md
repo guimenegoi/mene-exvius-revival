@@ -16,6 +16,9 @@
   de múltiplos JSON nem evento pós-save conectado ao motor Android.**
 - O cliente recusa redirecionamentos HTTP 3xx, impedindo o encaminhamento
   acidental do token Bearer ou do payload de backup a outra origem.
+- O comando `push` também exige token local em arquivo regular privado
+  (modo 0600), sem symlink, com pelo menos 32 caracteres; recusa a
+  operação antes de ler qualquer save quando essas condições falham.
 - Transporte **HTTPS com validação da CA/certificado**, token Bearer
   de no mínimo 32 caracteres no servidor, SHA-256 na requisição e
   confirmação SHA-256 na resposta. Nenhum HTTP simples em produção.
