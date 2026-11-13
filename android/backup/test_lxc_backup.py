@@ -224,6 +224,47 @@ class BackupTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "HTTPS"):
                 backup.upload(state, "http://127.0.0.1:18447", "token", Path(tmp), "phone")
 
+    def test_upload_refuses_redirect_without_forwarding_bearer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state = sample(root)
+            cert, key = root / "server.pem", root / "server.key"
+            subprocess.run(["openssl", "req", "-x509", "-nodes", "-newkey", "rsa:2048",
+                            "-days", "1", "-keyout", str(key), "-out", str(cert),
+                            "-subj", "/CN=ffbe-test",
+                            "-addext", "subjectAltName=IP:127.0.0.1"],
+                           check=True, capture_output=True)
+            from http.server import BaseHTTPRequestHandler
+            received = []
+            class Redirect(BaseHTTPRequestHandler):
+                def log_message(self, *args):
+                    pass
+                def do_POST(self):
+                    self.send_response(302)
+                    self.send_header("Location", "https://127.0.0.1:1/stolen")
+                    self.end_headers()
+                def do_GET(self):
+                    received.append(self.headers.get("Authorization"))
+                    self.send_response(200)
+                    self.end_headers()
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            context.load_cert_chain(str(cert), str(key))
+            server = ThreadingHTTPServer(("127.0.0.1", 0), Redirect)
+            server.socket = context.wrap_socket(server.socket, server_side=True)
+            worker = threading.Thread(target=server.serve_forever, daemon=True)
+            worker.start()
+            try:
+                with patch.dict(os.environ, {"no_proxy": "127.0.0.1"}, clear=False):
+                    with self.assertRaises(urllib.error.HTTPError) as caught:
+                        backup.upload(state, f"https://127.0.0.1:{server.server_port}",
+                                      "secret-bearer", cert, "test", timeout=2)
+                self.assertEqual(caught.exception.code, 302)
+                self.assertEqual(received, [])
+            finally:
+                server.shutdown()
+                server.server_close()
+                worker.join(2)
+
     def test_end_to_end_https_with_pinned_ca(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

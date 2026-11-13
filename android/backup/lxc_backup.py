@@ -247,6 +247,13 @@ def make_handler(root: Path, token: str):
     return Handler
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Never forward backup credentials or payloads to redirect targets."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def upload(state_dir: Path, url: str, token: str, cafile: Path, device: str,
            timeout: float = 8.0) -> dict:
     """Optional one-shot transfer; the caller decides when and whether to run."""
@@ -261,7 +268,9 @@ def upload(state_dir: Path, url: str, token: str, cafile: Path, device: str,
             "X-Content-SHA256": hashlib.sha256(data).hexdigest(),
         })
     context = ssl.create_default_context(cafile=str(cafile))
-    with urllib.request.urlopen(request, timeout=timeout, context=context) as reply:
+    opener = urllib.request.build_opener(
+        urllib.request.HTTPSHandler(context=context), _NoRedirect())
+    with opener.open(request, timeout=timeout) as reply:
         if reply.status != 201:
             raise RuntimeError("Server did not accept backup")
         result = json.load(reply)

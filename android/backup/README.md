@@ -14,6 +14,8 @@
   o snapshot lê um arquivo inteiro sem modificá-lo e recusa leituras
   simultâneas à troca do arquivo. **Ainda não há consistência transacional
   de múltiplos JSON nem evento pós-save conectado ao motor Android.**
+- O cliente recusa redirecionamentos HTTP 3xx, impedindo o encaminhamento
+  acidental do token Bearer ou do payload de backup a outra origem.
 - Transporte **HTTPS com validação da CA/certificado**, token Bearer
   de no mínimo 32 caracteres no servidor, SHA-256 na requisição e
   confirmação SHA-256 na resposta. Nenhum HTTP simples em produção.
