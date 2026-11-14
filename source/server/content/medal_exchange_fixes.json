@@ -1,0 +1,6 @@
+{
+ "source": "Exchange rows that are wrong in the game's last F_MEDAL_EXCHANGE_MST (exvius_actions_shops.medal_exchange_fixes). store_currency: every exchange row of the store is priced in this currency. 900120 = Battle at the Borders (replay week 14, the Minister's counter): 53 of its 57 rows (71805-71857) cost Debased Coins (106302900, The Frozen Cavern's currency); Global's list of that run has all of them in Hairpins (ios-server/research/wiki/Battle_at_the_Borders.wiki, King Mog).",
+ "store_currency": {
+  "900120": "1209000833"
+ }
+}

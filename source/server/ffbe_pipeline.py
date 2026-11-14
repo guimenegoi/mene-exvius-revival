@@ -159,6 +159,10 @@ PIPELINE: tuple = (
     # the drops channel of 09HRWXDf. (No-op for any reply without that tag.)
     # Collection points (collection_points.py): an exploration's load reply lists its points and what each
     # gives this run; kept on the attempt observe_load (just above) started. No-op for any other reply.
+    # A fixed fight with no enemy data in any record is served with its labeled stand-in group
+    # (battle_content.scenario_stand_ins; the MissionStartRequest reply carries the scenario battle rows).
+    Step("scenario_stand_ins", lambda c: __import__("battle_content").scenario_stand_ins(c.spec),
+         "spec", "YjHhvN65", "stand-in groups for fixed fights without enemy data (content/scenario_fights.json)"),
     Step("serve_collection_points",
          lambda c: __import__("collection_points").serve(c.spec, c.mid, c.is_battle_bundle),
          "state", "State.player.exvius_repeat.attempt.collection", "an exploration's points and their rewards"),
@@ -274,6 +278,9 @@ PIPELINE: tuple = (
          "state", "State.player.mailbox", "old clears' first-clear rewards, once per save, by mail (first_clear.py)"),
     Step("deliver_missed_first_clears", lambda c: __import__("first_clear").deliver_missed(c.spec, c.reply_id),
          "state", "State.player.mailbox", "first-clear rewards of cleared quests never paid, by mail (first_clear.py)"),
+    Step("repair_shift_forms", lambda c: __import__("shift_forms").step(c.spec, c.reply_id, State),
+         "state", "State.player.roster", "units summoned as a Brave Shift form become the unit itself, once per "
+         "save (shift_forms.py); before the Guide registers the roster and before the login reply carries it"),
     Step("register_guide", lambda c: __import__("guide").register(c.spec, c.reply_id),
          "state", "State.player.guide", "keep held units/items/gear/materia/cards in the Guide register (guide.py)"),
     Step("repair_quest_switches", lambda c: __import__("quest_switches").step(c.spec, c.reply_id, State),
@@ -360,6 +367,12 @@ PIPELINE: tuple = (
     # will fetch -- four rows there is `MST_LOAD_FAILED` before character creation (2026-09-20).
     Step("serve_version_table", lambda c: serve_version_table(c.spec), "spec", "c1qYg84Q",
          "the only source of the table versions a cleared client will fetch"),
+    # The function table's version in the reply the phone asks for before the title, for a phone known to
+    # hold that file: the game then loads it before the title builds its table list, which is what puts the
+    # Convert screens' table in that list (early_tables.py). After serve_version_table, which would turn a
+    # one-row list into the whole one.
+    Step("early_function_table", lambda c: __import__("early_tables").step(c.spec, c.reply_id, c.plaintext, State),
+         "spec", "c1qYg84Q", "one row before the title; records which phone holds which version"),
     # The EMBLEM family. `serve_emblem_info` answers the select screen's entry request (an EMPTY body there
     # is a connection error, measured live 2026-09-30); `apply_emblem_setting` records the *Set* press.
     # Both sit immediately before the projection: the setting writes `player_emblem_id`, and the reply it
@@ -513,6 +526,13 @@ PIPELINE_EDGES: tuple = (
          "(`n69quiCJ`); project first and the header shows the PREVIOUS crest"),
     Edge("apply_emblem_setting", "save_state", "st.STATE_FILE",
          "the chosen emblem has to survive the restart that ends the run, or it silently reverts"),
+    Edge("serve_version_table", "early_function_table", "c1qYg84Q",
+         "the early step reads the version the login's list gives the function table, and must not have its "
+         "one-row list expanded into the whole list"),
+    Edge("repair_shift_forms", "register_guide", "State.player.roster",
+         "the Guide registers the unit a swapped form became, at the same login"),
+    Edge("repair_shift_forms", "apply_to_reply", "State.player.roster",
+         "the login's roster must carry the swapped units, not the forms"),
     Edge("repair_quest_switches", "serve_switches", "State.player.switches",
          "the login's switch group must carry the repaired completion switches"),
     Edge("record_battle_carry", "save_state", "State.player.inventory.carry_items",

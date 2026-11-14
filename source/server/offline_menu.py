@@ -99,4 +99,12 @@ def convert_test_undo(state, state_file, slot):
         raise OSError('The save could not be written. The test save is still in place.')
     state.player = restored
     state.state_dirty = False
-    return {'restored_from': str(copies[-1]), **status(state, state_file)}
+    # Keep the copy under a name the next --undo doesn't pick up: after two runs of convert-test a second --undo
+    # then goes back to the save before the first run, and an --undo with nothing left to undo says so instead of
+    # putting the same copy back again.
+    used = copies[-1].with_name(copies[-1].name.replace('-before-convert-test-', '-undone-convert-test-'))
+    try:
+        copies[-1].replace(used)
+    except OSError:
+        used = copies[-1]
+    return {'restored_from': str(used), **status(state, state_file)}

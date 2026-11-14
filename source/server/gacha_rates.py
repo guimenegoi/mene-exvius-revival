@@ -197,7 +197,7 @@ def _guarantee_html(banner, pool, guarantee, draws, slots) -> tuple[str, list]:
                          f'{_rarity_label(rarity)}{" or higher" if rarity < 7 else ""}'
                          + (f' (before the {reserved} slot{"s" if reserved != 1 else ""} below)' if reserved else '')
                          + '.')
-            tables.append((f'Guaranteed {_rarity_label(rarity)}+ draw', summon_guarantee_pool(pool, guarantee)))
+            tables.append((f'Guaranteed {_rarity_label(rarity)}+ draw', summon_guarantee_pool(pool, guarantee, banner)))
         else:
             lines.append(f'At least one {_rarity_label(rarity)}{" or higher" if rarity < 7 else ""}: '
                          'if no draw reaches it, the lowest draw is replaced with one picked from this list.')
@@ -228,6 +228,9 @@ def page(banner_id):
         from exvius_actions import _mst
         from ffbe_gacha import unit_name
         choices = _mst('F_GACHA_SELECT_UNIT_MST.ndjson', '3HriTp6B')
+        import exvius_gacha_select      # the limited and collab units added to the list (EXVIUS_SELECT_LIMITED)
+        choices = dict(choices, **{row['3HriTp6B']: row for row in exvius_gacha_select.extra_unit_rows()
+                                   if row['3HriTp6B'] not in choices})
         rows = sorted(({'unit_id': uid, 'rarity': (__import__('player_state').unit_mst(uid) or {}).get('9fW0TePj'),
                         'rate': 1, 'tickets': row.get('e4mG8jTc')} for uid, row in choices.items()),
                       key=lambda r: (_rarity(r), unit_name(r['unit_id']).lower()))
@@ -238,10 +241,12 @@ def page(banner_id):
         return _wrap(name, parts)
 
     if banner.get('boxes'):
-        parts.append('<section><h2><span>Boxes</span></h2><p class="note">The first five boxes are drawn without '
-                     'replacement; their contents and what is left are on the Box Details screen. After them, '
-                     'every draw takes materials 80%, enhancers 19% and ultra-rare rewards 1%, split equally '
-                     'within each group.</p></section>')
+        parts.append('<section><h2><span>Boxes</span></h2><p class="note">The boxes are drawn without '
+                     'replacement; their contents and what is left are on the Box Details screen. After the last '
+                     'box, every draw of the standard summon uses the chances below.</p></section>')
+        after = summon_pool(banner)       # the banner's own list and rates, as gacha_box.roll draws it
+        if after:
+            parts.append('<section><h2><span>After the boxes</span></h2>' + _pool_html(after) + '</section>')
         return _wrap(name, parts)
 
     pool = summon_pool(banner)

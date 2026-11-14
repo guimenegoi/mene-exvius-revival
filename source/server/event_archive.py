@@ -198,6 +198,12 @@ def weekly_events(rows=None, now=None):
                           if holiday_name(start) else history_runs.overlaps((start, last), earliest, win['to']))]
             if opened:
                 run = max(opened).isoformat()
+                if str(row.get('area')) in history_runs.OPEN_ENDED:
+                    # A feature kept open from its first run is one long run here; the quests Global added on
+                    # its later dates come when history reaches them (only_existing_quests cuts at `release`).
+                    started = [d for d in released if d < win['to']]
+                    if started:
+                        run = max(started).isoformat()
                 kept.append(row if run == row.get('release') else
                             dict(row, release=run, first_release=row.get('release')))
             continue
@@ -412,10 +418,13 @@ def added_art(area):
 
 
 def fetch_added_art(log=print):
-    """Download each added event's banner from the wiki into en/sd/area/ (once), as a 640x240 PNG."""
+    """Download each added event's banner from the wiki into en/sd/area/ (once), as a 640x240 PNG. Only when
+    EXVIUS_EVENT_ART_FETCH=1 asks for it: the banners are in the game data (the summon art pack carries them)."""
     import io
     import os
     import urllib.request
+    if os.environ.get('EXVIUS_EVENT_ART_FETCH', '0') != '1':
+        return 0
     folder = _art_folder()
     if not folder or not os.path.isdir(folder):
         return 0

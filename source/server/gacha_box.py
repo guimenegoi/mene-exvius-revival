@@ -137,7 +137,14 @@ def next_box(spec, req):
             _note('Raid box: featured rewards must be drawn before advancing')
     out = _refresh(spec)
     out.pop('5yLD4dYI', None)
-    out.update(gacha_groups(banners))
+    # The same list the summon screen and a pull's reply carry (ffbe_gacha.serve_gacha_info): this week's summons
+    # and the ones a held ticket opens. Every banner in the game was sent here (1,300+ rows, 2 s).
+    import os
+    shown = banners
+    if os.environ.get('EXVIUS_SUMMON_ARCHIVE') == '1':
+        from gacha_archive import visible_banners
+        shown = visible_banners(player, banners)
+    out.update(gacha_groups(shown))
     return out
 
 

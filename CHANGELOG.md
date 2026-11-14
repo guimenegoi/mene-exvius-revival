@@ -12,7 +12,140 @@
   uma batalha e persistência do save. Não publicar binários proprietários.
 - A documentação iOS original abaixo permanece como histórico do upstream.
 
-Each entry is one update to this repo. To update: in your repo folder run `git pull`, then from `ios-server` run `docker compose build && docker compose up -d`. Your save isn't touched. Open the game twice afterwards so it picks up the new data.
+Each entry is one update to this repo. To update: in your repo folder run `git pull`, then from `ios-server` run `docker compose build`, `docker compose run --rm server fetch-data` and `docker compose up -d`. Your save isn't touched. Open the game twice afterwards so it picks up the new data. If you downloaded the ZIP instead of using git, see **Updating** in the README.
+
+## 2026-11-13 update: read this first
+
+**This update downloads new data. Follow these steps exactly.** In your `ios-server` folder, run each line on its own:
+
+```
+git pull
+docker compose build
+docker compose run --rm server fetch-data
+docker compose up -d
+```
+
+`fetch-data` downloads about 0.3 GB of summon art this time and should end with `installed summon-art`. Then close the game fully and open it twice.
+
+**Convert to Prism / Fragments** work from the second time you open the game after updating. In the first session, go to Menu → return to the title screen → start again, and they'll show your units.
+
+**New to this?**
+- **Docker Desktop is required:** [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/). On Windows, if it won't start, hardware virtualization may be off in your BIOS. Keep Docker Desktop open while the server runs.
+- **Git is optional.** Without it, update by ZIP: on GitHub, use Code → Download ZIP, replace your `exvius/repo` folder with the new files, and copy your old `ios-server/.env` into the new `ios-server` folder. Your save and game data are outside `repo`, so they're kept. Then run the last three lines above.
+- **Want git?** Windows: [git-scm.com/download/win](https://git-scm.com/download/win), default options, then open a new PowerShell. Mac: type `git --version` in Terminal and click Install when asked.
+
+The entries below, from here down to "5★ Select list, summon pools…", are all part of this update.
+
+## 2026-11-13: Summon buttons and the moogle's line on the large detail screen
+
+- On the larger summon detail screen (step-ups, free and ticket summons, and paid summons with full-size art such as Dark Fina Revealed) the Summon and 11 Summons buttons had an empty Lapis bar with the price underneath. That screen now uses the game's large buttons, with the price inside the bar. The paid summons' own screen keeps its gold buttons.
+- The moogle on that screen said "Summon 1 reward(s). The button shows the cost..." for almost every summon. It now says what the summon does, for example "Summon 11 for at least one 4★ or higher unit, kupo!". Summons that have the game's own text keep it.
+- New setting `EXVIUS_SUMMON_SCREEN_BUTTONS` (see the README).
+
+## 2026-11-13: Convert lists from a fresh start
+
+- The Nov 11 and Nov 12 entries that said the Convert lists were fixed were wrong. Convert to Prism and Convert to Fragments stayed empty every time the game was opened fresh; they only filled after Menu → return to the title screen → start again.
+- The cause: the game only takes the Convert table into its list of tables if another of its tables is already loaded when the title screen opens, and the server sent that table's version too late. The server now names it just before the title screen.
+- It does this only once it knows your phone has that table: from the second time you open the game after this update (and after a new install or a new game). In the first session the lists are still empty; the manual way above still works.
+- New setting `EXVIUS_CONVERT_EARLY_TABLE` (see the README). `docker compose logs server | grep CONVERT-TABLE` shows what the server did at each launch.
+
+## 2026-11-13: Summon list: the game's own banners are whole again
+
+- After the last update the summon list showed only a strip from the bottom of 39 banners from 2016 and 2017 (Dark Fina Revealed, Final Fantasy Type-0 and others): the names and the title, with the units cut off. The game's own list banners are shown whole again.
+- Those summons still open the larger detail screen with the whole art. Strips are only cut from news images and Japanese banners, where no list banner survives.
+- No new download: `fetch-data` has nothing to fetch for this.
+
+## 2026-11-13: Summon art comes with the game data
+
+- Run `docker compose run --rm server fetch-data` once after this update. It downloads one new pack (about 310 MB) with the summon banner art.
+- The server no longer downloads banner art from the internet while it runs, and no longer draws or pads banners on the fly. Every summon image is a finished file, so the summon screen opens the same way with or without an internet connection.
+- With the default settings the game server downloads nothing from the internet. The only download is `fetch-data`, from this project's data releases.
+- 151 more summons have real art in place of a plain titled banner: 101 with a news image from Global's archived announcements, and 50 with the Japanese banner of the same summon where no English one survives (2023 featured summons and raid summons).
+- Summons whose art is lost show a plain titled banner sized for their screen, instead of a small one between blurred sides.
+- New settings `EXVIUS_SUMMON_ART_PACK` and `EXVIUS_EVENT_ART_FETCH`; `EXVIUS_DEAL_ART_FETCH` is now off unless you turn it on (see the README).
+
+## 2026-11-13: Brave Shift forms from summons
+
+- Summons could give a unit's Brave Shift form as a unit of its own: a copy that can't be awakened. Eight summons did this, among them Royal Puppeteer Aphmau, Curse of Immunity Melissa, Lunar Festival Cleome and World's Hero Gilgamesh. No summon gives a form any more; these summons give the unit itself.
+- If you already have such a copy, it turns into the real unit the next time you open the game. It keeps its place in your box and parties, its equipment, materia and Vision Card, and its level up to the unit's maximum. A copy of an awakened 5★ unit's Neo Vision form becomes the 5★ unit (or the 3★ unit for Gau), which you can then awaken normally.
+- The featured Neo Vision units of those eight summons are at 1% each, as on Global. Before, a unit and its form shared the chance or doubled it.
+- Drop Rates pages no longer list the same unit twice.
+- New setting `EXVIUS_SUMMON_NO_SHIFT_FORMS` (see the README).
+
+## 2026-11-13: Summon art on the right screen
+
+- Summon pages that showed small art between blurred sides (step-ups, free and ticket summons, 10+1 deals) now show the art across the frame.
+- 59 paid summons whose art is the tall kind open the screen that fits it. Their prices are the same.
+- The summon list no longer has giant square tiles: a news or Japanese picture that isn't a strip gets a strip cut from it.
+- New setting `EXVIUS_SUMMON_SCREENS` (see the README).
+
+## 2026-11-13: Battle item set
+
+- The battle item set went back up to its old count after a Vortex battle such as the Chamber of the Fallen, and stayed there after a restart, even when you had no spare items. The game refills the set from your bag by itself after those battles, and the server was counting the items in the set as still in the bag. It no longer does: the set only refills from items you really have left.
+- The Items tab now shows the items that are not in the set, as the game counts them. If you own 25 Potions and carry 10, it shows 15.
+- A set that was filled from items you didn't have is lowered to what you own the next time you open the game.
+- New setting `EXVIUS_ITEM_SET_BAG` (see the README).
+
+## 2026-11-13: Kilika Woods, random battles in three events
+
+- Kilika Woods - Exploration: after the Opening no further quest was offered. Its explorations are listed now, also for a save that already cleared the Opening. The same fault kept 29 quests of three other events from being offered, among them Shinra Building, 69th Floor - Exploration.
+- The Dreadnought (INT to ELT) and the Realm of the Dragon King's explorations had no random battles, and The Crystal Tower's 2022 reruns had none on their upper floors. Their maps mark those tiles with encounter zones the server sent no battles for. They have them now.
+- Pandemonium - Exploration does have random battles. Its map gives a 5% chance per step, and none for the first 20 steps on each floor, so a short walk can meet none.
+- New settings `EXVIUS_CLEAR_SWITCHES` and `EXVIUS_ENCOUNTER_MAP_FIELDS` (see the README).
+
+## 2026-11-13: Convert lists: the cause, and a way to get them
+
+- Convert to Prism and Convert to Fragments are empty because the game never downloads the unit conversion table when it is opened fresh. The game only fetches that table if one of its own tables is already loaded when it builds its download list, and on a fresh start it isn't yet.
+- Until this is automatic: after opening the game, go to Menu, choose to return to the title screen, and start again. The game then fetches the table and both lists work until the app is fully closed.
+- The earlier updates that made the game "fetch the table once more" did nothing and are removed, with the `EXVIUS_REFETCH_TABLES` setting.
+- With `EXVIUS_CLIENT_REPORTS` set to `1`, the server log says what the game's own log reports about that table (`docker compose logs server | grep CONVERT-TABLE`). The game uploads its log without asking or showing anything; a log it sends again is now saved only once.
+
+## 2026-11-13: Step-up summon art
+
+- A step-up summon showed its art on the first step and an empty frame on every later step. The art now stays on every step.
+- New setting `EXVIUS_STEP_ART` (see the README).
+
+## 2026-11-13: The Enchanted Maze, exploration fights
+
+- The Enchanted Maze - INT and ADV: many of their fights had no enemies for the game to load, ADV's first room among them, which could close the game. They have their enemies now.
+- The same is fixed in 85 other explorations (149 fights), such as Isaaru's Aeons, The Crystal Tower, Siren's Tower, Kilika Woods, Pandæmonium and Big Bridge - Exploration: the boss and set fights their maps start now have enemies.
+- Two ADV fights ("EXP Lv4" and "GIL Lv4") have no surviving record. They use the quest's Lv5 fights as stand-ins.
+- New setting `EXVIUS_SCENARIO_STAND_INS` (see the README).
+
+## 2026-11-13: Bulk Fusion
+
+- Bulk Fusion now fuses every unit you picked. Before, only the first unit's copies were fused and the rest came back.
+
+## 2026-11-13: Summon screen download with all banners shown
+
+- With `EXVIUS_SUMMON_ROTATION` set to `0`, opening the summon screen downloads the art of every banner, and the download stopped just before the end with "A connection error has occurred". One banner's art (the Hyoh / Veritas of the Frost featured summon) is a very tall picture, and the server failed every time it prepared it. While failing it asked for a very large amount of memory, which is the likely reason some servers restarted. Oversized art is now scaled down first, and a picture the server can't prepare is sent as it is instead of failing the download. Update, then open the summon screen again; what was already downloaded is kept.
+- Twelve images with a ★ in their file name now go out under plain names. An earlier version of this entry gave them as the cause of the failed download. They weren't.
+- If a download still fails, the server log says why: `docker compose logs server | grep -E "Traceback|BANNER-FIT|HTTP REFUSED"`.
+
+## 2026-11-12: 5★ Select list, summon pools, drops, back-pay and exchange fixes
+
+Every fix since the first release was tested again from end to end. These are the ones that didn't fully work, or broke something else, and are fixed now. Open the game twice after updating.
+
+- The 5★ Select Summon's list now has the 80 limited and collaboration units added on 2026-11-10. That update never reached the game: the list stayed at 234 units.
+- Weekly featured summons no longer give limited, collaboration or seasonal units they don't feature, and Gilgamesh (FFV) is in them. All of Global's launch units can be summoned from the start: Xiao, Cerius, Terra, Kuja, Garland, Zidane and Vivi were missing.
+- The later summons of the replay (Global's 2022-24 banners) no longer give a unit's Brave Shift or awakened form as a separate unit.
+- Raid box summons: "next box" no longer lists every summon in the game. The Drop Rates pages of box summons and of the 5★ Select Summon list what is really drawn. "Raid Summon: Destroy the Machine Lifeform" shows once.
+- The esper Tests give 10 Supercite a clear (15 and 15 in each third test) and the Chamber of Enlightenment its Enlightenment Points (300 to 10,000), as on Global. They gave 1.
+- Enemies in 15 quests that never dropped anything now drop, among them Grandshelt Castle - Throne Room, Lanzelt Ruins - Basement Lv. 1 and Zadehl Southersands - Lost City.
+- Vow of the Revived Legend's "Lv. 7 - Burst Pots" stage gives its Burst Pot.
+- If you leave a battle and start the same quest again, event currency and the Guide count the battle you fought, not the one you left.
+- Town quests that finish at the end of a battle, or are given inside an exploration, are saved and paid.
+- Missed first-clear rewards: a Trust Moogle, cactuar or pot is no longer left out because you already hold one of the same kind. One left out since 2026-11-11 can't be sent again.
+- Treasure chest mail: a New Game no longer gets the previous save's chests, and the mail no longer includes a chest you never opened.
+- Shop exchanges: the events' own ability materia and Guaranteed Tickets (160 items in 33 events) are in the Shop's exchange list again. Those events drop a little more currency per clear to match. Battle at the Borders' exchange can be bought with Hairpins. The Super Trust Moogle and Red Star Quartz exchanges no longer show before the replay reaches them.
+- Awakening a 6★ Kevin with an Omniprism is refused: the game has no 7★ Kevin, and it added a broken unit.
+- A saved party still loads after one of its units has been awakened. A party saved before such an awakening has to be saved again.
+- The Guide no longer checks off a unit's Neo Vision form when you only hold its 7★ form.
+- Kira: the abilities of his Trust reward and Vision Card have English names.
+- Short Stories, Twelve Types Takedown and Advent of Purgatory get their later quests when the replay reaches them.
+- Mana Mystery is open in the replay week of its Global dates (3 to 16 February 2017), not the week before as well. If it was in your Vortex and left with the "Replay runs" update, it comes back when your replay reaches that week.
+- `convert-test --undo` goes back one run each time.
+- New setting `EXVIUS_EVENT_RUN_QUESTS_TABLE` (see the README).
 
 ## 2026-11-12: Town quests stay done; Quest Report
 

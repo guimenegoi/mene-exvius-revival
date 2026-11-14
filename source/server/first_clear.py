@@ -300,8 +300,10 @@ def missed_rows(player) -> tuple[list[str], list[dict]]:
             continue
         missions.append(mid)
         for row in rewards(mid):
-            if row["kind"] == 10 and str(row["id"]) in held_units:
-                continue              # already holds that clear's unit
+            if row["kind"] == 10 and str(row["id"]) in held_units and not str(row["id"]).startswith("9"):
+                # already holds that clear's unit. Not for enhancer units (ids 9xxxxxxxx: Trust Moogles, cactuars,
+                # pots; 289 of the 296 unit first clears): they stack, so holding one says nothing about this clear.
+                continue
             if row["kind"] == 60 and str(row["id"]) in owned_recipes:
                 continue
             if not player._can_credit(row):

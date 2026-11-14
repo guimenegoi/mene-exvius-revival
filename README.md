@@ -66,7 +66,7 @@ The whole setup in order, one action per step. Each part links to the full instr
    docker compose up -d
    ```
 
-   The second one downloads about 14.6 GB and takes a while. If it stops, run it again; it picks up where it left off.
+   The second one downloads about 14.9 GB and takes a while. If it stops, run it again; it picks up where it left off.
 8. Run `docker compose logs -f server` and wait for a line ending in `http://100.x.y.z/ca.mobileconfig`. Write down that `100.x.y.z` address, then press Ctrl+C. The server keeps running.
 
 **In the Tailscale admin console**
@@ -101,7 +101,7 @@ Tailscale split DNS ── only gumi.sg / exvius.com questions ──▶  ffbe (
 - **Its own Tailscale address.** One container, `ffbe`, runs Tailscale (joining your tailnet as a machine called `ffbe`) and the game server together. If either stops, both restart together. Nothing listens on your computer's own ports, so it can't clash with anything else you run.
 - **A tiny DNS responder.** It answers only `gumi.sg` and `exvius.com` names. A Tailscale split-DNS rule sends the phone's lookups for those names to it. Nothing else about your phone's or tailnet's DNS changes.
 - **A private certificate** that can only vouch for `gumi.sg` and `exvius.com` (an X.509 name constraint). You install it on the phone once, and it can't be used for any other site.
-- **The game data** (about 14.6 GB) is downloaded during setup from a copy of Exvius Offline's data hosted with this project.
+- **The game data** (about 14.9 GB) is downloaded during setup from a copy of Exvius Offline's data hosted with this project.
 
 Everything the stack creates lives in one folder (`FFBE_DIR`). [Removing everything](#removing-everything) is at the end.
 
@@ -113,7 +113,7 @@ The commands are the same on Windows (PowerShell), macOS (Terminal) and Linux un
 
 ### 1. Install Docker and get the files
 
-1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and start it. On Linux, Docker Engine with the Compose plugin also works.
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and start it. It includes `docker compose`. On Windows, if Docker Desktop won't start, hardware virtualization is probably turned off in your PC's BIOS/UEFI settings: turn it on and restart. On Linux, Docker Engine with the Compose plugin also works.
 2. Make a folder for everything, for example `exvius` in your home folder, and download this repository into it as `repo`:
 
    ```bash
@@ -123,7 +123,10 @@ The commands are the same on Windows (PowerShell), macOS (Terminal) and Linux un
    cd repo/ios-server
    ```
 
-   If you don't have `git`, download the repository from GitHub (**Code → Download ZIP**) and unzip it so that the files are in `exvius/repo`.
+   **Git is optional.** If you don't have `git`, download the repository from GitHub (**Code → Download ZIP**) and unzip it so that the files are in `exvius/repo`. To install git instead:
+   - **Windows:** run the installer from [git-scm.com/download/win](https://git-scm.com/download/win) with the default options, then open a new PowerShell window.
+   - **macOS:** type `git --version` in Terminal and click **Install** when macOS offers the developer tools.
+   - **Linux:** install `git` with your package manager.
 
 All the remaining commands run from `exvius/repo/ios-server`.
 
@@ -155,7 +158,7 @@ docker compose build
 docker compose run --rm server fetch-data
 ```
 
-`fetch-data` downloads about **14.6 GB**, checks every pack, unpacks it and deletes the download. If it stops for any reason, run it again; it picks up where it left off.
+`fetch-data` downloads about **14.9 GB**, checks every pack, unpacks it and deletes the download. If it stops for any reason, run it again; it picks up where it left off.
 
 This also starts Tailscale for the first time, so a machine called `ffbe` appears in your Tailscale admin console.
 
@@ -253,6 +256,7 @@ docker compose logs -f server
 
 | What you see | What it means |
 | --- | --- |
+| Docker Desktop won't start (Windows) | Hardware virtualization is probably off in your PC's BIOS/UEFI settings. Turn it on and restart. |
 | Nothing at all when the game starts | The phone isn't reaching the server. Re-check step 5, and that the hello page in step 6 loads. |
 | `TLS handshake failed from 100.…` | The phone doesn't trust the certificate. Check **Certificate Trust Settings** (step 6.4). |
 | `OK POST …` lines | The game is talking to the server. |
@@ -260,7 +264,7 @@ docker compose logs -f server
 | The game crashes when the first battle starts | Close it fully and open it again (step 7.2). |
 | A scene has no music | That track hasn't downloaded yet (step 7.3). |
 
-**Logs from the game itself.** iOS hides apps' logs, but the game can upload its own error log to the server. This is off by default, since each upload is tens of MB. While it's on, the game uploads its log once each time you open it. Turn it on when you need a log: set `EXVIUS_CLIENT_REPORTS: "1"` in `docker-compose.yml` (on Unraid, the `EXVIUS_CLIENT_REPORTS` variable in the template), run `docker compose up -d`, open the game and repeat what went wrong, then open the game once more. Each upload is saved in `FFBE_DIR/server/client-reports/`, and the server log shows a `CLIENT REPORT` line when one arrives. Set it back to `"0"` afterwards. To read one:
+**Logs from the game itself.** iOS hides apps' logs, but the game can upload its own error log to the server. This is off by default, since each upload is tens of MB. While it's on, the game uploads its log once each time you open it. Turn it on when you need a log: set `EXVIUS_CLIENT_REPORTS: "1"` in `docker-compose.yml` (on Unraid, the `EXVIUS_CLIENT_REPORTS` variable in the template), run `docker compose up -d`, open the game and repeat what went wrong, then open the game once more. The phone shows no prompt and no sign that it is sending: the only sign is the server log, which shows a `CLIENT REPORT` line when a log arrives. The game sends every log it still holds at each launch; one that was already saved is not saved again. Each new upload is saved in `FFBE_DIR/server/client-reports/`. Set it back to `"0"` afterwards. To read one:
 
 ```bash
 pip install cryptography
@@ -275,6 +279,8 @@ The server also keeps a record of each request it received, for three days and a
 
 - **Memories from the Aquapolis** (a 2017 exploration event) is hidden from the Vortex. Its stage files (each stage's boundaries, boss and ending, and its treasure chests) were lost from the game data, so every stage was the whole map with no chests and no proper ending. `EXVIUS_HIDDEN_EVENTS: "0"` shows it again (see [Settings](#settings)).
 
+- **Convert to Prism and Convert to Fragments list no units in the first session** after installing the game, starting a new game, or an update that changes the game's function table. The game only takes the Convert table into its list of tables when another table is already loaded as the title screen opens, and the server can only arrange that once your phone has reached the home screen once. From the next time you open the game the lists work. To get them at once, without closing the game: **Menu → return to the title screen → start again**. The lists then work until the app is fully closed. (`EXVIUS_CONVERT_EARLY_TABLE`, see [Settings](#settings).)
+
 ## Everyday use
 
 | Task | Command |
@@ -287,7 +293,7 @@ The server also keeps a record of each request it received, for three days and a
 | Logs | `docker compose logs -f server` |
 | Stop | `docker compose down` |
 | Unraid | After [moving it to the Docker tab](#unraid-run-it-from-the-docker-tab): start, stop, restart, logs and settings are all on the `ffbe` icon. Commands run inside it with `docker exec ffbe python3 /app/ffbe.py …` (for example `rotation` or `status`) instead of `docker compose exec server …`. |
-| Test the Convert screens | `docker exec ffbe python3 /app/ffbe.py convert-test` (Unraid; with Compose: `docker compose exec server python3 /app/ffbe.py convert-test`). Adds ten units, one of each kind the Convert lists treat differently, and says which list each should be in. A copy of the save from just before is kept in `server/state/backups/`; `convert-test --undo` puts it back (the ten units go, and anything else done since). |
+| Test the Convert screens | `docker exec ffbe python3 /app/ffbe.py convert-test` (Unraid; with Compose: `docker compose exec server python3 /app/ffbe.py convert-test`). Adds ten units, one of each kind the Convert lists treat differently, and says which list each should be in. A copy of the save from just before is kept in `server/state/backups/`; `convert-test --undo` puts it back (the ten units go, and anything else done since). If you ran `convert-test` more than once, each `--undo` goes back one run. |
 | Start the game over | `docker compose exec server python3 /app/ffbe.py new-game --yes` (the old save is backed up to `server/state/backups/`) |
 
 **Your save** is in `FFBE_DIR/server/state/`. Back up that folder.
@@ -298,14 +304,18 @@ The server also keeps a record of each request it received, for three days and a
 - The server certificate lasts about 13 months and renews itself; the container restarts once to do it.
 - If you delete the `certs` folder, install the phone profile again (step 6).
 
-**Updating** to a newer version:
+**Updating** to a newer version (`fetch-data` only downloads data packs that changed):
 
 ```bash
 git pull
 docker compose build
-docker compose run --rm server fetch-data   # only downloads data packs that changed
+docker compose run --rm server fetch-data
 docker compose up -d
 ```
+
+Then close the game fully and open it twice.
+
+**If you downloaded the ZIP instead of using git**, `git pull` won't work. On GitHub, use **Code → Download ZIP**, replace your `exvius/repo` folder with the new files, and copy your old `ios-server/.env` (and `ios-server/docker-compose.override.yml`, if you made one) into the new `ios-server` folder. Your save and the game data are in `exvius/server` and `exvius/data`, outside `repo`, so they're kept. Then run the last three commands above.
 
 ## Settings
 
@@ -319,7 +329,7 @@ The server keeps its own records for troubleshooting and trims them every hour, 
 | --- | --- |
 | `FFBE_REQUEST_LOG_DAYS` | Request records (`server/requests/`, one per game request) older than this many days are deleted. Default `3`. |
 | `FFBE_REQUEST_LOG_MB` | Request records are also trimmed, oldest first, to stay under this many MB in total. Default `300`. |
-| `EXVIUS_CLIENT_REPORTS` | `0` (default) doesn't ask the game for its error log; a log the game already has queued is answered but not saved (the server log shows its size). `1` asks the game to upload its log and saves each upload in `server/client-reports/`, for troubleshooting: while it's on, the game uploads its log (tens of MB) once each time you open it. See "Logs from the game itself" in [If it doesn't work](#if-it-doesnt-work). |
+| `EXVIUS_CLIENT_REPORTS` | `0` (default) doesn't ask the game for its error log; a log the game already has queued is answered but not saved (the server log shows its size). `1` asks the game to upload its log and saves each upload in `server/client-reports/`, for troubleshooting: while it's on, the game uploads its log (tens of MB) once each time you open it. See "Logs from the game itself" in [If it doesn't work](#if-it-doesnt-work). With `1` the server log also gets `CONVERT-TABLE phone log` lines: what the uploaded log says about the unit conversion table (`F_SACRIFICE_MST`) and which tables the game failed to load. The upload is silent: the phone asks nothing and shows nothing, so look for the `CLIENT REPORT` line in the server log. A log the game sends again is saved once. |
 | `FFBE_CLIENT_REPORTS_KEEP` | How many of the game's uploaded logs (`server/client-reports/`, up to tens of MB each, only while `EXVIUS_CLIENT_REPORTS` is `1`) to keep, newest first. Default `30`. |
 
 The container's own log (`docker logs ffbe`) is capped at 60 MB by Docker (3 files of 20 MB).
@@ -367,14 +377,18 @@ The original game's Lapis income assumed you'd buy Lapis. These settings raise w
 | `EXVIUS_SELECT_LIMITED` | `1` (default) adds the limited and collaboration 5★ units Global had (80) to the 5★ Select Summon's list, at the usual 10 tickets. Story, reward and Japan-only units stay out. `0` shows the game's own list (234 regular units). |
 | `EXVIUS_SELL_STORY_UNITS` | `1` (default) gives the story units above the usual sell price for their rarity, so extra copies can be sold to free up space. This also applies to the copy the story gave you, so mark it as a favourite if you want to keep it safe from selling. `0` makes them unsellable again (a phone that already has the change may keep it until the game is reinstalled). |
 | `EXVIUS_COLLECTION_POINTS` | `1` (default) shows the collection points in explorations (the sparkling spots; Dalnakya Cavern has three) and gives what they gave in Global, from the FFBE wiki's lists: one item per point each run, such as ore, Lumber, a cryst or magicite, at the wiki's odds where it lists them, otherwise ores 40%, crysts 40%, magicite 20%. Event explorations give their own list or event certificates. Quests that reuse an exploration's map (the Aquapolis knight quests, character episodes) give that exploration's list. A few have no record of what their points gave and show none: Japan-only quests, Castle Exdeath, Doga's Grotto and the Water God trials. `0` hides all collection points, as before. |
+| `EXVIUS_SCENARIO_STAND_INS` | `1` (default) gives a fixed fight that has no enemy data in any record a stand-in from the same quest, so the game has something to load: The Enchanted Maze - ADV's "EXP Lv4" and "GIL Lv4" fights use its Lv5 fights (listed in `source/server/content/scenario_fights.json`). `0` names the fights as recorded. |
 | `EXVIUS_EXCHANGE_SCHEDULE` | `1` (default) has King Mog and the Mog Minister in the Vortex town run the exchange of the event that is on this week, as in Global (Mana Mystery's week: King Mog trades for Candy). Between events, each keeps the exchange of an event currency you still hold, or has nothing. The exchange shows the name of the merchant who opened it. The exchanges on the Shop's summon coin screen open while an event that pays their currency is on, or while you hold the currency; the Star Quartz unit exchanges open once the replay reaches January 2023, when Global added them. `0` brings back the old fixed shops (King Mog always Star Quartz, the Minister always Auracite Shards, every exchange always open). |
 | `EXVIUS_CAPTAIN_MENU` | `1` (default) makes the Moogle Guard Captain in the Vortex town the place for leftover event currency: his menu lists every exchange whose currency you hold that King Mog and the Mog Minister aren't showing this week (events that are over, and events that lost the counter to another event in a busy week), plus his own Super Trust Moogle and Dark Visions exchanges from the dates Global added them. Events the replay hasn't reached never show. With nothing to list he says so. The exchanges he opens carry his name. The list is worked out when the game starts, so currency you get or spend shows up in his menu at the next launch (an option whose currency you spent tells you so). Each change downloads the Vortex town again (about 6.6 MB). `0` brings back the shipped menu. |
 | `EXVIUS_EVENT_RUN_QUESTS` | `1` (default) has each Vortex event show only the quests it had in the run of Global's history the replay is in. Trials and stages a later run added (Chamber of the Vengeful's trials, Chamber of Arms', Twelve Types Takedown's, the later Short Stories, and so on) appear when the replay reaches the run that added them, with their currencies and exchanges. Trial chambers that started later (Chamber of the Vengeful in 2019, Chamber of Arms in 2017) appear from then. The dates come from the Brave Exvius wiki's update history. `0` shows every quest of an open event, as before. |
+| `EXVIUS_EVENT_RUN_QUESTS_TABLE` | `0` (default). `1` also marks the held-back quests in the quest table the game downloads. Without it the game may still list some later trials of Chamber of the Fallen, Chamber of Arms and Chamber of the Vengeful from its own table, before the replay reaches them. Off by default because it hasn't been checked on a phone yet. After changing it, open the game twice. |
 | `EXVIUS_HIDE_CLONE_QUESTS` | `1` (default) hides quests that are exact copies of another quest in the same event (same battle, missions and rewards), so each is listed once: Chamber of Challenges, Elemental Turn Challenge and Producer of the Crystal; also, by choice, Mana Mystery's second quest set (double mission Lapis) and Producer of the Crystal's copies with other mission rewards. List: `ios-server/research/CLONE_QUESTS.md`. `0` shows every copy again. |
 | `EXVIUS_VORTEX_ORDER` | `1` (default) lists the Vortex's events in this order: story events, then the other limited-time events (newest first), then Clash of Wills and Dark Visions, then rotating events like Boss Rush, then the trial chambers (Chamber of the Fallen, of Arms, of the Vengeful), and the farming chambers at the bottom (the ones Global added last at the very bottom). The game sorts the list by a number in its area table; the server sends that table with these numbers. Open the game twice after changing it. `0` keeps the game's own order. |
 | `EXVIUS_HIDDEN_EVENTS` | Vortex events kept out because they can't be played the way Global ran them, as a comma-separated list of event area ids. Default `711` (Memories from the Aquapolis, see [Known issues](#known-issues)): hidden from the Vortex, the News notices and the home banners. `0` shows them all. |
 | `GACHA_RAIDS` | `1` (default) adds Global's raid summons: the Box Summons of 47 raids and the Raid Summons of 21 more, each in its raid's replay week, paid with the raid's coins. Box Summons work like Global's: the game's own box screen, up to 50 pulls at once, rewards removed from the box as you draw them, the next box once the featured rewards are drawn, then the raid's standard summon. Contents are from the FFBE wiki; odds are Global's measured ones where players recorded them, otherwise estimates (list in `ios-server/research/RAID_SUMMON_RATES.md`). `0` turns them off. |
-| `EXVIUS_DEAL_ART_FETCH` | On startup, download the deal summons' banner art from the Internet Archive into `server/deal_art/` (once per image; a lost image gets a plain titled banner). Default `1`; `0` skips it, and those summons show without art. |
+| `EXVIUS_SUMMON_ART_PACK` | `1` (default) reads the summon art that comes with the game data (`data/static/summon_art/`, put there by `fetch-data`): the banner images the server used to download or draw, and the list strips and detail images it used to cut and pad, as finished files. With it the server needs no internet for summon art and makes no image. `0` ignores that folder; the server then draws, pads and cuts as before. |
+| `EXVIUS_DEAL_ART_FETCH` | `1` downloads the deal summons' banner art from the Internet Archive into `server/deal_art/` on startup (once per image; a lost image gets a plain titled banner). Default `0`: the art is in the game data now (see `EXVIUS_SUMMON_ART_PACK`). Without that data and with this off, those summons show a plain titled banner, and the server log says so (`SUMMON-ART drew a stand-in ...`). |
+| `EXVIUS_EVENT_ART_FETCH` | `1` downloads the banners of nine added Vortex events from the Brave Exvius wiki into `data/native/en/sd/area/` on startup. Default `0`: they are in the game data now. Without them those events show the default tile art. |
 | `EXVIUS_WEEKLY_GIFT` | Mailed once per summon week, as `kind:id:count` items. Default `23:50:10,23:70:1`: 10 Rare Summon Tickets and a Guaranteed Ticket (4★/5★/NV), usable with any banner's Ticket Summon button. `""` turns it off. |
 | `EXVIUS_FIRST_CLEAR` | `1` (default) pays each quest's first-clear reward the first time you clear it, as the original game did: Lapis (multiplied like other earned Lapis), event currency such as Mana Mystery's Candy, tickets, units, equipment and materia. The result screen lists it in its first-clear section. Quests you cleared before this setting existed don't pay when replayed; their rewards come once by mail instead (next setting). `0` turns it off. |
 | `EXVIUS_FIRST_CLEAR_MISSED` | First-clear rewards of quests you cleared but were never paid for (any build), by mail at login, once per quest; a unit you already hold or a recipe you already own is left out. `1` (default) mails it; `0` turns it off; `preview` only writes what it would pay to the server log. |
@@ -382,8 +396,12 @@ The original game's Lapis income assumed you'd buy Lapis. These settings raise w
 | `EXVIUS_GUIDE` | `1` (default) fills the Guide (Library): units (with the lower forms of awakened units), items, equipment, materia and Vision Cards you hold or have held, and monsters from battles fought from now on. `0` sends nothing (the Guide stays empty except recipes). |
 | `EXVIUS_ENGLISH_SEARCH` | `1` (default) gives each Vision Card its English name as its search reading, so the Vision Card search finds cards by English name (the game's data has Japanese readings for 216 cards). `0` serves the card table as shipped. |
 | `EXVIUS_FARPLANE_SCENES` | `1` (default) stops the Farplane from replaying its first scene and sending you back to Mitra on every visit: the game is told to skip two Farplane scene files that hold a copy of that first scene (the Crest scene and the end of the Moogle quests; neither survives in English). `0` sends the game's own list again (open the game twice afterwards). |
-| `EXVIUS_REFETCH_TABLES` | `1` (default) makes the game download the unit conversion table (`F_SACRIFICE_MST`) again, which the Convert to Prism and Convert to Fragments lists need. `0` advertises it as shipped. |
-| `EXVIUS_SUMMON_ART_GUARD` | `1` (default) makes sure the summon screen only asks for banner images the server has, drawing a stand-in with the summon's name where the art isn't there yet. `0` names the art as before. A missing image is still answered with a drawn picture either way. |
+| `EXVIUS_SUMMON_ART_GUARD` | `1` (default) makes sure the summon screen only asks for banner images the server has, drawing a stand-in with the summon's name where the art isn't there yet. It also sends image names made only of plain characters: the twelve banners whose files are named with a ★ go out under a plain name the server maps back. `0` names the art as before. A missing image is still answered with a drawn picture either way. |
+| `EXVIUS_ITEM_SET_BAG` | `1` (default) keeps the battle item set and the bag apart, as the game does: the bag count the game is sent leaves out what is in the set, and the set can't hold more of an item than you own. The game tops the set up from the bag by itself after Vortex battles and on the world map; without this it did so from Potions that weren't there. `0` sends the whole count as the bag and stores any set, as before. |
+| `EXVIUS_CLEAR_SWITCHES` | `1` (default) sets the switch a quest opens when it is cleared also for event quests, so the quests that wait on it are offered: Kilika Woods - Exploration's fifteen explorations after its Opening, and 29 quests of three other events. A quest cleared before this update gets its switch at the next login. `0` leaves those switches unset, as before. |
+| `EXVIUS_STEP_ART` | `1` (default) shows a step-up summon's art on every step. The game picks the picture by the step's position in the summon's list of detail images, and most step-ups have one picture for all their steps, so it is listed once per step (still one file to download). `0` lists it once, as before: steps 2 and later then show an empty frame. |
+| `EXVIUS_SUMMON_SCREEN_BUTTONS` | `1` (default) gives each summon the buttons of the screen it opens. The larger detail screen (step-ups, free and ticket summons, and paid summons whose art is 640x392) draws the price for the game's large buttons, so those are used there; the small gold buttons stay on the paid summons' screen, which is made for them. `0` uses the small gold buttons everywhere, as before: on the larger screen their Lapis bar is then empty and the price sits under the button. |
+| `EXVIUS_CONVERT_EARLY_TABLE` | `1` (default) names the game's function table in the answer the game asks for just before the title screen, so the game loads it before it builds its list of tables and the Convert to Prism and Convert to Fragments lists work from a fresh start. It is only named for a phone that has reached the home screen with that same table version, so nothing is downloaded before the title and nothing is downloaded twice; the server log says what it did (`docker compose logs server \| grep CONVERT-TABLE`). `0` never names it: the lists are then empty after every fresh start until you use Menu → return to the title screen → start again. |
 | `EXVIUS_NV_AWAKENED_FLAG` | `1` (default) tells the game which NV units you got by NV awakening (Dark Fina NV, Lightning NV and the like), so Convert to Fragments lists them. `0` doesn't, and those units are left out of that list again. |
 | `EXVIUS_CHEST_BACKPAY` | `1` (default) mails you, once, the equipment, materia and key items from treasure chests you opened that never arrived (only those the server still has a record of). `0` doesn't send it. |
 | `EXVIUS_MISSION_GIL` | `1` (default) pays each quest's own clear Gil on every win (the Chamber of Riches pays almost all its Gil this way: 1,500 to 85,000 per run) and shows it on the result screen. `0` pays only the Gil the monsters drop. |
@@ -409,6 +427,7 @@ Each successful clear of any quest (story, exploration, Vortex, events) gives ev
 | Setting | What it controls |
 | --- | --- |
 | `EXVIUS_FIELD_ENCOUNTERS` | `1` (default) gives explorations their random battles while you walk: the monsters the FFBE wiki lists for each exploration, in about the wiki's number of battles per zone, and then they run out as they did in the original game. 248 story, quest and event explorations are covered (`source/server/content/exploration_encounters.json`); the rest have no random battles. Each battle's drops are rolled from the enemies' own drop lists. `0` turns random battles off. |
+| `EXVIUS_ENCOUNTER_MAP_FIELDS` | `1` (default) also sends an exploration's random battles on the encounter zones its own map tiles are marked with (read from the game's map files; The Dreadnought, the Realm of the Dragon King and The Crystal Tower's reruns use zones outside the usual list and had no random battles). `0` sends them on the usual zones only, as before. |
 
 **Other players**
 
@@ -450,7 +469,9 @@ Your own hand-picked companions still come from `source/server/friends.yaml`.
 | `EXVIUS_STORY_TEXT_FIX` | `0` (default) serves the story scenes as shipped. `1` fills in the story lines three scenes are missing in the English data (chapter 1 leaving with Fina, Lid's Mechabo at Ballen Passage, and one event scene), but the iPhone can't load the rebuilt scenes yet: entering Port City Lodin gives "A loading error has occurred". Leave it at `0`. |
 | `ANNIVERSARY_TICKET` | `0` (default here) stops the free 8th-Anniversary 10+1 ticket the engine otherwise mails every day. `1` turns it back on. Tickets you already received stay. |
 | `EXVIUS_LAPIS_SHOP_EXCLUDE` | Products left out of the exchange shops that sell for Lapis, as `kind:id` pairs. The default, `10:900020401`, removes King Metal Minituars, which otherwise cost 3 Lapis each. Empty puts them back. |
-| `EXVIUS_IOS_BANNER_FIT` | `1` (default) pads summon detail art to the shape of the frame the iPhone draws it in, so taller or wider images aren't squashed (the Android build does this with a hook). Paid summons draw it in a wide frame; the Standard (friend point) and free summons in a 640x392 one, so their art is fitted to that instead. The sides are filled with a blurred, darkened copy of the art. Needs Pillow, which the image installs. Cached in `FFBE_DIR/server/ios-cache/banner-fit/`. |
+| `EXVIUS_IOS_BANNER_FIT` | `1` (default) pads summon detail art to the shape of the frame the iPhone draws it in, so taller or wider images aren't squashed (the Android build does this with a hook). Paid summons draw it in a wide frame; the Standard (friend point) and free summons in a 640x392 one, so their art is fitted to that instead. The sides are filled with a blurred, darkened copy of the art. Summon art larger than the phone can use (a padded detail image over 2,798 pixels wide, a list image over 2,798 on either side) is scaled down to that first; a picture too large to open is replaced by a drawn banner with the summon's name, and one the server can't read is sent as it is. `0` sends every summon image exactly as the file is. Needs Pillow, which the image installs. Cached in `FFBE_DIR/server/ios-cache/banner-fit/`. |
+| `EXVIUS_SUMMON_NO_SHIFT_FORMS` | `1` (default) keeps Brave Shift forms out of every summon: a unit's other form (the one it shifts into in battle, or the Neo Vision form of an awakened 5★ unit) is never drawn as a unit of its own, and the Drop Rates pages list each unit once (a unit two rarity tiers hold is one line with both chances added; the draw is the same). A form a banner names is replaced by the unit it belongs to. Forms summoned before this update are swapped for their unit at the next login, once per save: the unit keeps its place, equipment, materia and Vision Card, and its level up to the new unit's maximum; each swap is written to the server log (`shift forms: ...`). `0` checks no pool and swaps nothing. |
+| `EXVIUS_SUMMON_SCREENS` | `1` (default) shows summon art on the screen its summon really opens. Detail art of the 640x392 screens (step-ups, free, ticket and 10+1 summons) is sent whole instead of padded for the paid summons' strip; a paid summon whose art is 640x392 opens the 640x392 screen; and a news or Japanese picture used as a list image that isn't a strip is sent as a strip cut from it, so the summon list has no giant tiles. The game's own list banners are always sent whole, whatever their shape. `0` goes back to the old behaviour (small art between blurred sides on those screens, tall tiles in the list). |
 | `EXVIUS_IOS_BANNER_FIT_NAMES` | `1` (iPhone default) names each summon detail image `<name>-fit1.png` (`<name>-full1.png` for the Standard and free summons) in the summon tables. The phone keeps every banner image it has downloaded and never asks again, so without a new name it keeps the squashed copy. The server maps the name back to the real file. |
 | `EXVIUS_BANNER_DEALS` | `1` (default) pays the extras printed on summon banner art that the banner data left out: free Trust Moogles with every 10+1, bonus coins and tickets, and from October 2020 a guaranteed 5★/NV unit plus a Summon Coin with every 11 summon. 107 banners, listed in `source/server/banner_deals.json`. `0` turns it off. |
 | `EXVIUS_IOS_VORTEX_ART` | `1` (default) builds the Vortex banner pack the iPhone needs, so event tiles show their art (and the Enhance tab doesn't crash). It's built when the server starts and cached in `FFBE_DIR/server/ios-cache/` (about 240 MB). |
@@ -492,7 +513,7 @@ The weekly summon rotation is in `source/server/gacha_rotation.py`, the historic
 
    On Unraid with the template: remove `ffbe` in the Docker tab (icon → **Remove**), run `docker image rm ffbe-ios-server:local`, and delete `/boot/config/plugins/dockerMan/templates-user/my-ffbe.xml`.
 
-   Then delete the whole `exvius` folder (or your `FFBE_DIR`). That removes the game data (including the event banners the server downloads from the Brave Exvius wiki into `data/native/en/sd/area/`, and the deal summons' art it downloads into `server/deal_art/`), your save, the certificates, the Tailscale state and this copy of the repo.
+   Then delete the whole `exvius` folder (or your `FFBE_DIR`). That removes the game data (including the summon art in `data/static/summon_art/`, and anything an older version or the two fetch settings downloaded into `data/native/en/sd/area/` and `server/deal_art/`), your save, the certificates, the Tailscale state and this copy of the repo.
 2. In the Tailscale admin console:
    - **Machines → ffbe → ⋯ → Remove.**
    - **DNS:** delete the nameserver entries for `gumi.sg` and `exvius.com`.

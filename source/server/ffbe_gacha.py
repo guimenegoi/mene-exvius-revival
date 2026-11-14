@@ -51,6 +51,14 @@ def banner_art_index() -> dict:
             for dirpath, _dirs, files in os.walk(root):
                 for fn in files:
                     _BANNER_ART_INDEX.setdefault(fn, os.path.join(dirpath, fn))
+        # A file whose name the phone isn't handed as it is (`Gacha-7★-Aranea.png`) is also listed under the
+        # ASCII alias the summon reply uses for it (summon_art.plain_name), so a request for the alias finds
+        # the file, also right after a restart.
+        import summon_art
+        for fn, path in list(_BANNER_ART_INDEX.items()):
+            alias = summon_art.plain_name(fn)
+            if alias != fn:
+                _BANNER_ART_INDEX.setdefault(alias, path)
     return _BANNER_ART_INDEX
 _AREA_ART_INDEX: dict = {}
 def area_art_index() -> dict:
@@ -226,7 +234,16 @@ def raid_banners() -> list:
     run date. Off with `GACHA_RAIDS=0`."""
     if not GACHA_RAIDS_ON or not os.path.exists(GACHA_RAIDS):
         return []
-    return _banner_doc(GACHA_RAIDS, note="no raid summons")
+    # One summon per Global raid run: the game has two areas (757, 843) for Destroy the Machine Lifeform, and each
+    # got a banner with the same name, date, coin, price and prizes, so that week listed the summon twice.
+    out, seen = [], set()
+    for banner in _banner_doc(GACHA_RAIDS, note="no raid summons"):
+        same = json.dumps([banner.get('name'), banner.get('release'), banner.get('cost'), banner.get('after_cost'),
+                           banner.get('reward_pool'), banner.get('boxes')], sort_keys=True)
+        if same not in seen:
+            seen.add(same)
+            out.append(banner)
+    return out
 def standard_banners() -> list:
     """The STANDARD families (SW-75) from `gacha_standard.json` -- the static, never-campaign-tied FREE-tab
     summons. Authored (`source: standard-authored`); the ids/titles are shipped. Off unless `GACHA_STANDARD=1`."""
@@ -365,6 +382,37 @@ def _gold_button(cost: dict, draws) -> str:
         # of the native cost icon. The small two-line version overlaps it.
         return "gacha_btn_r_ticket"
     return "gacha_btns_gold_1"
+# The small gold buttons (204x96) are the paid screen's (`GachaPayDetailScene`, layout 1): its layout puts the
+# price at (88, 55) of a 204x96 button (`gacha_pay_button_left_price`, layout/gacha/gachaButtonL.csv), inside
+# the gold button's bar. Every other screen is `GachaDetailScene`, whose `setBtnLayout` (0x2143b18) only knows
+# `gacha_button_left_price` / `gacha_button_right_price`: (141, 81) and (170, 81) of a 304x136 button
+# (`gacha_btn_left_offset`, `gacha_btn_right_offset`, `gacha_btn_center_offset` are 304x136). That is the bar
+# of the big family (`gacha_btn_r_1.png`: x 118-215, y 79-102) and below-right of a gold button's bar (x 80-154,
+# y 55-74): the cost under an empty bar (operator's screenshot of Dark Fina Revealed, 2026-11-13). No record of
+# Global's own button names survives (they came from its server); the game's files have the captions "Summon"
+# and "11 Summons" with a Lapis bar in both sizes, one per screen.
+_DETAIL_SCREEN_BUTTONS = {
+    "gacha_btns_gold_1": "gacha_btn_r",                 # Summon
+    "gacha_btns_gold_11": "gacha_btn_r_multi",          # 11 Summons
+    "gacha_btns_gold_free_1": "gacha_btn_r_free",       # Summon, Free
+    **{f"gacha_btns_gold_{n}": f"gacha_btn_r_{n}times" for n in range(2, 8)},      # N Summons
+    **{f"gacha_btns_gold_{n}": "gacha_btn_y_multi" for n in (8, 9, 10)},           # Multi-Summon (no N art)
+}
+
+
+def screen_buttons_enabled() -> bool:
+    """EXVIUS_SUMMON_SCREEN_BUTTONS (default on; 0 = the gold buttons everywhere, as before 2026-11-13)."""
+    return os.environ.get("EXVIUS_SUMMON_SCREEN_BUTTONS", "1").strip().lower() not in ("0", "off", "false", "no")
+
+
+def screen_button(name, layout) -> str:
+    """The button image for the screen a summon opens: on anything but the paid screen (layout 1), a small gold
+    button becomes the 304x136 button with the same caption, the one that screen lays its price out for."""
+    if str(layout or "0") == "1" or not screen_buttons_enabled():
+        return name
+    return _DETAIL_SCREEN_BUTTONS.get(str(name), name)
+
+
 def _step_button(cost: dict, draws) -> str:
     """The step-up scene (`GachaDetailScene`, layout 2) places the price for the big 304x136 buttons, so its
     rows wear the big Global family: `gacha_btn_r` (Summon), `gacha_btn_r_<N>times` (2-7), `gacha_btn_r_multi`
@@ -555,7 +603,60 @@ def _gacha_banner_detail_string(banner: str) -> str:
     parser demands. Evidence: `docs/notes/gacha_banner_draw_path.md` S4a/S4d.
     """
     return f"0:{banner}" if banner else ""
-def _gacha_schedule_banner_string(banner: str, detail: str = "", extras=(), pad: bool = True) -> str:
+def _art_shape(name: str):
+    """(width, height) of a summon image the art index holds, or None (not there, or not readable)."""
+    import banner_fit
+    path = banner_art_index().get(str(name or ""))
+    return banner_fit.file_shape(path) if path else None
+
+
+def _game_art(name: str) -> bool:
+    """True for a summon image that comes with the game data itself: the game's own banner files (its packs and
+    loose cache images, and Global's banners as the wiki kept them, `gacha_community/art`). False for what was
+    added around them: the summon art pack's pictures and the deal art folder (news images, Japanese banners,
+    drawn stand-ins), and for a name no file answers."""
+    path = banner_art_index().get(str(name or ""))
+    if not path:
+        return False
+    import art_pack
+    import data_paths
+    real = os.path.realpath(path)
+    for added in (art_pack.root(), data_paths.DEAL_ART_ROOT):
+        if added and real.startswith(os.path.join(os.path.realpath(added), "")):
+            return False
+    return True
+
+
+def _cut_for_list(name: str) -> bool:
+    """True when the summon list is sent a strip cut from this list image (`x-strip1.png`) instead of the image.
+
+    Only an added picture that isn't a strip is cut: a news image or a Japanese banner that is a banner's one
+    file for list and detail (Global's 640x392 detail art), which the list would draw as a giant tile. A list
+    image from the game's own banner files is never cut, whatever its shape: the 2016-17 banners are 640x392
+    and that is their real list art (operator, 2026-11-13: Dark Fina Revealed and Final Fantasy Type-0 showed
+    only the bottom of their banner, the units cut off)."""
+    import banner_fit
+    if not banner_fit.screens_enabled() or _game_art(name):
+        return False
+    return not banner_fit.is_strip_shaped(_art_shape(name) or (4, 1))
+
+
+def _drawn_art(name: str) -> bool:
+    """True for a stand-in the server draws itself (no art on record, or Global's not downloaded yet)."""
+    import art_pack
+    import summon_art
+    name = str(name or "")
+    if name.startswith(summon_art.STANDIN):
+        return True
+    packed = art_pack.source(name)      # the art pack says what each of its pictures is (`jp`, `news`, `drawn`)
+    if packed is not None:
+        return packed == "drawn"
+    target = summon_art._targets().get(name)
+    return target is not None and not target[0]
+
+
+def _gacha_schedule_banner_string(banner: str, detail: str = "", extras=(), pad: bool = True,
+                                  steps: int = 0, strip: bool = False) -> str:
     """`GachaScheduleMst.bannerInfo` (`4yT7FUqj`): the MIXED form the two screens need, and they are TWO
     different SLOTS (confirmed 2026-09-21):
       * the **LIST** entry reads the **bare** field `+0x60` -- `GachaTopScene::setListLayout` (`0x2120880`
@@ -572,12 +673,28 @@ def _gacha_schedule_banner_string(banner: str, detail: str = "", extras=(), pad:
     `pad`: the detail art goes to `GachaPayDetailScene` (3.5:1 frame, padded by banner_fit). False for
     banners that open the base `GachaDetailScene` (friend-point and other layout-0 summons), whose
     frame is 640x392 like the art.
+
+    `steps`: how many steps a step-up has. A step-up (`GachaMst` type 5) has no carousel: `setBannerLayout`
+    (the type check at `0x2139074`) counts the player's `UserGachaInfo` rows of the summon that come before
+    the row of the step on offer (`UserGachaInfoList::getGachaStepUpCount` `0x1dfbccc`, the 0-based step) and
+    draws the detail entry at THAT position (`0x21390d0`-`0x2139134`); past the end of the list the name is
+    empty (`0x21390ec` `b.le`) and the frame stays blank. Global listed one image per step (the cached Global
+    step-ups: `<hash>_01.png` ... `_0N.png`). A step-up with fewer images on record than steps gets its last
+    image at every remaining position, so each step shows the summon's art (2026-11-13: steps 2 and later
+    were blank for 124 of the 130 step-ups). The repeats are one file: the download skips a name it has
+    queued or already holds (`FileDownloadManager::createRequest` `0x1f0b8f0`: `isFileExist`, `hasRequest`).
+    EXVIUS_STEP_ART=0 lists the images once, as before.
     """
     name = banner or GACHA_DEFAULT_BANNER_ART
-    from banner_fit import fit_name   # a fresh name for padded detail art (banner_fit.py)
-    detail = fit_name(detail or name, pad)
-    extra = "".join(f",{i}:{fit_name(f, pad)}" for i, f in enumerate(extras or (), 1))
-    return f"{name},0:{detail}{extra}"
+    from banner_fit import fit_name, strip_name   # a fresh name for padded detail art (banner_fit.py)
+    listed = [fit_name(detail or name, pad)] + [fit_name(f, pad) for f in extras or ()]
+    if strip:
+        # `strip`: the list image isn't a strip (the banner's one file is its 640x392 detail art). The list is
+        # sent the strip cut from it (`x-strip1.png`, banner_fit.strip); the detail entries keep the whole art.
+        name = strip_name(name)
+    if steps > len(listed) and os.environ.get("EXVIUS_STEP_ART", "1").strip().lower() not in ("0", "off", "false", "no"):
+        listed += [listed[-1]] * (steps - len(listed))
+    return name + "".join(f",{i}:{f}" for i, f in enumerate(listed))
 def _gacha_target_info(entry: dict) -> str:
     """`GachaPanelGroupMst.targetInfo` (7iJpH5zZ) = `TargetType:TargetID:TargetNum:TargetRate:TargetLv`
     (`setAnalyzeTargetInfo` 0x1ceb934 stores into +0x68/6c/70/74/78)."""
@@ -646,6 +763,25 @@ def gacha_groups(banners: list) -> dict:
                 layout = 2
             elif kind not in ("free", "friend_point"):
                 layout = 1                       # lapis / ticket / gil -> the pay detail scene
+        # Which screen the art is for (2026-11-13, banner art brief). `GachaUtil::changeSummonSecondScene` sends
+        # layout 1 to `GachaPayDetailScene`, whose banner frame is a 626x184 strip (`gacha_pay_main_banner`), and
+        # everything else to `GachaDetailScene`: frame 640x392 (`gacha_banner`), and a step-up draws its image
+        # 640x392 too (operator's screenshots). Global's own files agree: 640x190 detail strips for Featured
+        # Summons, 640x392 for step-ups, free, ticket, select and raid box summons.
+        #   * A paid summon whose real detail art is not a strip opens the 640x392 screen (layout 2, as 392
+        #     paid deal banners already do), so the art is shown whole instead of in a strip's frame. Drawn
+        #     stand-ins and authored layouts are left where they are.
+        #   * Only layout 1 is padded for the strip frame (`pad`, below). Layout 2 was padded for it as well,
+        #     and the 640x392 screens then squeezed the padded picture: tiny art between blurred sides.
+        #   * An added list image (news, Japanese) that isn't a strip goes out as a cut strip (`strip`,
+        #     `_cut_for_list`). The game's own list images are sent whole.
+        import banner_fit
+        screens = banner_fit.screens_enabled()
+        detail_name = _gacha_art(schedule_art, "detail_banner") or _gacha_art(schedule_art, "banner")
+        if (screens and str(layout or "") == "1" and b.get("gacha_layout") is None
+                and not _drawn_art(detail_name) and (_art_shape(detail_name) or (4, 1))[0] > 0
+                and not banner_fit.is_strip_shaped(_art_shape(detail_name) or (4, 1))):
+            layout = 2
         if layout:
             row["7xBNR2MH"] = str(layout)
         mst.append(row)
@@ -691,7 +827,10 @@ def gacha_groups(banners: list) -> dict:
                       "4yT7FUqj": _gacha_schedule_banner_string(_gacha_art(schedule_art, "banner"),
                                                                  _gacha_art(schedule_art, "detail_banner"),
                                                                  schedule_art.get("detail_extra") or (),
-                                                                 pad=str(layout or "0") in ("1", "2")),
+                                                                 pad=str(layout or "0") in (("1",) if screens
+                                                                                            else ("1", "2")),
+                                                                 steps=len(steps),
+                                                                 strip=_cut_for_list(_gacha_art(schedule_art, "banner"))),
                       "VjJQ51uG": _served_start(b, window),
                       "m8ivD4NX": SERVED_END,
                       "N2PkD9sy": _served_start(b, window)})
@@ -705,6 +844,10 @@ def gacha_groups(banners: list) -> dict:
                            "q4m8aKr0": str(b.get("detail_id", "")),
                            "7iJpH5zZ": _gacha_target_info(entry),
                            "Z0EN6jSh": str(i)})
+    # The buttons of the screen each summon opens (`screen_button`), now that the screen is settled.
+    opens = {row["X1IuZnj2"]: row.get("7xBNR2MH") for row in mst}
+    for det in detail:
+        det["XFLm4Mx6"] = screen_button(det.get("XFLm4Mx6"), opens.get(det.get("X1IuZnj2")))
     out = {GACHA_MST_TAG: mst, GACHA_DETAIL_TAG: detail, GACHA_SCHEDULE_TAG: sched,
            GACHA_PANEL_TAG: panel, GACHA_PANEL_GROUP_TAG: pgroup}
     for banner in banners:

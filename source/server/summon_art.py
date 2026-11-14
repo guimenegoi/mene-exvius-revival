@@ -63,14 +63,60 @@ def _draw(name: str, title: str, size: tuple) -> bool:
             print(f"SUMMON-ART could not draw {name}: {exc!r}", flush=True)
             return False
         _index()[name] = path
+        _say_drawn(name)
         return True
+
+
+_DRAWN = [0]
+
+
+def _say_drawn(name: str) -> None:
+    """A stand-in drawn while running is the last resort: the art pack carries these as files (art_pack.py).
+    The first five are logged by name, then every hundredth, so a server without the pack says so plainly
+    without filling its log."""
+    _DRAWN[0] += 1
+    if _DRAWN[0] <= 5 or _DRAWN[0] % 100 == 0:
+        import art_pack
+        why = ("it is not in the summon art pack" if art_pack.installed()
+               else "the summon art pack is not installed: run fetch-data")
+        print(f"SUMMON-ART drew a stand-in for {name} ({why}; {_DRAWN[0]} drawn since the start)", flush=True)
+
+
+# Characters a summon image name may be made of when it is handed to the phone: printable ASCII that needs at
+# most a space encoded in a URL. Names with spaces (`Gacha-Noctis Arrives.png`) are in replay weeks 0 and 1 and
+# download on the phone. A name outside this set is sent under an ASCII alias instead (`plain_name`).
+_PLAIN = re.compile(r"[A-Za-z0-9._ \-&'()+,;=@!$*~]+")
+
+
+def plain_name(name: str) -> str:
+    """`name`, or an ASCII alias for it when it holds anything else (2026-11-13, GitHub #6/#7).
+
+    Twelve pack images are named `Gacha-7★-<unit>.png`. The star is three bytes in UTF-8 (E2 98 85). No phone
+    had ever been handed such a name: with the replay they first show in week 29, with EXVIUS_SUMMON_ROTATION=0
+    all at once, and those players' summon download never finished. What the phone sends for one isn't known
+    (the iPhone's downloader is platform code); sent as raw bytes the request line didn't even parse here (see
+    capture_server.Handler.parse_request). The alias keeps the readable part and adds a checksum of the real
+    name, so it is the same after every restart; ffbe_gacha.banner_art_index lists every alias beside the real
+    name, so the file server finds the file under either."""
+    if not name or _PLAIN.fullmatch(name):
+        return name
+    import zlib
+    stem, ext = os.path.splitext(name)
+    safe = re.sub(r"-{2,}", "-", re.sub(r"[^A-Za-z0-9._ \-]+", "-", stem)).strip("-. ") or "art"
+    ext = ext if re.fullmatch(r"\.[A-Za-z0-9]+", ext) else ".png"
+    return f"{safe}-x{zlib.crc32(name.encode('utf-8')) & 0xffffff:06x}{ext}"
 
 
 def ensure(name: str, title: str = "", size: tuple | None = None) -> str:
     """A name for `name` that the phone can download now."""
     from ffbe_config import GACHA_DEFAULT_BANNER_ART
-    if not name or name in _index():
+    if not name:
         return name
+    if name in _index():
+        alias = plain_name(name)
+        if alias != name:
+            _index().setdefault(alias, _index()[name])
+        return alias
     target = _targets().get(name)
     if target is not None:
         url, made_title, made_size = target
@@ -101,8 +147,9 @@ def resolve(banner: dict, art: dict) -> dict:
     return out
 
 
-def fallback(rel: str) -> tuple[bytes, str] | None:
-    """(PNG bytes, how) for a summon art request the file server couldn't answer, else None."""
+def fallback(rel: str, why: str = "file missing") -> tuple[bytes, str] | None:
+    """(PNG bytes, how) for a summon art request the file server couldn't answer, else None. `why` goes in
+    the log line (banner_fit gives its own when the file is there but too large to fit)."""
     m = SUMMON_ART.search(rel or "")
     if not m:
         return None
@@ -112,11 +159,11 @@ def fallback(rel: str) -> tuple[bytes, str] | None:
     url, title, size = _targets().get(base, ("", "", None))
     size = size or ((640, 392) if m.group(2).lower() == "sub" else (640, 160))
     try:
-        return deal_art.render(title or "Summon", size), "summon art stand-in (file missing)"
+        return deal_art.render(title or "Summon", size), f"summon art stand-in ({why})"
     except Exception:  # noqa: BLE001
         from ffbe_config import GACHA_DEFAULT_BANNER_ART
         path = _index().get(GACHA_DEFAULT_BANNER_ART)
         if path and os.path.isfile(path):
             with open(path, "rb") as fh:
-                return fh.read(), "default summon art (file missing)"
+                return fh.read(), f"default summon art ({why})"
     return None

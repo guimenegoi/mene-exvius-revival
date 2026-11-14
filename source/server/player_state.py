@@ -239,6 +239,21 @@ SWITCH_TYPE = "5opcUT9t"
 SWITCH_INDEX = "QLfe23bu"
 MISSION_SWITCH_TYPE = "101"      # the switch type mission flags live in (SWITCH_TYPE_MISSION, capture_server)
 MAIN_STORY_CLEAR_SWITCH_TYPES = frozenset(('103', '200', '201', '9002'))
+# A mission's own clear switch of these types is granted whatever world the mission is in (2026-11-13). Event
+# chains hang on them: Kilika Woods - Exploration (Opening) 30210101 opens 18521101 (type 103), and its fifteen
+# explorations require it. Only original-world missions were granted these types, so 44 quests in four areas
+# (3021 Kilika Woods, 3033, 3151, 898) could never be offered. EXVIUS_CLEAR_SWITCHES=0: as before.
+EVENT_CLEAR_SWITCH_TYPES = frozenset(('103', '9002'))
+
+
+def item_set_apart() -> bool:
+    """EXVIUS_ITEM_SET_BAG (default on; 0 = off): the bag the phone is sent leaves out what the item set holds,
+    and the set can't hold more than is owned. Off: the bag is sent whole and any set is stored, as before."""
+    return str(os.environ.get('EXVIUS_ITEM_SET_BAG', '1')).strip().lower() not in ('0', 'off', 'false', 'no')
+
+
+def event_clear_switches() -> bool:
+    return str(os.environ.get('EXVIUS_CLEAR_SWITCHES', '1')).strip().lower() not in ('0', 'off', 'false', 'no')
 
 # ---------------------------------------------------------------------------------------------------
 # The authored STORY-UNLOCK sets (`STORY_UNLOCK=vortex,espers`). A synthetic server CHOOSES a world
@@ -1069,6 +1084,153 @@ def unit_roots_by_rarity() -> dict:
     return _UNIT_ROOTS
 
 
+def unit_other_forms() -> set:
+    """Ids of `F_UNIT_MST` rows that are another row's other form (`I3SKJ4q0 = 1`, naming it in `JPW8Vs40`): the
+    Brave Shift form of a Neo Vision unit (id ...17) and the NV-awakened form of a 5-star unit (...27). They are
+    their own series root at rarity 7, so a tier with no unit list would draw them beside the units themselves;
+    Global's own Neo Vision list (NV EXVIUS Summon) holds none. Cached for the process (2026-11-12)."""
+    global _UNIT_OTHER_FORMS
+    if _UNIT_OTHER_FORMS is None:
+        _UNIT_OTHER_FORMS = {str(r.get(UNIT_KEY)) for r in _load_ndjson("F_UNIT_MST.ndjson").get("__rows__", [])
+                             if str(r.get("I3SKJ4q0")) == "1"
+                             and str(r.get("JPW8Vs40") or "0") not in ("", "0", str(r.get(UNIT_KEY)))}
+    return _UNIT_OTHER_FORMS
+
+
+_UNIT_OTHER_FORMS = None
+
+
+def no_shift_forms() -> bool:
+    """EXVIUS_SUMMON_NO_SHIFT_FORMS (default on; 0 = off): a summon never gives a Brave Shift form as a unit,
+    and forms already summoned are swapped for their unit at the next login (shift_forms.py)."""
+    return str(os.environ.get('EXVIUS_SUMMON_NO_SHIFT_FORMS', '1')).strip().lower() not in ('0', 'off', 'false', 'no')
+
+
+def summon_unit(unit_id) -> str:
+    """The unit a summon gives for `unit_id`: itself, or, for a Brave Shift form (`unit_other_forms`), the series
+    root of the row the form names in `JPW8Vs40`.
+
+    A summoned Neo Vision unit is ...07 and its form ...17 names it: the root is the ...07 unit. A 5-star unit's
+    NV form is ...17 and ITS form ...27 names that: the root is the 5-star (or 3-star) base. A form in a roster
+    can't be awakened and stays at its base rarity (player report, 2026-11-13: eight banners named a unit's
+    form among their featured units, so their summons gave it)."""
+    unit = str(unit_id)
+    if not no_shift_forms() or unit not in unit_other_forms():
+        return unit
+    named = str((unit_mst(unit) or {}).get("JPW8Vs40") or "")
+    root = str((unit_mst(named) or {}).get("woghJa61") or named)
+    for candidate in (root, named):
+        if candidate and unit_mst(candidate) is not None and candidate not in unit_other_forms():
+            return candidate
+    return unit
+
+
+def without_shift_forms(rows: list) -> list:
+    """Pool rows with every Brave Shift form replaced by the unit a summon should give (`summon_unit`).
+    When that unit is already in the pool the form's rate is added to it, so a pool never holds a unit twice
+    because of its form and the rates still add up; a form that names no unit is dropped. Rows that are not
+    units are left alone. The last step of every pool, whatever built it."""
+    if not no_shift_forms():
+        return rows
+    forms = unit_other_forms()
+    out, place, touched = [], {}, set()
+    for row in rows:
+        unit = str(row.get("unit_id") or "")
+        was_form = bool(unit) and unit in forms
+        if was_form:
+            unit = summon_unit(unit)
+            if unit in forms:
+                continue
+            row = dict(row, unit_id=unit, rarity=(unit_mst(unit) or {}).get("9fW0TePj", row.get("rarity")))
+            if "id" in row and str(row.get("kind")) == "10":
+                row["id"] = type(row["id"])(unit)
+        if unit and unit in place and (was_form or unit in touched):
+            kept = out[place[unit]]
+            if "rate" in row or "rate" in kept:
+                kept["rate"] = float(kept.get("rate") or 0) + float(row.get("rate") or 0)
+            continue
+        if unit:
+            place.setdefault(unit, len(out))
+            if was_form:
+                touched.add(unit)
+        out.append(dict(row) if was_form else row)
+    return out
+
+
+def one_row_per_unit(rows: list) -> list:
+    """Pool rows with a unit that stands in two tiers at the same rarity made one row, its chances added: a
+    5-star unit featured in a Neo Vision tier and also drawn in the 5-star tier (Fei on the Xenogears banner
+    9709003, four units on 9709002) was two rows, so the Drop Rates page listed it twice. The draw is the same:
+    one row with the sum is as likely as the two were together. Rows that carry more than a unit, a rarity and
+    a rate (reward rows with amounts) are left alone. Off with EXVIUS_SUMMON_NO_SHIFT_FORMS=0."""
+    if not no_shift_forms():
+        return rows
+    out, place = [], {}
+    for row in rows:
+        key = (str(row.get("unit_id")), str(row.get("rarity")))
+        if row.get("unit_id") in (None, "") or set(row) - {"unit_id", "rarity", "rate"}:
+            out.append(row)
+        elif key in place:
+            kept = out[place[key]] = dict(out[place[key]])
+            kept["rate"] = float(kept.get("rate") or 0) + float(row.get("rate") or 0)
+        else:
+            place[key] = len(out)
+            out.append(row)
+    return out
+
+
+def tiers_without_shift_forms(banner: dict) -> dict:
+    """`banner` with every Brave Shift form taken out of its tiers' `featured` and `units` lists and out of its
+    rate-up list (`community.unit_ids`), before any rate is worked out.
+
+    A form whose unit the banner names anyway is only removed. The tier keeps its printed rate, and each featured
+    unit that stays keeps its own chance: the banners' featured rate is a rate per unit (1% for a Neo Vision
+    unit, source/exvius/build_catalogue_banners.py), so a tier that counted a unit and its form as two featured
+    units gives the form's part back to its other units (`featured_share` shrinks with the list). A form whose
+    unit the banner doesn't name is replaced by it where it stood when the unit is of the tier's rarity; when
+    it is not (a 5-star or 3-star base named as its NV-awakened form) the form stays for the rate and
+    `without_shift_forms` turns its row into the unit's, at the unit's own rarity."""
+    pool = banner.get("pool")
+    if not no_shift_forms() or not isinstance(pool, dict):
+        return banner
+    forms = unit_other_forms()
+    tiers = pool.get("tiers") or []
+    rate_up = [str(u) for u in ((banner.get("community") or {}).get("unit_ids") or [])]
+    lists = [tier.get(kind) or [] for tier in tiers for kind in ("featured", "units")] + [rate_up]
+    if not any(str(u) in forms for units in lists for u in units):
+        return banner
+    named = {str(u) for units in lists for u in units} - forms
+
+    def clean(units, rarity):
+        out = []
+        for unit in (str(u) for u in units):
+            if unit not in forms:
+                out.append(unit)
+                continue
+            real = summon_unit(unit)
+            if real in forms or real in named:
+                continue                                    # no unit to give, or the banner has it already
+            named.add(real)
+            same = rarity is None or str((unit_mst(real) or {}).get("9fW0TePj")) == str(rarity)
+            out.append(real if same else unit)
+        return out
+
+    new_tiers = []
+    for tier in tiers:
+        tier = dict(tier)
+        for kind in ("featured", "units"):
+            if tier.get(kind):
+                before = len(tier[kind])
+                tier[kind] = clean(tier[kind], tier.get("rarity"))
+                if kind == "featured" and len(tier[kind]) < before and tier.get("featured_share") is not None:
+                    tier["featured_share"] = float(tier["featured_share"]) * len(tier[kind]) / before
+        new_tiers.append(tier)
+    banner = dict(banner, pool=dict(pool, tiers=new_tiers))
+    if rate_up:
+        banner["community"] = dict(banner["community"], unit_ids=clean(rate_up, None))
+    return banner
+
+
 def nv_shift_targets() -> set:
     """Ids another `F_UNIT_MST` row's `JPW8Vs40` points at (self-references excluded) -- the shift FORMS.
 
@@ -1202,6 +1364,8 @@ def expand_pool(banner: dict) -> list:
     expands to every base-rarity root of that rarity; `featured` units take `featured_share` of the tier
     (split equally) and the non-featured take the remainder. This keeps `gacha_authored.json` small and the
     pool real -- the unit catalogue is shipped data."""
+    # A Brave Shift form is never a summon's unit: out of the tier lists before any rate is worked out.
+    banner = tiers_without_shift_forms(banner)
     pool = banner.get("pool")
     # Historical replay (replay.py): only units released by this week's point in history. A banner's
     # featured units always stay (a holiday set shown ahead of history keeps its own units).
@@ -1239,7 +1403,8 @@ def expand_pool(banner: dict) -> list:
             (upto is None or _replay.released_by(u, upto)) and str(u) not in excluded
             and (not since or (_dates.get(str(u)) or '') >= since)))
     if isinstance(pool, list):
-        return _only_named([row for row in pool if allowed(row.get("unit_id"))])
+        return _only_named(one_row_per_unit(without_shift_forms(
+            [row for row in pool if allowed(row.get("unit_id"))])))
     roots = unit_roots_by_rarity()
     # Retail summons (Lapis, tickets) never drew the 9xxxxxxxx fusion/material units (moogles, pots):
     # those come from the Friend Point summon and events. Only a friend-point banner keeps them.
@@ -1261,13 +1426,28 @@ def expand_pool(banner: dict) -> list:
     # 2026-11-10): out of a rarity tier's default draw unless this banner features them.
     banner_featured = {str(u) for t in tiers for u in (t.get("featured") or [])}
     banner_featured |= {str(u) for u in ((banner.get("community") or {}).get("unit_ids") or [])}
-    left_out = left_out | (summon_exclusions.limited_out() - banner_featured)
+    left_out = left_out | (summon_exclusions.limited_out() - banner_featured - summon_exclusions.guessed_limited())
+    # A unit's other form (Brave Shift, NV-awakened) is never drawn from a tier's default list (2026-11-12: the
+    # rebuilt late banners' Neo Vision tier has no unit list and drew 424 of them).
+    left_out = left_out | (unit_other_forms() - banner_featured)
+    # A featured summon whose unit lists we wrote ourselves (`rate_source.eligibility_authored`: "every unit
+    # released by then", written before the release dates and the limited flags were corrected) still held
+    # limited and collab units it doesn't feature (Demon Rain on the Noctis banner) and lacked Gilgamesh (FFV).
+    # Its 3-5★ tiers draw like a tier with no list, the regular pool of this week; its Neo Vision tier keeps
+    # its list (the 7★ roots include awakened forms of older units) without the limited units it doesn't feature.
+    source = banner.get('rate_source')
+    own_lists = not (isinstance(source, dict) and source.get('eligibility_authored'))
     out: list = []
     for tier in tiers:
         rate = max(0.0, float(tier.get("rate", 0)))
         if rate <= 0:
             continue
-        units = [str(u) for u in (tier.get("units") or [u for u in roots.get(str(tier.get("rarity")), [])
+        listed = tier.get("units") or None
+        if listed is not None and not own_lists:
+            listed = (None if str(tier.get("rarity")) in ("3", "4", "5")
+                      else [u for u in (str(x) for x in listed) if u not in left_out])
+        units = [str(u) for u in (listed if listed is not None
+                                  else [u for u in roots.get(str(tier.get("rarity")), [])
                                                           if (keep_materials or not u.startswith("9"))
                                                           and u not in left_out])
                  if allowed(u)]
@@ -1291,7 +1471,9 @@ def expand_pool(banner: dict) -> list:
             per = rate / len(units)
             for u in units:
                 out.append({"unit_id": u, "rarity": tier.get("rarity"), "rate": per})
-    return _only_named(out)
+    # A form that stood in for a unit of another rarity becomes that unit's row here; a unit two tiers hold
+    # is one row.
+    return _only_named(one_row_per_unit(without_shift_forms(out)))
 
 
 def summon_pool(banner: dict, part: dict | None = None) -> list:
@@ -1312,14 +1494,18 @@ def summon_pool(banner: dict, part: dict | None = None) -> list:
         if entry['kind'] == 10:
             entry['unit_id'] = str(entry['id'])
             entry['rarity'] = (unit_mst(entry['id']) or {}).get('9fW0TePj')
-    return pool
+    return without_shift_forms(pool)
 
 
-def summon_guarantee_pool(pool: list, guarantee: dict) -> list:
+def summon_guarantee_pool(pool: list, guarantee: dict, banner: dict | None = None) -> list:
     """The rows a counted rarity guarantee (`guarantee.count`) draws from: its own `pool` if it names one,
-    else the banner's pool; either way only rows at or above `guarantee.rarity`."""
+    else the banner's pool; either way only rows at or above `guarantee.rarity`. `banner` tells whether the
+    guarantee's unit lists are ones we wrote (`rate_source.eligibility_authored`, see expand_pool)."""
     floor = int(guarantee.get('rarity') or 0)
-    rows = expand_pool({'pool': guarantee['pool']}) if guarantee.get('pool') is not None else pool
+    own = {'pool': guarantee.get('pool')}
+    if banner and banner.get('rate_source'):
+        own['rate_source'] = banner['rate_source']
+    rows = expand_pool(own) if guarantee.get('pool') is not None else pool
     return [e for e in rows if int(e.get('rarity') or 0) >= floor]
 
 
@@ -2412,6 +2598,10 @@ class PlayerState:
                 return int(new) if isinstance(value, int) else new
             if isinstance(value, str) and field in ('2A6fYiEC', 'w1JG7i9j'):
                 return re.sub(r'(?<!\d)' + re.escape(old) + r'(?!\d)', new, value)
+            # A saved party slot also names its units in its gear, materia, skin and card strings
+            # ("<unit>:<value>,..."); left on the old id, the slot can't be loaded ("invalid saved loadout").
+            if isinstance(value, str) and field in ('93Y6evuT', '80NUYFMJ', '2c8nqLrM', 'nQ1iAGf3'):
+                return re.sub(r'(^|,)' + re.escape(old) + r'(?=:)', lambda m: m.group(1) + new, value)
             return value
 
         for key in list(self.data):
@@ -3092,9 +3282,53 @@ class PlayerState:
         `Qy5EvcK1` = itemNum). Zero-count rows are omitted: mode 1 reads `0` as a delete and a zero row draws
         nothing, and `spend_item` can leave a zero row behind.
         """
-        return [{"tL6G9egd": str(it.get("item_id")), "Qy5EvcK1": str(it.get("count", 0))}
-                for it in self._items()
-                if str(it.get("item_type")) == str(BAG_ITEM_TYPE) and int(it.get("count", 0)) > 0]
+        # The phone keeps the item set and the bag as two stocks (2026-11-13): putting items in the set takes
+        # them out of its bag (`ItemCarryNumSelectScene::touchEnded` 0x21fc368: `addItem` back, then `setItemNum`
+        # bag - carried; `GameUtils::carryItemFull` 0x19e5924 the same), and the game fills the set from the bag
+        # by itself when a quest's ready screen opens and on the way out of the results (`ReadyForMissionScene::
+        # initialize`, `ResultBaseScene::exitResult` back to the Vortex list or the world map). The save keeps
+        # what is OWNED (set included), so the bag the phone is sent is owned minus carried. Sent whole, the
+        # phone took the carried Potions for spare ones and topped the set up from stock that wasn't there.
+        carried = self.carried_counts() if item_set_apart() else {}
+        rows = []
+        for it in self._items():
+            if str(it.get("item_type")) != str(BAG_ITEM_TYPE):
+                continue
+            left = int(it.get("count", 0)) - carried.get(str(it.get("item_id")), 0)
+            if left > 0:
+                rows.append({"tL6G9egd": str(it.get("item_id")), "Qy5EvcK1": str(left)})
+        return rows
+
+    def carried_counts(self) -> dict:
+        """{item id: how many of it the item set holds}."""
+        out: dict = {}
+        for row in self._carry_items():
+            out[str(row["item_id"])] = out.get(str(row["item_id"]), 0) + int(row["count"])
+        return out
+
+    def fit_carry_to_owned(self) -> dict:
+        """Lower the item set where it holds more of an item than is owned; {item id: count taken off}.
+
+        The set is part of what is owned, so it can never hold more. An edit asking for more is cut to what
+        there is, and a save whose set was topped up from stock that wasn't there (before 2026-11-13) is put
+        right at its next login. Slots are filled in their own order; an emptied slot is dropped."""
+        if not item_set_apart() or not self._mutate():
+            return {}
+        left: dict = {}
+        kept, cut = [], {}
+        for row in sorted(self._carry_items(), key=lambda r: int(r["disp_order"])):
+            item, count = str(row["item_id"]), int(row["count"])
+            have = left.setdefault(item, self.item_count(BAG_ITEM_TYPE, row["item_id"]))
+            new = max(0, min(count, have))
+            left[item] = have - new
+            if new < count:
+                cut[item] = cut.get(item, 0) + count - new
+            if new > 0:
+                kept.append({"disp_order": int(row["disp_order"]), "item_id": int(row["item_id"]), "count": new})
+        if cut:
+            self._carry_items()[:] = kept
+            self.dirty = True
+        return cut
 
     def carry_item_rows(self) -> list:
         """`UserCarryItemInfoResponse` (`nE7pV2wr`): the player's ITEM SET — the battle carry list.
@@ -4043,7 +4277,8 @@ class PlayerState:
                 print(f"    switch: mission {mid} opens {sid}, which has no F_SWITCH_MST row — not granted",
                       flush=True)
                 continue
-            if pos[0] not in (MISSION_SWITCH_TYPE, '9004') and sid not in story_switches:
+            if (pos[0] not in (MISSION_SWITCH_TYPE, '9004') and sid not in story_switches
+                    and not (pos[0] in EVENT_CLEAR_SWITCH_TYPES and event_clear_switches())):
                 print(f"    switch: mission {mid} opens {sid} (type {pos[0]} index {pos[1]}) — type not "
                       f"tracked by this op, not granted", flush=True)
                 continue
@@ -4348,7 +4583,7 @@ class PlayerState:
         guaranteed_count = int(guarantee.get('count', 1))
         if reward_pool and guarantee:
             return None  # Mixed item pools have their own explicit published weights.
-        guaranteed_pool = summon_guarantee_pool(pool, guarantee)
+        guaranteed_pool = summon_guarantee_pool(pool, guarantee, banner)
         if (guaranteed_count < 1 or guaranteed_count > draws or
                 (guarantee.get('rarity') is not None and not guaranteed_pool)):
             print('    gacha refused: guaranteed slots cannot be fulfilled by this pool', flush=True)
@@ -4480,6 +4715,10 @@ class PlayerState:
             return pool[-1]
 
         awards = [_pick() for _ in range(draws)]
+        if guarantee.get("any_of"):          # a guaranteed unit named as its Brave Shift form: the unit itself
+            guarantee = dict(guarantee, any_of=list(dict.fromkeys(summon_unit(u) for u in guarantee["any_of"])))
+        if guarantee.get("unit_id") is not None:
+            guarantee = dict(guarantee, unit_id=summon_unit(guarantee["unit_id"]))
         if guarantee.get("any_of") and not any(str(a["unit_id"]) in map(str, guarantee["any_of"]) for a in awards):
             idx = min(range(len(awards)), key=lambda i: int(awards[i].get("rarity") or 0))
             pick = str(random.choice(guarantee["any_of"]))

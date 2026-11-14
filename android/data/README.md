@@ -4,10 +4,10 @@
 
 O cliente FFBE Global 9.1.0 deve receber **todos os recursos antes da primeira
 partida offline**. O manifesto atual em [data/latest.json](../../data/latest.json)
-contém 19 pacotes: 18 para os arquivos nativos e tabelas do Revival e um
+contém 20 pacotes: 19 para os arquivos nativos, tabelas e artes do Revival e um
 `client-assets` que contém `static/client/game-assets.apk`.
 
-A versão de referência declara ~14,65 GB de downloads e ~14,95 GB extraídos.
+A revisão 10 declara ~14,95 GB de downloads e ~15,26 GB extraídos.
 A instalação inicial recomenda **22 GiB livres** para manter o maior ZIP
 temporário e uma reserva. O download é sequencial, com retomada, e as
 atualizações reutilizam o registro dos pacotes já instalados.
@@ -24,7 +24,7 @@ python3 android/data/offline_data.py install --data "$DATA"
 python3 android/data/offline_data.py verify  --data "$DATA"
 ~~~
 
-O instalador **reutiliza** `ios-server/fetch_data.py` para todos os 18 pacotes
+O instalador **reutiliza** `ios-server/fetch_data.py` para todos os 19 pacotes
 do motor e sua verificação SHA-256, sem modificar o fluxo Linux. Só a etapa
 `client-assets` é adicionada; ela reutiliza o mesmo download com retomada,
 SHA-256 e extração segura. Nenhuma parte do ZIP é colocada no Git.
@@ -33,7 +33,7 @@ A estrutura preparada contém:
 
 ~~~text
 data/
-  installed.json                  hashes dos 19 pacotes
+  installed.json                  hashes dos 20 pacotes
   offline-client-assets.json      hash do APK de recursos extraído
   registry.json                   registro incluído nos pacotes
   static/

@@ -104,19 +104,21 @@ MAP_EXT = ("F_MAP_EXT_RESOURCE_MST", "En90A5BC", "9dA6bguS")
 # here has for the Vortex), so every way in played the intro. Neither real scene survives in English.
 STAND_IN_SCENES = {"390001201": "211020111.cpk (the Crest scene)",
                    "390001213": "211020123.cpk (the end of the Moogle quests)"}
-# Tables advertised one step higher so the phone downloads them again, served as shipped (`_cdn_fetch` maps any
-# `Ver<N>_<token>.dat` back to the one shipped file). F_SACRIFICE_MST (2026-11-11): a player's game error log showed
-# "Failed to load MST. REASON=File does not exist. MSTNAME=F_SACRIFICE_MST MSTFILE=w5JFGPh3" 42 times (unit menus,
-# Convert). The server advertises and serves it (sandbox), so the phone held a version whose file it didn't have
-# (GL 0x1c4cfa8 checks `Ver<version>_w5JFGPh3.dat`; the row index `mst/w5JFGPh3.i` it builds itself, and rebuilds when
-# the version changes, 2026-11-12). A new version makes it download the file. `EXVIUS_REFETCH_TABLES=0` turns it off.
-REFETCH = {"F_SACRIFICE_MST": "w5JFGPh3"}
-# 2000 since 2026-11-12 (was 1000): a phone that fetched Ver201291 once asks again, so the next phone test's
-# CONVERT-TABLE log line shows whether the phone asks for the table at all.
-REFETCH_STEP = 2000
+# F_SACRIFICE_MST (the Convert screens' table) is advertised and served as shipped. It was advertised 1000, 2000 and
+# then 3000 higher (2026-11-11 to 11-13, `REFETCH`) on the theory that phones held a version whose file they lacked.
+# The operator's phone was told 203291, a number it had never seen, and still asked for nothing: the game queues a
+# table for download only when it is in its table list, and `SacrificeMstList` joins that list only if the function
+# table already holds FUNCTION_SP_CLASSUP when the list is built (GL 0x1d3d154), which on a fresh launch it never
+# does (HANDOFF, "Convert lists: why the phone never asks"). The number played no part, so the bump is removed.
 # Ability descriptions (`T7aEx3Mj`) of restored units still in Japanese (content/restored_unit_text.json; Kira's
 # variants, 2026-11-12). Token/key from libgame.
 ABILITY_EXPLAIN = ("F_ABILITY_EXPLAIN_MST", "7FGj2bCh", "B2Ka3kft")
+# Exchange rows priced in the wrong currency in the game's last table (exvius_actions_shops.medal_exchange_fixes:
+# Battle at the Borders' store, 53 rows in The Frozen Cavern's Debased Coins instead of Hairpins). The phone's table
+# reader keeps each row's own currency (`ak2dhKm3`, GL 0x1ca8450, stored at +0x28); whether the store screen checks
+# the purse against it or against the store's schedule currency wasn't traced, so the phone gets the same rows the
+# server charges (2026-11-12, not seen on the phone).
+MEDAL_EXCHANGE = ("F_MEDAL_EXCHANGE_MST", "2qDEnLF9", "7FmTj0hp")
 URL_KEY_FIELD = "gu8McTA6"
 # The host the Drop Rates page is opened on. NOT v900 (the notice host): `WebViewCommon::showWebView`
 # (GL 0x258bbf8) skips the page's posted fields (`gacha_id`) when the address contains the game setting
@@ -270,6 +272,11 @@ def table_bump(spec, *roots) -> int:
         return 1001     # 1000: first build (v900 address); raise it whenever the served rows change
     if spec in (CHALLENGE, MISSION):
         import reward_overrides
+        held = sorted(scheduled_missions()) if spec == MISSION else []
+        if held:
+            # 2000, above every version the first-clear patch alone gave (1000-1999), so a phone asks again.
+            signature = reward_overrides.signature() if reward_overrides.enabled() else ""
+            return 2000 + zlib.crc32((spec[0] + signature + ",".join(held)).encode()) % 1000
         if not reward_overrides.enabled():
             return 0
         return 1000 + zlib.crc32((spec[0] + reward_overrides.signature()).encode()) % 1000
@@ -284,16 +291,23 @@ def table_bump(spec, *roots) -> int:
         return 1000 + zlib.crc32(b"vision-search-english-v1") % 1000 if english_search() else 0
     if spec == ABILITY_EXPLAIN:
         import ios_texts
-        return 1000 + zlib.crc32(json.dumps(restored_ability_text(), sort_keys=True).encode()) % 1000 \
+        # 2000, not 1000: the first eight descriptions went out at 1545; a longer list must not be advertised lower.
+        return 2000 + zlib.crc32(json.dumps(restored_ability_text(), sort_keys=True).encode()) % 1000 \
             if ios_texts.enabled() and restored_ability_text() else 0
     if spec == MAP_EXT:
         # Off still serves the table (the shipped rows) one version higher, so a phone that got the fixed rows
         # goes back to the shipped ones.
         return 1000 if farplane_scenes() else 1001
+    if spec == MEDAL_EXCHANGE:
+        import exvius_actions_shops
+        fixes = exvius_actions_shops.medal_exchange_fixes()
+        return 1000 + zlib.crc32(json.dumps(fixes, sort_keys=True).encode()) % 1000 if fixes else 0
     if spec == SELECT_UNIT:
         import exvius_gacha_select
         extra = [r["3HriTp6B"] for r in exvius_gacha_select.extra_unit_rows()]
-        return 1000 + zlib.crc32(",".join(extra).encode()) % 1000 if extra else 0
+        # 2000, not 1000: until 2026-11-12 the version 1000 higher was answered with the shipped list (see
+        # `_rows`), and a phone keeps a table it has at the advertised version. A new version makes it ask again.
+        return 2000 + zlib.crc32(",".join(extra).encode()) % 1000 if extra else 0
     if spec == AREA:
         import vortex_order
         order = vortex_order.priorities()
@@ -306,17 +320,9 @@ def version_bumps() -> dict[str, int]:
     import ios_texts
     out = {RESOURCE[0]: version_bump(), ios_texts.INDEX[0]: ios_texts.index_bump()}
     for spec in (RESOURCE_VERSION, RESOURCE_MAP_VERSION, RESOURCE_CHECKSUM, QUEST, URL, CHALLENGE, MISSION, UNIT, AREA,
-                 MAP_CHECKSUM, SELECT_UNIT, VISION_CARD, MAP_EXT, ABILITY_EXPLAIN):
+                 MAP_CHECKSUM, SELECT_UNIT, VISION_CARD, MAP_EXT, ABILITY_EXPLAIN, MEDAL_EXCHANGE):
         out[spec[0]] = table_bump(spec)
-    if refetch_tables():
-        for name in REFETCH:
-            out[name] = out.get(name, 0) + REFETCH_STEP
     return {name: bump for name, bump in out.items() if bump}
-
-
-def refetch_tables() -> bool:
-    """EXVIUS_REFETCH_TABLES (default on; 0 = off): advertise the REFETCH tables REFETCH_STEP higher."""
-    return os.environ.get("EXVIUS_REFETCH_TABLES", "1").strip().lower() not in ("0", "off", "false", "no")
 
 
 def _path(token: str):
@@ -333,7 +339,7 @@ def _which(rel: str):
     if version_bump() and _path(RESOURCE[1]).search(rel):
         return RESOURCE
     for spec in (RESOURCE_VERSION, RESOURCE_MAP_VERSION, RESOURCE_CHECKSUM, QUEST, URL, CHALLENGE, MISSION, UNIT, AREA,
-                 MAP_CHECKSUM, SELECT_UNIT, VISION_CARD, MAP_EXT, ABILITY_EXPLAIN):
+                 MAP_CHECKSUM, SELECT_UNIT, VISION_CARD, MAP_EXT, ABILITY_EXPLAIN, MEDAL_EXCHANGE):
         if _path(spec[1]).search(rel) and table_bump(spec):
             return spec
     return None
@@ -399,23 +405,44 @@ def source_table(*roots: str | None, token: str = RESOURCE[1]) -> str | None:
 
 
 def _rows(raw: bytes, key_text: str):
-    """Yield (line, row, double_pad) for each CBC-encrypted JSON line."""
+    """Yield (line, row, shape) for each encrypted JSON line. `shape` is what `_encrypt` needs to write a row the
+    way the file's own rows are written: for the CBC tables a bool (double-padded or not); for the tables the game
+    ships in AES-ECB, ("ecb", pad layers). 66 of the phone's 243 tables are ECB, F_GACHA_SELECT_UNIT_MST among
+    them: read as CBC it failed, the patch was dropped and the shipped 234-unit list was served (found
+    2026-11-12 with the real file; the 2026-11-10 test used a hand-made CBC table)."""
+    import base64
     from ffbe_crypto import cbc_decrypt, key16
     key = key16(key_text)
     for line in raw.decode("ascii").splitlines():
         line = line.strip()
         if not line:
             continue
-        plain = cbc_decrypt(key, line)
-        pad = plain[-1]
-        double = 1 <= pad <= 16 and plain[-pad:] == bytes([pad]) * pad
-        yield line, json.loads(plain[:-pad] if double else plain), double
+        try:
+            plain = cbc_decrypt(key, line)
+            pad = plain[-1]
+            double = 1 <= pad <= 16 and plain[-pad:] == bytes([pad]) * pad
+            row = json.loads(plain[:-pad] if double else plain)
+        except ValueError as not_cbc:
+            import ios_texts
+            try:
+                plain, layers = ios_texts._ecb(key_text, True, base64.b64decode(line)), 0
+                while plain and 1 <= plain[-1] <= 16 and plain[-plain[-1]:] == bytes([plain[-1]]) * plain[-1]:
+                    plain, layers = plain[:-plain[-1]], layers + 1
+                row, double = json.loads(plain), ("ecb", layers)
+            except ValueError:
+                raise not_cbc from None
+        yield line, row, double
 
 
-def _encrypt(key_text: str, row: dict, double: bool) -> str:
+def _encrypt(key_text: str, row: dict, double) -> str:
+    """One table line for `row`, in the shape `_rows` reported for the file's own rows."""
+    body = json.dumps(row, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    if isinstance(double, tuple):      # ("ecb", pad layers)
+        import base64
+        import ios_texts
+        return base64.b64encode(ios_texts._ecb(key_text, False, ios_texts._pad(body, double[1]))).decode("ascii")
     from ffbe_crypto import cbc_encrypt, key16
-    return cbc_encrypt(key16(key_text), json.dumps(row, ensure_ascii=False, separators=(",", ":")).encode("utf-8"),
-                       double_pad=double)
+    return cbc_encrypt(key16(key_text), body, double_pad=double)
 
 
 def patch_challenges(raw: bytes) -> tuple[bytes, int]:
@@ -442,16 +469,43 @@ def patch_challenges(raw: bytes) -> tuple[bytes, int]:
     return ("\n".join(out) + "\n").encode("ascii"), changed
 
 
+def held_back_in_table() -> bool:
+    """EXVIUS_EVENT_RUN_QUESTS_TABLE (default 0; 1 = on): also mark the held-back quests in the mission table the
+    phone downloads (`scheduled_missions`). Off until it has been looked at on a phone."""
+    return os.environ.get("EXVIUS_EVENT_RUN_QUESTS_TABLE", "0").strip().lower() in ("1", "on", "true", "yes")
+
+
+def scheduled_missions() -> set[str]:
+    """The quests the replay holds back until Global added them (content/event_quest_dates.json `missions`), when
+    that rule is on (EXVIUS_EVENT_RUN_QUESTS) and EXVIUS_EVENT_RUN_QUESTS_TABLE is 1. The phone lists a quest
+    whose schedule type (`69fVGgcI`) is 0 from its own tables, whatever gate rows the Vortex reply carries
+    (GateUtil::getInSessionMissionList 0x1ab6a8c: MissionMst +0xf8 == 0 -> listed; otherwise the quest needs its
+    own SpDungeonCondMst row in period). 190 of the 250 dated quests are type 0 (the trial chambers' later
+    trials), so leaving their rows out of the reply (27dd1a0) hides nothing for them. Served with type 1 they
+    show only while the reply carries their row, which ffbe_player.serve_event_gate writes for every quest it
+    serves. Read from the game library on 2026-11-12 and not seen on a phone: how a type-1 trial quest looks
+    there (period label, timers) is unknown, which is why this is off by default."""
+    import event_archive
+    if not held_back_in_table() or not event_archive.run_quests_enabled():
+        return set()
+    return {str(m) for m in (event_archive.quest_dates().get("missions") or {})}
+
+
 def patch_first_clears(raw: bytes) -> tuple[bytes, int]:
-    """`F_MISSION_MST` with the active wiki first-clear rewards (`1x4bG2J8`)."""
+    """`F_MISSION_MST` with the active wiki first-clear rewards (`1x4bG2J8`), and, with
+    EXVIUS_EVENT_RUN_QUESTS_TABLE=1, the held-back quests given a schedule type (`scheduled_missions`)."""
     import reward_overrides
+    held = scheduled_missions()
     out, changed = [], 0
     for line, row, double in _rows(raw, MISSION[2]):
         value = str(row.get("1x4bG2J8") or "")
         new = reward_overrides.first_clear(row.get("qo3PECw6"), value) if reward_overrides.for_mission(
             row.get("qo3PECw6")) else value
-        if new != value:
-            line = _encrypt(MISSION[2], dict(row, **{"1x4bG2J8": new}), double)
+        fields = {"1x4bG2J8": new} if new != value else {}
+        if str(row.get("qo3PECw6")) in held and str(row.get("69fVGgcI") or "0") == "0":
+            fields["69fVGgcI"] = "1"
+        if fields:
+            line = _encrypt(MISSION[2], dict(row, **fields), double)
             changed += 1
         out.append(line)
     return ("\n".join(out) + "\n").encode("ascii"), changed
@@ -561,6 +615,20 @@ def patch_select_units(raw: bytes) -> tuple[bytes, int]:
     added = [r for r in exvius_gacha_select.extra_unit_rows() if r["3HriTp6B"] not in have]
     out += [_encrypt(SELECT_UNIT[2], row, double) for row in added]
     return ("\n".join(out) + "\n").encode("ascii"), len(added)
+
+
+def patch_medal_exchange(raw: bytes) -> tuple[bytes, int]:
+    """`F_MEDAL_EXCHANGE_MST` with exvius_actions_shops.medal_exchange_fixes applied."""
+    import exvius_actions_shops
+    fixes = exvius_actions_shops.medal_exchange_fixes()
+    out, changed = [], 0
+    for line, row, double in _rows(raw, MEDAL_EXCHANGE[2]):
+        fix = fixes.get(str(row.get("S21FT3L8")))
+        if fix and any(str(row.get(field)) != str(value) for field, value in fix.items()):
+            line = _encrypt(MEDAL_EXCHANGE[2], dict(row, **fix), double)
+            changed += 1
+        out.append(line)
+    return ("\n".join(out) + "\n").encode("ascii"), changed
 
 
 def patch_area_order(raw: bytes) -> tuple[bytes, int]:
@@ -673,7 +741,8 @@ def serve(rel: str, *roots: str | None) -> tuple[bytes | None, str | None]:
             return data, f"{os.path.basename(src)}, {changed} challenge row(s) from the wiki"
         if spec == MISSION:
             data, changed = patch_first_clears(open(src, "rb").read())
-            return data, f"{os.path.basename(src)}, {changed} first-clear reward(s) from the wiki"
+            return data, (f"{os.path.basename(src)}, {changed} row(s): first-clear rewards from the wiki"
+                          + (", held-back quests given a schedule type" if scheduled_missions() else ""))
         if spec == UNIT:
             data, changed = patch_unit_sell(open(src, "rb").read())
             return data, f"{os.path.basename(src)}, {changed} story-unit row(s) given a sell price"
@@ -688,6 +757,9 @@ def serve(rel: str, *roots: str | None) -> tuple[bytes | None, str | None]:
                 return open(src, "rb").read(), f"{os.path.basename(src)}, shipped rows (EXVIUS_FARPLANE_SCENES=0)"
             data, changed = patch_map_ext(open(src, "rb").read())
             return data, f"{os.path.basename(src)}, {changed} Farplane stand-in scene row(s) left out"
+        if spec == MEDAL_EXCHANGE:
+            data, changed = patch_medal_exchange(open(src, "rb").read())
+            return data, f"{os.path.basename(src)}, {changed} exchange row(s) given their store's currency"
         if spec == SELECT_UNIT:
             data, changed = patch_select_units(open(src, "rb").read())
             return data, f"{os.path.basename(src)}, {changed} limited/collab unit(s) added to the 5★ Select list"

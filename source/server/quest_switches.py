@@ -48,6 +48,36 @@ def repair(player) -> list[tuple[str, str]]:
     return found
 
 
+CLEAR_LEDGER = "clear_switch_repair"
+
+
+def missing_clear_switches(player) -> list[tuple[str, str]]:
+    """[(mission id, switch id)] of cleared missions' own clear switches of the event types the save lacks
+    (player_state.EVENT_CLEAR_SWITCH_TYPES: until 2026-11-13 only original-world missions were granted them)."""
+    from player_state import EVENT_CLEAR_SWITCH_TYPES, mission_open_switch, switch_position
+    out = []
+    for mid in (player.data.get("progress") or {}).get("cleared_missions") or []:
+        for switch in filter(None, (s.strip() for s in str(mission_open_switch(str(mid)) or "").split(","))):
+            pos = switch_position(switch)
+            if pos and pos[0] in EVENT_CLEAR_SWITCH_TYPES and int(pos[1]) not in player.switches.get(pos[0], set()):
+                out.append((str(mid), switch))
+    return out
+
+
+def repair_clear_switches(player) -> list[tuple[str, str]]:
+    """Once per save: missions cleared before the fix get their event clear switches (Kilika Woods' Opening)."""
+    from player_state import event_clear_switches, switch_position
+    if (player is None or player.mode == "frozen" or not event_clear_switches()
+            or (player.data.get(CLEAR_LEDGER) or {}).get("done")):
+        return []
+    found = missing_clear_switches(player)
+    for _mid, switch in found:
+        player.grant_switch(*switch_position(switch))
+    player.data[CLEAR_LEDGER] = {"done": True, "set": [s for _mid, s in found]}
+    player.dirty = True
+    return found
+
+
 def step(spec, reply_id, state):
     """Pipeline step: the login repair, before the switch group is built."""
     if str(reply_id) not in LOGIN_REPLIES or state.player is None:
@@ -57,4 +87,9 @@ def step(spec, reply_id, state):
         state.state_dirty = True
         print(f"quest switches: set {len(found)} completion switch(es) for completed steps: "
               + ", ".join(f"{sid}->{sw}" for sid, sw in found), flush=True)
+    cleared = repair_clear_switches(state.player)
+    if cleared:
+        state.state_dirty = True
+        print(f"quest switches: set {len(cleared)} clear switch(es) of quests cleared earlier: "
+              + ", ".join(f"{mid}->{sw}" for mid, sw in cleared), flush=True)
     return spec

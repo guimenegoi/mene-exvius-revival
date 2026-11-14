@@ -6,7 +6,10 @@ wiki). This module downloads each missing file into `DEAL_ART_ROOT` (`<data>/dea
 index finds it. A file that can't be fetched is retried on the next start; until then the summon list shows
 the banner without art, as for any banner whose file is missing.
 
-Remove: delete `<data>/deal_art` (README, removal section). Off with EXVIUS_DEAL_ART_FETCH=0.
+Remove: delete `<data>/deal_art` (README, removal section).
+
+Since 2026-11-13 the summon art pack carries these images (art_pack.py) and nothing is downloaded unless
+EXVIUS_DEAL_ART_FETCH=1 asks for it.
 """
 from __future__ import annotations
 
@@ -87,7 +90,7 @@ def _png(data: bytes) -> bytes:
 
 def fetch(log=print) -> int:
     """Download the deal banners' missing art. Returns how many files were added."""
-    if os.environ.get('EXVIUS_DEAL_ART_FETCH', '1') != '1':
+    if os.environ.get('EXVIUS_DEAL_ART_FETCH', '0') != '1':
         return 0
     import data_paths
     folder = data_paths.DEAL_ART_ROOT

@@ -3,7 +3,7 @@
 
 Binds only 127.0.0.1:18082 in the LXC. Use SSH -L and adb reverse to route
 Android loopback requests. No public HTTP endpoint; not a production installer.
-All 19 original pack hashes, names, sizes and order remain unchanged.
+All manifest pack hashes, names, sizes and order remain unchanged.
 """
 from __future__ import annotations
 
@@ -23,8 +23,9 @@ LOOPBACK = "127.0.0.1"
 def pinned_data(manifest: Path, packs: Path, base: str) -> tuple[bytes, dict]:
     document = json.loads(manifest.read_text(encoding="utf-8"))
     rows = document.get("packs")
-    if document.get("schema") != 1 or document.get("revision") != 9 or not isinstance(rows, list) or len(rows) != 19:
-        raise ValueError("Expected 19-pack manifest revision 9")
+    if (document.get("schema") != 1 or not isinstance(rows, list)
+            or len(rows) != {9: 19, 10: 20}.get(document.get("revision"))):
+        raise ValueError("Expected manifest revision 9/19 or 10/20")
     if packs.is_symlink() or not packs.is_dir():
         raise ValueError("Unsafe pack directory")
     output: dict[str, tuple[Path, int]] = {}
@@ -142,7 +143,7 @@ def main() -> None:
     data, files = pinned_data(args.manifest, args.packs, source)
     server = ThreadingHTTPServer((LOOPBACK, PORT), make_handler(data, files))
     server.daemon_threads = True
-    print(f"LAB-CACHE-READY {source} /data/latest.json 19 files", flush=True)
+    print(f"LAB-CACHE-READY {source} /data/latest.json {len(files)} files", flush=True)
     try:
         server.serve_forever(poll_interval=0.2)
     finally:

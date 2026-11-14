@@ -112,7 +112,12 @@ TICKET_LONG = " The summon appears on the Summon screen while you hold this tick
 # 8 = Orbonne Monastery Vaults' exchange added to them (2026-11-10),
 # 9 = the two exchange-store name tables added (2026-11-10, WEEKLY).
 # 10 = Kira's ability names (content/restored_unit_text.json, 2026-11-12).
-GENERATION = 10
+# 11 = the abilities of Kira's Trust reward and Vision Card added to them (2026-11-12).
+# 12 = 221 more event exchange products (the runs' own ability materia, 4★+ Guaranteed Tickets, Battle at the
+#      Borders' stock; content/event_exchanges.json rebuilt 2026-11-12).
+# 13 = the moogle's line for summons without a text of their own says what the summon does (gacha_explain.py,
+#      2026-11-13); the number must go up so phones fetch the summon text table again.
+GENERATION = 13
 
 _CACHE: dict = {}
 _JAPANESE = re.compile("[\u3040-\u30ff\u3400-\u9fff]")
@@ -193,14 +198,14 @@ def additions() -> dict[str, dict[str, tuple[str, bool]]]:
         banners = all_banners()
         for gid, name in missing_gacha_names(banners).items():
             out["F_TEXT_GACHA"]["MST_GACHA_NAME_" + gid] = (_clean(name), True)
+        # The moogle's line (long) and the label (short), only under a key the game's table lacks: the game's
+        # own texts are never replaced (`False`). What is filled in says what the summon does (gacha_explain.py);
+        # until 2026-11-13 it was one generic line for every banner, "Summon 1 reward(s). The button shows ...".
+        import gacha_explain
         for b in banners:
             gid = str(b["id"])
-            text = ("Choose a unit or prism from the selection list." if b.get("selection") else
-                    f"{len(b['steps'])}-step summon. Review each step's contents above." if b.get("steps") else
-                    f"Summon {b.get('draws', 1)} reward(s). The button shows the cost. "
-                    "See Drop Rates for the reward list.")
-            out["F_TEXT_GACHA"]["MST_GACHA_EXPLAIN_LONG_" + gid] = (text, False)
-            out["F_TEXT_GACHA"]["MST_GACHA_EXPLAIN_SHORT_" + gid] = (text, False)
+            out["F_TEXT_GACHA"]["MST_GACHA_EXPLAIN_LONG_" + gid] = (_clean(gacha_explain.long_text(b)), False)
+            out["F_TEXT_GACHA"]["MST_GACHA_EXPLAIN_SHORT_" + gid] = (_clean(gacha_explain.short_text(b)), False)
     except Exception as exc:  # noqa: BLE001 -- bundles and tickets still get their names
         print(f"[ios-texts] banner names skipped ({exc})", flush=True)
     _CACHE["additions"] = out

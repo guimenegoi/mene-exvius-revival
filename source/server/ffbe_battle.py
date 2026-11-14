@@ -77,6 +77,35 @@ def calamity_writ_chance() -> float:
         return 0.5
 
 
+def _seat_drop_rows(spec: dict, rows: list) -> list:
+    """Each wave's drop row on a monster its group really has, at that monster's own place (2026-11-12).
+
+    The phone hangs a drop row on a monster only when monster id, parts number AND display order all match
+    (`BattleScene::initDropInfo` 0x1e41b70 compares the row with `MonsterUnit::getMonsterID`, `getPartsNum` and
+    `BattleUnit::getDispOrder`; a monster's order is its group row's `Z0EN6jSh`: `MonsterParty::entryMonsterGroup`
+    0x1ae233c passes BattleGroupMst+0x48 to `entryMonster`, which sets it). `battle_content` writes every drop row
+    on the group's first monster at place 1. A group with no monster at place 1 then drops nothing on the phone:
+    12 quests' fixed groups, and groups three story quests reach through the per-battle roll (1110703, 1121203,
+    1125103). Such a row moves to the place its monster has (else to the group's first monster). Rows that match
+    are returned as they are."""
+    group_of = {str(r.get("6v7y3QcJ")): str(r.get("2fY1IomW")) for r in spec.get("an6TB4WS") or []
+                if isinstance(r, dict)}
+    slots: dict[str, list] = {}
+    for g in spec.get("Bi6hVv34") or []:
+        if isinstance(g, dict):
+            slots.setdefault(str(g.get("2fY1IomW")), []).append((str(g.get("Z0EN6jSh")), str(g.get("xqartN26"))))
+    out = []
+    for row in rows:
+        members = slots.get(group_of.get(str(row.get("6v7y3QcJ")))) if isinstance(row, dict) else None
+        if not members or (str(row.get("Z0EN6jSh")), str(row.get("xqartN26"))) in members:
+            out.append(row)
+            continue
+        same = [m for m in members if m[1] == str(row.get("xqartN26"))]
+        place, monster = min(same or members, key=lambda m: int(m[0]) if m[0].isdigit() else 0)
+        out.append(dict(row, **{"Z0EN6jSh": place, "xqartN26": monster}))
+    return out
+
+
 def roll_drops(spec, mid: str | None = None, is_battle_bundle: bool = False):
     """Turn each served drop list into a ROLL of itself, so drops vary per battle.
 
@@ -117,7 +146,7 @@ def roll_drops(spec, mid: str | None = None, is_battle_bundle: bool = False):
         return spec
     spec = dict(spec)
     out = []
-    for row in rows:
+    for row in _seat_drop_rows(spec, rows):
         if not isinstance(row, dict) or DROP_TOKEN not in row:
             out.append(row)
             continue
@@ -554,11 +583,13 @@ def _credit_mission_rewards(plaintext: str | None, spec=None):
     # a cleared run, from what the bundle placed (exvius_repeat.observe_load keeps it on the attempt).
     if mission_result_from(plaintext).get('cleared') is True:
         attempt = State.player.data.get("exvius_repeat", {}).get("attempt", {})
-        for iid, count in (attempt.get("series_drops") or {}).items():
-            missing = int(count) - reported.get((28, str(iid)), 0)
-            row = {"kind": 28, "id": int(iid), "count": missing}
-            if missing > 0 and State.player._can_credit(row) and State.player._grant_items([row]) == [row]:
-                paid.append(f"28:{iid}x{missing} (not reported)")
+        # The same for a unit the battle dropped (kind 10, attempt `unit_drops`): the phone's list can't name it either.
+        for kind, kept in ((28, "series_drops"), (10, "unit_drops")):
+            for iid, count in (attempt.get(kept) or {}).items():
+                missing = int(count) - reported.get((kind, str(iid)), 0)
+                row = {"kind": kind, "id": int(iid), "count": missing}
+                if missing > 0 and State.player._can_credit(row) and State.player._grant_items([row]) == [row]:
+                    paid.append(f"{kind}:{iid}x{missing} (not reported)")
     # Rank points come from the REPLY (the request never carries them): `wuUakq71` is the delta granted
     # for this battle. Credit the total into `rank.exp` so the next `3oU9Ktb7` agrees with the client.
     if isinstance(spec, dict):
@@ -1378,6 +1409,35 @@ def serve_version_table(spec):
               f"{len(bumps)} audited Vortex patches")
         return spec
     authored = [r for r in spec["c1qYg84Q"] if isinstance(r, dict)]
+    # Tables the iPhone server serves patched (ios_tables.py); a higher version makes the phone fetch them.
+    # The Farplane Captain's menu is worked out here, once per login (captain_menu.py), before the bumps.
+    try:
+        import captain_menu
+        captain_menu.refresh()
+    except Exception as exc:  # noqa: BLE001 -- the phone keeps the menu it has
+        _note(f"captain menu: not refreshed ({exc!r})")
+    rows, added, forced, offset = _advertised_rows(authored)
+    if forced:
+        missing = sorted(set(forced) - {r.get("a4hXTIm0") for r in rows})
+        if missing:
+            # An unregistered name is inert, so this is a warning rather than a failure -- but it would also
+            # be silent, and a silent no-op here looks exactly like the bug being fixed.
+            _note(f"version table: FORCE_TABLE_VERSIONS names {missing}, which the client has NOT registered "
+                  f"(not in {VERSION_TABLE_XML}) -- the row is inert")
+    spec = dict(spec)  # never rewrite the loaded payload -- else the note below drifts on the 2nd request
+    spec["c1qYg84Q"] = rows
+    sacrifice = next((r.get("wM9AfX6I") for r in rows if r.get("a4hXTIm0") == "F_SACRIFICE_MST"), None)
+    print(f"CONVERT-TABLE advertised F_SACRIFICE_MST version {sacrifice} (Ver{sacrifice}_w5JFGPh3.dat)"
+          if sacrifice else "CONVERT-TABLE F_SACRIFICE_MST is NOT in the version list", flush=True)
+    _note(f"version table: {len(authored)} authored + {len(added)} from {VERSION_TABLE_XML} "
+          f"= {len(rows)} rows" + (f"; forced {forced}" if forced else "")
+          + (f"; every table advertised at +{offset}" if offset else ""))
+    return spec
+
+
+def _advertised_rows(authored: list):
+    """(rows, added, forced, offset): the version list as the Initialize reply carries it, from the rows its
+    payload authors. No side effects, so it can also be asked between logins (`advertised_version`)."""
     have = {r.get("a4hXTIm0") for r in authored}
     added = [{"a4hXTIm0": n, "wM9AfX6I": v}
              for n, v in sorted(version_table().items()) if n not in have]
@@ -1386,12 +1446,6 @@ def serve_version_table(spec):
     if forced:
         rows = [dict(r, wM9AfX6I=forced[r["a4hXTIm0"]]) if r.get("a4hXTIm0") in forced else r
                 for r in rows]
-        missing = sorted(set(forced) - {r.get("a4hXTIm0") for r in rows})
-        if missing:
-            # An unregistered name is inert, so this is a warning rather than a failure -- but it would also
-            # be silent, and a silent no-op here looks exactly like the bug being fixed.
-            _note(f"version table: FORCE_TABLE_VERSIONS names {missing}, which the client has NOT registered "
-                  f"(not in {VERSION_TABLE_XML}) -- the row is inert")
     offset = table_version_offset()
     if offset:
         # A stock client (the iPhone app) arrives with tables of its own, from its app bundle or an old
@@ -1403,28 +1457,22 @@ def serve_version_table(spec):
                 if str(r.get("a4hXTIm0", "")).startswith("F_") and r.get("a4hXTIm0") not in GLOBAL_VERSION_ROWS
                 and str(r.get("wM9AfX6I", "")).isdigit() else r
                 for r in rows]
-    # Tables the iPhone server serves patched (ios_tables.py); a higher version makes the phone fetch them.
-    # The Farplane Captain's menu is worked out here, once per login (captain_menu.py), before the bumps.
-    try:
-        import captain_menu
-        captain_menu.refresh()
-    except Exception as exc:  # noqa: BLE001 -- the phone keeps the menu it has
-        _note(f"captain menu: not refreshed ({exc!r})")
     import ios_tables
     bumps = ios_tables.version_bumps()
     if bumps:
         rows = [dict(r, wM9AfX6I=str(int(r["wM9AfX6I"]) + bumps[r.get("a4hXTIm0")]))
                 if r.get("a4hXTIm0") in bumps and str(r.get("wM9AfX6I", "")).isdigit() else r
                 for r in rows]
-    spec = dict(spec)  # never rewrite the loaded payload -- else the note below drifts on the 2nd request
-    spec["c1qYg84Q"] = rows
-    sacrifice = next((r.get("wM9AfX6I") for r in rows if r.get("a4hXTIm0") == "F_SACRIFICE_MST"), None)
-    print(f"CONVERT-TABLE advertised F_SACRIFICE_MST version {sacrifice} (Ver{sacrifice}_w5JFGPh3.dat)"
-          if sacrifice else "CONVERT-TABLE F_SACRIFICE_MST is NOT in the version list", flush=True)
-    _note(f"version table: {len(authored)} authored + {len(added)} from {VERSION_TABLE_XML} "
-          f"= {len(rows)} rows" + (f"; forced {forced}" if forced else "")
-          + (f"; every table advertised at +{offset}" if offset else ""))
-    return spec
+    return rows, added, forced, offset
+
+
+def advertised_version(name: str):
+    """The version the Initialize reply would give table `name` right now, or None (the table isn't listed)."""
+    payload = State.replies.get("75fYdNxq") if isinstance(State.replies, dict) else None
+    authored = [r for r in ((payload or {}).get("c1qYg84Q") or []) if isinstance(r, dict)] \
+        if isinstance(payload, dict) else []
+    rows = _advertised_rows(authored)[0]
+    return next((str(r.get("wM9AfX6I")) for r in rows if r.get("a4hXTIm0") == name), None)
 
 
 # The rows that are not per-table versions: the app build and the two global counters.

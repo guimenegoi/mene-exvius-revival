@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cache the pinned 19 FFBE data ZIPs without unpacking or altering saves.
+"""Cache the pinned revision-9 or revision-10 FFBE data ZIPs without unpacking or altering saves.
 
 Uses the existing Revival downloader, Range-resume and SHA-256 implementation.
 Output is an external-disk backup, NOT a completed first-run APK installer.
@@ -17,14 +17,15 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "ios-server"))
 import fetch_data  # noqa: E402
 
-EXPECTED_PACKS = 19
+PACKS_BY_REVISION = {9: 19, 10: 20}
 
 
 def read_packs(manifest: Path) -> list[dict]:
     body = json.loads(manifest.read_text(encoding="utf-8"))
     packs = body.get("packs")
-    if body.get("schema") != 1 or not isinstance(packs, list) or len(packs) != EXPECTED_PACKS:
-        raise ValueError("Expected the pinned 19-pack manifest")
+    if (body.get("schema") != 1 or not isinstance(packs, list)
+            or len(packs) != PACKS_BY_REVISION.get(body.get("revision"))):
+        raise ValueError("Expected pinned revision-9/19 or revision-10/20 manifest")
     ids: set[str] = set()
     for pack in packs:
         if not isinstance(pack, dict):
@@ -72,7 +73,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--destination", type=Path, required=True)
     parser.add_argument("--verify-only", action="store_true")
     parser.add_argument("--only", action="append", default=[],
-                        help="One pack ID; may be repeated. Default: all 19.")
+                        help="One pack ID; may be repeated. Default: all manifest packs.")
     args = parser.parse_args(argv)
     packs = read_packs(args.manifest)
     known = {p["id"] for p in packs}

@@ -76,18 +76,19 @@ def bitmap(indices) -> str:
 
 @lru_cache(maxsize=1)
 def _families() -> tuple[dict, dict]:
-    """(unit id -> family key, family key -> [(rarity, unit id)])."""
+    """(unit id -> family key, family key -> [(rank, unit id)]). rank = (rarity, Neo Vision step): a 7-star unit,
+    its Neo Vision form (`5Mgpv8hJ` 1) and its NV+ form (2) share the family and the rarity 7."""
     from player_state import _load_ndjson
     of, members = {}, {}
     for row in _load_ndjson("F_UNIT_MST.ndjson").get("__rows__", []):
         uid = str(row.get("3HriTp6B"))
         base = str(row.get("woghJa61") or uid)
         try:
-            rarity = int(row.get("9fW0TePj") or 0)
+            rank = (int(row.get("9fW0TePj") or 0), int(row.get("5Mgpv8hJ") or 0))
         except ValueError:
-            rarity = 0
+            rank = (0, 0)
         of[uid] = base
-        members.setdefault(base, []).append((rarity, uid))
+        members.setdefault(base, []).append((rank, uid))
     return of, members
 
 
@@ -103,16 +104,13 @@ def _held(player) -> dict:
     """Ids held now (or once, for bag rows left at 0), per section."""
     out = {name: set() for name in SECTIONS}
     of, members = _families()
-    from player_state import unit_mst
     for unit in player.data.get("roster", []):
         uid = str(unit.get("master_id"))
         out["units"].add(uid)
-        try:
-            rarity = int((unit_mst(uid) or {}).get("9fW0TePj") or 0)
-        except ValueError:
-            rarity = 0
-        for r, form in members.get(of.get(uid, uid), []):
-            if r <= rarity:
+        forms = members.get(of.get(uid, uid), [])
+        rank = next((r for r, form in forms if form == uid), (0, 0))
+        for r, form in forms:
+            if r < rank:
                 out["units"].add(form)          # lower forms the unit was awakened through
         gear = unit.get("equipment") if isinstance(unit.get("equipment"), dict) else {}
         for item in gear.values():                  # equipped gear: slot -> item id ('0' = empty)

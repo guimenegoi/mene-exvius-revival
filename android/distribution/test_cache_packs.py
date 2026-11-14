@@ -20,7 +20,7 @@ class CachePacksTests(unittest.TestCase):
             for i in range(19)
         ]
         path = root / "manifest.json"
-        path.write_text(json.dumps({"schema": 1, "packs": packs}))
+        path.write_text(json.dumps({"schema": 1, "revision": 9, "packs": packs}))
         return path, content
 
     def test_manifest_requires_19_and_safe_names(self):
@@ -32,6 +32,28 @@ class CachePacksTests(unittest.TestCase):
             path.write_text(json.dumps(manifest))
             with self.assertRaisesRegex(ValueError, "Unsafe"):
                 cache_packs.read_packs(path)
+
+    def test_revision_10_cache_reuses_19_existing_zips(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest, data = self.manifest(root)
+            original = json.loads(manifest.read_text())
+            original["revision"] = 10
+            extra = dict(original["packs"][-1], id="summon-art")
+            original["packs"].append(extra)
+            manifest.write_text(json.dumps(original))
+            self.assertEqual(len(cache_packs.read_packs(manifest)), 20)
+            cache = root / "packs"
+            cache.mkdir()
+            for entry in original["packs"][:-1]:
+                (cache / (entry["id"] + ".zip")).write_bytes(data)
+            with patch.object(cache_packs.fetch_data, "download",
+                              side_effect=lambda url, path, size: path.write_bytes(data)) as download:
+                self.assertEqual(cache_packs.main([
+                    "--manifest", str(manifest), "--destination", str(cache)
+                ]), 0)
+                download.assert_called_once()
+            self.assertEqual(len(list(cache.glob("*.zip"))), 20)
 
     def test_verify_does_not_download_or_write(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -5,6 +5,25 @@
 não equivale a APK offline. Versão-alvo: FFBE Global 9.1.0 (`versionCode=9101`).
 Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
 
+## Integração upstream revisão 10 — 14/11/2026 (candidata, não RC aprovada)
+
+- [x] Atualizado o manifesto embarcado e o preflight para **20 pacotes**
+      (19 anteriores mais `summon-art`, ~306,7 MB), com revisão 10 fixa
+      no commit upstream `d6e8858`. Hashes dos 19 pacotes antigos não mudaram.
+- [x] O instalador Android existente aponta para o mesmo manifesto imutável;
+      não há segundo instalador nem perda intencional de recibos.
+- [x] Cache privado de laboratório aceita revisão 9/19 e revisão 10/20;
+      teste sintético confirmou reutilização dos 19 ZIPs e download apenas
+      do novo. Preflight permanece fail-closed quando o inventário é incompleto.
+- [x] 109 testes Android sintéticos aprovados (77 runtime, 15 dados,
+      13 distribuição, 4 rede). Não houve teste com APK real nesta etapa.
+- [ ] Confirmar em APK ARM64 real que `DataUpdates` migra o recibo Java
+      9/19 para 10/20 sem redownload, mantém o save após reinício e roda
+      batalha/summon offline. **Não instalar sobre a RC2 sem backup e diff
+      de DEX, assinatura e validação em dispositivo isolado.**
+- [ ] Confirmar integridade/download do ZIP `summon-art` real na LXC;
+      os testes de cache usaram dados sintéticos, não os 306,7 MB.
+
 ## Princípios e integração de referência
 
 - [x] Fork próprio com remotos `origin` e `upstream`.

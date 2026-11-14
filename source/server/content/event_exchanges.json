@@ -21,7 +21,11 @@
     "70314",
     "70315",
     "70316",
-    "70317"
+    "70317",
+    "70318",
+    "70319",
+    "70320",
+    "70321"
    ],
    "stock": "wiki",
    "left_out": [
@@ -30,11 +34,7 @@
     "Calamity Gem (160)",
     "Prismatic Horn (160)",
     "Calamity Writ (160)",
-    "Divine Crystal (160)",
-    "Second Wind (6000)",
-    "Crush Armor (6000)",
-    "Medicate (2000)",
-    "Stone Throw (1500)"
+    "Divine Crystal (160)"
    ],
    "farm": {
     "free": 1260,
@@ -386,6 +386,9 @@
    ],
    "first_run": "2021-11-11",
    "rows": [
+    "72401",
+    "72402",
+    "72403",
     "72404",
     "72405",
     "72406",
@@ -404,6 +407,7 @@
     "72419",
     "72420",
     "72421",
+    "72422",
     "72423",
     "72424",
     "72425",
@@ -459,17 +463,12 @@
     "72475",
     "72476"
    ],
-   "stock": "client minus late items",
-   "left_out": [
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
-    "Doublehand (12000)"
-   ],
+   "stock": "client (no wiki list)",
+   "left_out": [],
    "farm": {
     "free": 6000,
-    "exclusive": 531500,
-    "need": 525500,
+    "exclusive": 563500,
+    "need": 557500,
     "wiki_top_drop": 3000,
     "wiki_top_energy": 50,
     "areas": [
@@ -870,7 +869,12 @@
    "rows": [
     "72601",
     "72602",
+    "72603",
+    "72604",
     "72605",
+    "72606",
+    "72607",
+    "72608",
     "72609",
     "72610",
     "72611",
@@ -915,17 +919,11 @@
     "72670"
    ],
    "stock": "wiki",
-   "left_out": [
-    "Attack - Castle Warfare (1200)",
-    "Magic - Castle Warfare (1200)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)"
-   ],
+   "left_out": [],
    "farm": {
     "free": 26000,
-    "exclusive": 672000,
-    "need": 646000,
+    "exclusive": 711200,
+    "need": 685200,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -947,12 +945,18 @@
    "first_run": "2017-06-29",
    "rows": [
     "73101",
+    "73102",
+    "73103",
+    "73104",
     "73105",
     "73106",
     "73107",
     "73108",
     "73109",
     "73110",
+    "73111",
+    "73112",
+    "73113",
     "73114",
     "73115",
     "73117",
@@ -994,19 +998,13 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
-    "Fireproof Aspiration (1200)",
-    "Waterproof Aspiration (1200)",
-    "Dual Wield (12000)",
     "King Metal Minituar (20000)",
     "Remedy (5)"
    ],
    "farm": {
     "free": 32200,
-    "exclusive": 810000,
-    "need": 777800,
+    "exclusive": 861200,
+    "need": 829000,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -1030,6 +1028,8 @@
     "71402",
     "71403",
     "71404",
+    "71405",
+    "71406",
     "71407",
     "71408",
     "71409",
@@ -1085,14 +1085,11 @@
     "71459"
    ],
    "stock": "wiki",
-   "left_out": [
-    "Warrior Lore (1200)",
-    "Mage's Monograph (1200)"
-   ],
+   "left_out": [],
    "farm": {
     "free": 11000,
-    "exclusive": 138000,
-    "need": 127000,
+    "exclusive": 147600,
+    "need": 136600,
     "wiki_top_drop": 425,
     "wiki_top_energy": 25,
     "areas": [
@@ -1112,8 +1109,12 @@
    ],
    "first_run": "2017-07-28",
    "rows": [
+    "71501",
+    "71502",
     "71503",
     "71504",
+    "71505",
+    "71506",
     "71508",
     "71509",
     "71510",
@@ -1168,17 +1169,13 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "March (1200)",
-    "Vigilance (1200)",
-    "Regenerator (10000)",
-    "Reactive Defense (20000)",
     "Remedy (5)",
     "Mini Burst Pot (1500)"
    ],
    "farm": {
     "free": 11000,
-    "exclusive": 124000,
-    "need": 113000,
+    "exclusive": 163600,
+    "need": 152600,
     "wiki_top_drop": 400,
     "wiki_top_energy": 25,
     "areas": [
@@ -1200,6 +1197,12 @@
    "rows": [
     "71601",
     "71602",
+    "71603",
+    "71604",
+    "71605",
+    "71606",
+    "71607",
+    "71608",
     "71609",
     "71610",
     "71611",
@@ -1255,18 +1258,11 @@
     "71661"
    ],
    "stock": "wiki",
-   "left_out": [
-    "Casanova (8000)",
-    "Water Maiden Blessing (8000)",
-    "Heart of Fire (1200)",
-    "Heart of Water (1200)",
-    "Heart of Wind (1200)",
-    "Heart of Earth (1200)"
-   ],
+   "left_out": [],
    "farm": {
     "free": 11000,
-    "exclusive": 129000,
-    "need": 118000,
+    "exclusive": 164200,
+    "need": 153200,
     "wiki_top_drop": 426,
     "wiki_top_energy": 25,
     "areas": [
@@ -1334,17 +1330,69 @@
    "first_run": "2017-10-13",
    "rows": [
     "71801",
-    "71802"
+    "71802",
+    "71803",
+    "71804",
+    "71805",
+    "71806",
+    "71807",
+    "71808",
+    "71809",
+    "71810",
+    "71811",
+    "71812",
+    "71813",
+    "71814",
+    "71815",
+    "71816",
+    "71817",
+    "71818",
+    "71819",
+    "71820",
+    "71821",
+    "71822",
+    "71823",
+    "71824",
+    "71825",
+    "71826",
+    "71827",
+    "71828",
+    "71829",
+    "71830",
+    "71831",
+    "71832",
+    "71833",
+    "71834",
+    "71835",
+    "71836",
+    "71837",
+    "71838",
+    "71839",
+    "71840",
+    "71841",
+    "71842",
+    "71843",
+    "71844",
+    "71845",
+    "71846",
+    "71847",
+    "71848",
+    "71849",
+    "71850",
+    "71851",
+    "71852",
+    "71853",
+    "71854",
+    "71855",
+    "71856",
+    "71857"
    ],
    "stock": "wiki",
-   "left_out": [
-    "Darkness's Foe (1200)",
-    "Light's Foe (1200)"
-   ],
+   "left_out": [],
    "farm": {
     "free": 11000,
-    "exclusive": 21000,
-    "need": 10000,
+    "exclusive": 138600,
+    "need": 127600,
     "wiki_top_drop": 413,
     "wiki_top_energy": 25,
     "areas": [
@@ -1364,6 +1412,8 @@
    ],
    "first_run": "2017-11-24",
    "rows": [
+    "72101",
+    "72102",
     "72103",
     "72104",
     "72105",
@@ -1421,14 +1471,11 @@
     "72157"
    ],
    "stock": "wiki",
-   "left_out": [
-    "Cold Defense (1200)",
-    "Thunder Defense (1200)"
-   ],
+   "left_out": [],
    "farm": {
     "free": 11200,
-    "exclusive": 129000,
-    "need": 117800,
+    "exclusive": 138600,
+    "need": 127400,
     "wiki_top_drop": 424,
     "wiki_top_energy": 25,
     "areas": [
@@ -1448,6 +1495,8 @@
    ],
    "first_run": "2017-12-15",
    "rows": [
+    "72001",
+    "72002",
     "72003",
     "72004",
     "72005",
@@ -1480,6 +1529,9 @@
     "72032",
     "72033",
     "72034",
+    "72035",
+    "72036",
+    "72037",
     "72038",
     "72039",
     "72040",
@@ -1506,11 +1558,6 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Powerful (1200)",
-    "Toughness (1200)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "Black Purecryst (80000)",
     "Green Purecryst (80000)",
     "Power Purecryst (80000)",
@@ -1521,8 +1568,8 @@
    ],
    "farm": {
     "free": 11200,
-    "exclusive": 129000,
-    "need": 117800,
+    "exclusive": 158600,
+    "need": 147400,
     "wiki_top_drop": 443,
     "wiki_top_energy": 25,
     "areas": [
@@ -1544,6 +1591,12 @@
    "rows": [
     "72501",
     "72502",
+    "72503",
+    "72504",
+    "72505",
+    "72506",
+    "72507",
+    "72508",
     "72509",
     "72510",
     "72511",
@@ -1588,18 +1641,11 @@
     "72570"
    ],
    "stock": "wiki",
-   "left_out": [
-    "Spirit Fighter (1200)",
-    "Spirit Magician (1200)",
-    "Dualcast (12000)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)"
-   ],
+   "left_out": [],
    "farm": {
     "free": 16200,
-    "exclusive": 454500,
-    "need": 438300,
+    "exclusive": 496100,
+    "need": 479900,
     "wiki_top_drop": 685,
     "wiki_top_energy": 40,
     "areas": [
@@ -1621,6 +1667,12 @@
    "rows": [
     "72158",
     "72159",
+    "72160",
+    "72161",
+    "72162",
+    "72163",
+    "72164",
+    "72165",
     "72166",
     "72167",
     "72168",
@@ -1685,18 +1737,11 @@
     "72227"
    ],
    "stock": "wiki",
-   "left_out": [
-    "Spirit (1200)",
-    "Girder (1200)",
-    "Doublehand (12000)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)"
-   ],
+   "left_out": [],
    "farm": {
     "free": 16200,
-    "exclusive": 454500,
-    "need": 438300,
+    "exclusive": 496100,
+    "need": 479900,
     "wiki_top_drop": 685,
     "wiki_top_energy": 40,
     "areas": [
@@ -1718,6 +1763,12 @@
    "rows": [
     "72301",
     "72302",
+    "72303",
+    "72304",
+    "72305",
+    "72306",
+    "72307",
+    "72308",
     "72309",
     "72310",
     "72311",
@@ -1782,18 +1833,11 @@
     "72370"
    ],
    "stock": "wiki",
-   "left_out": [
-    "Power of Purification (1200)",
-    "Art of Purification (1200)",
-    "Dual Wield (12000)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)"
-   ],
+   "left_out": [],
    "farm": {
     "free": 16200,
-    "exclusive": 454500,
-    "need": 438300,
+    "exclusive": 496100,
+    "need": 479900,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -1820,8 +1864,15 @@
     "71005",
     "71006",
     "71007",
+    "71008",
+    "71009",
+    "71010",
+    "71011",
     "71012",
     "71013",
+    "71014",
+    "71015",
+    "71016",
     "71017",
     "71018",
     "71019",
@@ -1887,19 +1938,11 @@
     "71079"
    ],
    "stock": "wiki",
-   "left_out": [
-    "Wave of Panic (4000)",
-    "Elemental Damage Down (4000)",
-    "Metal Slash (1200)",
-    "Hustle Dance (1200)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)"
-   ],
+   "left_out": [],
    "farm": {
     "free": 16100,
-    "exclusive": 908500,
-    "need": 892400,
+    "exclusive": 946100,
+    "need": 930000,
     "wiki_top_drop": 677,
     "wiki_top_energy": 40,
     "areas": [
@@ -1921,7 +1964,12 @@
    "rows": [
     "72701",
     "72702",
+    "72703",
+    "72704",
     "72705",
+    "72706",
+    "72707",
+    "72708",
     "72709",
     "72710",
     "72711",
@@ -1966,17 +2014,11 @@
     "72770"
    ],
    "stock": "wiki",
-   "left_out": [
-    "Thunderous Avoidance (1200)",
-    "Nebulous Avoidance (1200)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)"
-   ],
+   "left_out": [],
    "farm": {
     "free": 16200,
-    "exclusive": 674000,
-    "need": 657800,
+    "exclusive": 713200,
+    "need": 697000,
     "wiki_top_drop": 800,
     "wiki_top_energy": 20,
     "areas": [
@@ -1998,6 +2040,12 @@
    "rows": [
     "72801",
     "72802",
+    "72803",
+    "72804",
+    "72805",
+    "72806",
+    "72807",
+    "72808",
     "72809",
     "72810",
     "72811",
@@ -2062,18 +2110,12 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Knight's Hope (1200)",
-    "Mage's Hope (1200)",
-    "Dual Wield (12000)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "Remedy (5)"
    ],
    "farm": {
     "free": 16200,
-    "exclusive": 660000,
-    "need": 643800,
+    "exclusive": 711200,
+    "need": 695000,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -2147,12 +2189,18 @@
    "first_run": "2018-08-31",
    "rows": [
     "73002",
+    "73003",
+    "73004",
+    "73005",
     "73006",
     "73007",
     "73008",
     "73009",
     "73010",
     "73011",
+    "73012",
+    "73013",
+    "73014",
     "73015",
     "73016",
     "73018",
@@ -2195,18 +2243,12 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
-    "Brave Adventurer (1200)",
-    "Faithful Adventurer (1200)",
-    "MAG +30% (12000)",
     "King Metal Minituar (20000)"
    ],
    "farm": {
     "free": 16200,
-    "exclusive": 810000,
-    "need": 793800,
+    "exclusive": 861200,
+    "need": 845000,
     "wiki_top_drop": 657,
     "wiki_top_energy": 40,
     "areas": [
@@ -2229,6 +2271,12 @@
     "73301",
     "73302",
     "73303",
+    "73304",
+    "73305",
+    "73306",
+    "73307",
+    "73308",
+    "73309",
     "73310",
     "73311",
     "73312",
@@ -2274,19 +2322,13 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Akademeia Support - Attack (1200)",
-    "Akademeia Support - Defense (1200)",
-    "Doublehand (12000)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)",
     "Remedy (5)"
    ],
    "farm": {
     "free": 16200,
-    "exclusive": 810000,
-    "need": 793800,
+    "exclusive": 861200,
+    "need": 845000,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -2312,6 +2354,9 @@
     "10804",
     "10805",
     "10806",
+    "10807",
+    "10808",
+    "10809",
     "10810",
     "10811",
     "10812",
@@ -2377,16 +2422,12 @@
     "10872",
     "10873"
    ],
-   "stock": "client minus late items",
-   "left_out": [
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)"
-   ],
+   "stock": "client (no wiki list)",
+   "left_out": [],
    "farm": {
     "free": 10200,
-    "exclusive": 908000,
-    "need": 897800,
+    "exclusive": 928000,
+    "need": 917800,
     "wiki_top_drop": 0,
     "wiki_top_energy": 0,
     "areas": [
@@ -2407,7 +2448,13 @@
    "rows": [
     "73201",
     "73202",
+    "73203",
+    "73204",
+    "73205",
     "73206",
+    "73207",
+    "73208",
+    "73209",
     "73210",
     "73211",
     "73212",
@@ -2454,18 +2501,12 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Power of the Last Dragon (1200)",
-    "Magic of the Last Dragon (1200)",
-    "MP +30% (12000)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)"
    ],
    "farm": {
     "free": 16200,
-    "exclusive": 810000,
-    "need": 793800,
+    "exclusive": 861200,
+    "need": 845000,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -2487,8 +2528,14 @@
    "rows": [
     "73501",
     "73502",
+    "73503",
+    "73504",
+    "73505",
     "73506",
     "73507",
+    "73508",
+    "73509",
+    "73510",
     "73511",
     "73512",
     "73513",
@@ -2561,18 +2608,12 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Exorcism Power (1200)",
-    "Exorcism Technique (1200)",
-    "Doublehand (12000)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)"
    ],
    "farm": {
     "free": 16200,
-    "exclusive": 810000,
-    "need": 793800,
+    "exclusive": 861200,
+    "need": 845000,
     "wiki_top_drop": 1000,
     "wiki_top_energy": 5,
     "areas": [
@@ -2596,9 +2637,14 @@
     "73403",
     "73404",
     "73405",
+    "73406",
+    "73407",
     "73408",
     "73409",
     "73410",
+    "73411",
+    "73412",
+    "73413",
     "73414",
     "73415",
     "73416",
@@ -2645,17 +2691,12 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Inherited Magic (1200)",
-    "Inherited Spirit (1200)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)"
    ],
    "farm": {
     "free": 6000,
-    "exclusive": 873000,
-    "need": 867000,
+    "exclusive": 912200,
+    "need": 906200,
     "wiki_top_drop": 1000,
     "wiki_top_energy": 5,
     "areas": [
@@ -2678,9 +2719,14 @@
     "73602",
     "73603",
     "73604",
+    "73606",
+    "73607",
     "73608",
     "73609",
     "73610",
+    "73611",
+    "73612",
+    "73613",
     "73614",
     "73615",
     "73616",
@@ -2753,17 +2799,12 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Progression of Fervor (1200)",
-    "Progression of Belief (1200)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)"
    ],
    "farm": {
     "free": 16000,
-    "exclusive": 828000,
-    "need": 812000,
+    "exclusive": 867200,
+    "need": 851200,
     "wiki_top_drop": 1000,
     "wiki_top_energy": 5,
     "areas": [
@@ -2787,9 +2828,15 @@
     "73702",
     "73703",
     "73704",
+    "73705",
+    "73706",
+    "73707",
     "73708",
     "73709",
     "73710",
+    "73711",
+    "73712",
+    "73713",
     "73714",
     "73715",
     "73716",
@@ -2861,19 +2908,13 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Lunarian Comprehension (15000)",
-    "Full Moon's Guidance (1200)",
-    "New Moon's Guidance (1200)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (300)",
     "King Metal Minituar (20000)"
    ],
    "farm": {
     "free": 7000,
-    "exclusive": 687000,
-    "need": 680000,
+    "exclusive": 722000,
+    "need": 715000,
     "wiki_top_drop": 1000,
     "wiki_top_energy": 5,
     "areas": [
@@ -2895,7 +2936,13 @@
    "rows": [
     "74001",
     "74002",
+    "74003",
+    "74004",
+    "74005",
     "74006",
+    "74007",
+    "74008",
+    "74009",
     "74010",
     "74011",
     "74012",
@@ -2968,18 +3015,12 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Fraternal Power (1200)",
-    "Fraternal Wisdom (1200)",
-    "Doublehand (12000)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)"
    ],
    "farm": {
     "free": 16200,
-    "exclusive": 810000,
-    "need": 793800,
+    "exclusive": 842000,
+    "need": 825800,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -3001,8 +3042,13 @@
    "rows": [
     "73801",
     "73802",
+    "73803",
+    "73804",
     "73805",
     "73806",
+    "73807",
+    "73808",
+    "73809",
     "73810",
     "73811",
     "73812",
@@ -3075,17 +3121,12 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Technique of the Ancients (1200)",
-    "Knowledge of the Ancients (1200)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)"
    ],
    "farm": {
     "free": 16200,
-    "exclusive": 822000,
-    "need": 805800,
+    "exclusive": 842000,
+    "need": 825800,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -3108,8 +3149,16 @@
     "74101",
     "74102",
     "74103",
+    "74104",
+    "74105",
+    "74106",
     "74107",
+    "74108",
+    "74109",
     "74110",
+    "74111",
+    "74112",
+    "74113",
     "74114",
     "74115",
     "74116",
@@ -3183,20 +3232,12 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Chocobo Stamina (1200)",
-    "Magical Chocobo (1200)",
-    "HP +30% (12000)",
-    "All in Harmony (150000)",
-    "Spiritual Defense (150000)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)"
    ],
    "farm": {
     "free": 16200,
-    "exclusive": 1125000,
-    "need": 1108800,
+    "exclusive": 1457000,
+    "need": 1440800,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -3220,8 +3261,13 @@
     "74202",
     "74203",
     "74204",
+    "74205",
+    "74206",
     "74207",
     "74208",
+    "74209",
+    "74210",
+    "74211",
     "74212",
     "74213",
     "74214",
@@ -3295,17 +3341,12 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Sanctum's Militant Art (1200)",
-    "Sanctum's Militant Law (1200)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)"
    ],
    "farm": {
     "free": 16200,
-    "exclusive": 837000,
-    "need": 820800,
+    "exclusive": 857000,
+    "need": 840800,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -3329,7 +3370,13 @@
     "74302",
     "74303",
     "74304",
+    "74305",
+    "74306",
+    "74307",
     "74308",
+    "74309",
+    "74310",
+    "74311",
     "74312",
     "74313",
     "74314",
@@ -3403,18 +3450,12 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Castle Exdeath - Storm In (1200)",
-    "Castle Exdeath - Illusion Perception (1200)",
-    "Dual Wield (12000)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)"
    ],
    "farm": {
     "free": 16200,
-    "exclusive": 825000,
-    "need": 808800,
+    "exclusive": 857000,
+    "need": 840800,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -3442,6 +3483,9 @@
     "13203",
     "13204",
     "13205",
+    "13206",
+    "13207",
+    "13208",
     "13209",
     "13210",
     "13211",
@@ -3516,15 +3560,12 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)"
    ],
    "farm": {
     "free": 36000,
-    "exclusive": 846000,
-    "need": 810000,
+    "exclusive": 866000,
+    "need": 830000,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -3550,7 +3591,13 @@
     "74602",
     "74603",
     "74604",
+    "74605",
+    "74606",
+    "74607",
     "74608",
+    "74609",
+    "74610",
+    "74611",
     "74612",
     "74613",
     "74614",
@@ -3639,19 +3686,13 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Wild Rose Warrior (1200)",
-    "Wild Rose Mage (1200)",
-    "Dualcast (12000)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)",
     "Tech Alcryst (1000)"
    ],
    "farm": {
     "free": 16200,
-    "exclusive": 825000,
-    "need": 808800,
+    "exclusive": 857000,
+    "need": 840800,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -3675,7 +3716,13 @@
     "74502",
     "74503",
     "74504",
+    "74505",
+    "74506",
+    "74507",
     "74508",
+    "74509",
+    "74510",
+    "74511",
     "74512",
     "74513",
     "74514",
@@ -3764,19 +3811,13 @@
    ],
    "stock": "wiki",
    "left_out": [
-    "Protect the Espers! - Physical (1200)",
-    "Protect the Espers! - Magic (1200)",
-    "Black Impulse (12000)",
-    "Guaranteed Ticket (4★/5★/NV) (2000)",
-    "Guaranteed Ticket (4★/5★/NV) (6000)",
-    "Guaranteed Ticket (4★/5★/NV) (12000)",
     "King Metal Minituar (20000)",
     "Tech Alcryst (1000)"
    ],
    "farm": {
     "free": 16200,
-    "exclusive": 825000,
-    "need": 808800,
+    "exclusive": 857000,
+    "need": 840800,
     "wiki_top_drop": 680,
     "wiki_top_energy": 40,
     "areas": [
@@ -4080,6 +4121,7 @@
     "75109",
     "75110",
     "75111",
+    "75112",
     "75113",
     "75114",
     "75116",
@@ -4152,14 +4194,13 @@
    "stock": "wiki",
    "left_out": [
     "White Mage Rosa's Prism (150000)",
-    "Last Stand+ (30000)",
     "King Metal Minituar (10000)",
     "Tech Alcryst (1000)"
    ],
    "farm": {
     "free": 1900,
-    "exclusive": 1160000,
-    "need": 1158100,
+    "exclusive": 1190000,
+    "need": 1188100,
     "wiki_top_drop": 590,
     "wiki_top_energy": 30,
     "areas": [
@@ -4296,6 +4337,7 @@
     "75409",
     "75410",
     "75411",
+    "75412",
     "75413",
     "75414",
     "75415",
@@ -4369,14 +4411,13 @@
    "stock": "wiki",
    "left_out": [
     "Kimahri's Prism (150000)",
-    "Knowledge of Aeons (30000)",
     "King Metal Minituar (10000)",
     "Tech Alcryst (1000)"
    ],
    "farm": {
     "free": 1700,
-    "exclusive": 1220000,
-    "need": 1218300,
+    "exclusive": 1250000,
+    "need": 1248300,
     "wiki_top_drop": 590,
     "wiki_top_energy": 30,
     "areas": [
@@ -4437,6 +4478,7 @@
     "75309",
     "75310",
     "75311",
+    "75312",
     "75313",
     "75314",
     "75316",
@@ -4509,14 +4551,13 @@
    "stock": "wiki",
    "left_out": [
     "Strange Gourmand Quina's Prism (150000)",
-    "Long Reach (30000)",
     "King Metal Minituar (10000)",
     "Tech Alcryst (1000)"
    ],
    "farm": {
     "free": 104700,
-    "exclusive": 1155000,
-    "need": 1050300,
+    "exclusive": 1185000,
+    "need": 1080300,
     "wiki_top_drop": 590,
     "wiki_top_energy": 30,
     "areas": [
@@ -5884,6 +5925,7 @@
     "79404",
     "79405",
     "79406",
+    "79407",
     "79408",
     "79409",
     "79410",
@@ -5945,14 +5987,12 @@
     "79466",
     "79467"
    ],
-   "stock": "client minus late items",
-   "left_out": [
-    "Guaranteed Ticket (4★/5★/NV) (20000)"
-   ],
+   "stock": "client (no wiki list)",
+   "left_out": [],
    "farm": {
     "free": 1000000,
-    "exclusive": 1230000,
-    "need": 230000,
+    "exclusive": 1270000,
+    "need": 270000,
     "wiki_top_drop": 0,
     "wiki_top_energy": 0,
     "areas": [

@@ -175,12 +175,15 @@ def _catalogue(cutoff=None):
                     limit, (20, currency), medal=row['S21FT3L8'])
         EVENT_SHOPS[str(did)] = ([str(area) for area in shop['event_areas']], 20, currency)
         EXCHANGE_RUNS[str(did)] = str(shop.get('first_run') or '')
+        EXCHANGE_STORES[str(did)] = str(shop['store'])
     return details, products, offers
 
 
 # Event exchange detail id -> first Global run of its events (event_exchanges.json), to choose among
 # exchanges that share a currency.
 EXCHANGE_RUNS = {}
+# Event exchange detail id -> its town store, for the exchanges Global dated itself (captain_menu.OWN).
+EXCHANGE_STORES = {}
 
 
 def _exchange_ok(reward) -> bool:
@@ -211,7 +214,10 @@ def hidden_details():
         return hidden
     try:
         import event_archive
-        open_areas = {str(row['area']) for row in event_archive.weekly_events()}
+        weekly = event_archive.weekly_events()
+        open_areas = {str(row['area']) for row in weekly}
+        # The permanent chambers: in the Vortex every week, with no run of their own.
+        undated = {str(row['area']) for row in weekly if not row.get('release')}
     except Exception:  # noqa: BLE001 -- without the rotation, every event exchange shows
         return hidden
     # Operator (2026-11-09): an event's exchange shows while its event is up, or while the player holds its
@@ -222,11 +228,32 @@ def hidden_details():
         now = replay.window()['to'].isoformat() if replay.enabled() else None
     except Exception:  # noqa: BLE001
         now = None
+    # An exchange many events pay into (Super Trust Moogle Exchange Tickets: 83 areas; Red Star Quartz: 15) has
+    # permanent chambers among its areas, which are in the Vortex every week, so it showed from the replay's first
+    # week, years early (2026-11-12). A permanent chamber opens an exchange only once the exchange's first run is
+    # behind the replay; an exchange Global dated itself (the Captain's Super Trust Moogle store, 2019-08-08) never
+    # before that date.
+    try:
+        import captain_menu
+        dated = {store: day for store, _currency, _name, day in captain_menu.OWN}
+    except Exception:  # noqa: BLE001
+        dated = {}
+
+    def on(did):
+        areas = open_areas.intersection(EVENT_SHOPS[did][0])
+        if not areas:
+            return False
+        if not now:
+            return True
+        since = dated.get(EXCHANGE_STORES.get(did, ''), '')
+        if since and since >= now:
+            return False
+        return bool(areas - undated) or (EXCHANGE_RUNS.get(did) or '') < now
     shared = defaultdict(list)
     for did, (areas, kind, currency) in EVENT_SHOPS.items():
         shared[kind, currency].append(did)
     for (kind, currency), dids in shared.items():
-        opened = [did for did in dids if open_areas.intersection(EVENT_SHOPS[did][0])]
+        opened = [did for did in dids if on(did)]
         if opened:
             hidden.update(did for did in dids if did not in opened)
             continue

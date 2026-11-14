@@ -738,6 +738,38 @@ def encount_enabled() -> bool:
     return str(os.environ.get('EXVIUS_FIELD_ENCOUNTERS', '1')).strip().lower() not in ('0', 'off', 'false', 'no')
 
 
+_MAP_FIELDS: dict = {}
+
+
+def own_fields(mid: str) -> tuple:
+    """The encounter field ids a mission's own tiles are on (content/exploration_fields.json, read from the map
+    and event packages by ios-server/devtools/scan_encounter_fields.py); () when the mission wasn't read or
+    EXVIUS_ENCOUNTER_MAP_FIELDS=0."""
+    if str(os.environ.get('EXVIUS_ENCOUNTER_MAP_FIELDS', '1')).strip().lower() in ('0', 'off', 'false', 'no'):
+        return ()
+    if not _MAP_FIELDS:
+        try:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'content', 'exploration_fields.json'),
+                      encoding='utf-8') as fh:
+                _MAP_FIELDS.update(json.load(fh).get('missions') or {})
+        except (OSError, ValueError):
+            pass
+        _MAP_FIELDS.setdefault('', {})          # read once, even when the file is missing
+    return tuple((_MAP_FIELDS.get(mid) or {}).get('fields') or ())
+
+
+def mission_fields(mid: str) -> tuple:
+    """The encounter field ids a mission's random battles are sent on: the usual list, plus every field the
+    mission's own tiles are on (2026-11-13).
+
+    A tile starts a battle only from rows of ITS field (`MapManager::checkEncount` 0x1fb3f40 ->
+    `checkEncountFiled`), and some maps use fields outside the usual list: The Dreadnought INT-ELT 110-150, the
+    Realm of the Dragon King 241/271, The Crystal Tower's 2022 reruns 70-75. Those had rows on no field their
+    tiles use, so no random battle could start there. EXVIUS_ENCOUNTER_MAP_FIELDS=0 sends the usual list only."""
+    usual = ENCOUNT_FIELDS + ENCOUNT_FIELDS_EXTRA.get(mid[:5], ())
+    return usual + tuple(f for f in own_fields(mid) if f not in usual)
+
+
 def field_zone(field: int) -> int:
     """The zone an `F_ENCOUNT_FIELD_MST` id belongs to, from the table's own names:
     10-14 zone 1, 20-22 zone 2, ...; 60-63/64-67 and 70-75 "another floor" 1..n;
@@ -796,6 +828,70 @@ def scenario_battle_groups() -> set[str]:
     return _SCENARIO_BATTLE_GROUPS
 
 
+_SCENARIO_FIGHTS = None
+
+
+def scenario_fights() -> dict:
+    """content/scenario_fights.json: fixed fights whose enemy group isn't numbered after the mission that starts
+    them (`missions`), and labeled stand-ins for fights with no enemy data in any record (`stand_ins`)."""
+    global _SCENARIO_FIGHTS
+    if _SCENARIO_FIGHTS is None:
+        try:
+            with open(os.path.join(HERE, 'content', 'scenario_fights.json'), encoding='utf-8') as fh:
+                _SCENARIO_FIGHTS = json.load(fh)
+        except (OSError, ValueError):
+            _SCENARIO_FIGHTS = {}
+    return _SCENARIO_FIGHTS
+
+
+def scenario_fight_groups(mid) -> set[str]:
+    """The enemy groups of the fixed fights mission `mid`'s scripts start (content/scenario_fights.json), with a
+    stand-in's group in place of a group that has no enemy data."""
+    fights = (scenario_fights().get('missions') or {}).get(str(mid)) or []
+    if not fights:
+        return set()
+    stand = scenario_fights().get('stand_ins') or {}
+    try:
+        with open(DEFAULT_RESPONSES, encoding='utf-8') as fh:
+            rows = (json.load(fh).get('29JRaDbd') or {}).get('YjHhvN65') or []
+    except (OSError, ValueError):
+        rows = []
+    group_of = {str(r.get('ja07xgLF')): str(r.get('2fY1IomW')) for r in rows if isinstance(r, dict)}
+    return {str((stand.get(f) or {}).get('group') or group_of.get(f) or '') for f in fights} - {''}
+
+
+_FIGHT_GROUP_OK: dict = {}
+
+
+def _fight_group_loads(mid, group: str, source) -> bool:
+    """Whether a fixed fight's group can be served: every slot has its monster rows. `derive_mission` gives up on
+    the whole mission for one monster without data, which would turn a quest that loads into one that doesn't
+    (The Young Acacia Dragoon, 41930101/41930102), so such a group is left out and its fight stays as it was."""
+    if group not in _FIGHT_GROUP_OK:
+        try:
+            derive_mission(int(mid), source, field_groups={group})
+            _FIGHT_GROUP_OK[group] = True
+        except (SystemExit, Exception) as exc:  # noqa: BLE001 -- any failure means "don't add it"
+            print(f"battle: fixed fight group {group} left out of mission {mid}'s battle data ({exc})", flush=True)
+            _FIGHT_GROUP_OK[group] = False
+    return _FIGHT_GROUP_OK[group]
+
+
+def scenario_stand_ins(spec):
+    """The MissionStartRequest reply's scenario battle rows (`YjHhvN65`) with each stand-in fight pointed at the
+    group that stands in for it (content/scenario_fights.json `stand_ins`). `MapManager::startEventBattle` reads
+    the row's group with no check; a group with no enemy data has nothing to load (2026-11-13: The Enchanted
+    Maze - ADV's EXP Lv4 and GIL Lv4)."""
+    stand = scenario_fights().get('stand_ins') or {}
+    rows = spec.get('YjHhvN65') if isinstance(spec, dict) else None
+    if not stand or not isinstance(rows, list) or os.environ.get('EXVIUS_SCENARIO_STAND_INS', '1').strip() == '0':
+        return spec
+    out = dict(spec)
+    out['YjHhvN65'] = [dict(r, **{'2fY1IomW': str(stand[str(r.get('ja07xgLF'))]['group'])})
+                       if isinstance(r, dict) and str(r.get('ja07xgLF')) in stand else r for r in rows]
+    return out
+
+
 def exploration_plans() -> dict:
     """content/exploration_encounters.json (ios-server/devtools/build_exploration_encounters.py):
     each exploration's battles per zone, rebuilt from the FFBE wiki's monster counts."""
@@ -837,34 +933,48 @@ def encount_rows(mid: str, zones: list[tuple[int, list[str]]], bundle: dict, sou
     for row in source.load('F_MONSTER_PARTS_MST'):
         if str(row.get('xqartN26')) in wanted:
             parts.setdefault(str(row['xqartN26']), []).append(row)
-    fields = ENCOUNT_FIELDS + ENCOUNT_FIELDS_EXTRA.get(mid[:5], ())
-    rows = []
+    fields = mission_fields(mid)
+
+    def emit(group: str, times: int, on: list) -> None:
+        members = sorted(slots.get(group, []), key=lambda row: int(row['Z0EN6jSh']))
+        if not members:
+            return
+        drops: list[str] = []
+        for slot in members:
+            for part in parts.get(str(slot['xqartN26']), []):
+                for item in str(part.get('9BetM2Ds') or '').split(','):
+                    if item and len(item.split(':')) >= 4 and item not in drops:
+                        drops.append(item)
+        for field in on:
+            for n in range(times):
+                rows.append({
+                    'qo3PECw6': mid, 'YzGa63QM': str(field), '2fY1IomW': group, 'h4Sjf96p': str(n),
+                    'Z0EN6jSh': '1', 'xqartN26': str(members[0]['xqartN26']), '6Yc4RkdM': '1',
+                    '9BetM2Ds': ','.join(drops), 'MZn8LC6H': '', 'g4voc2Aw': '', 'Vf5DGw07': '',
+                    '4K8t5dVh': '0', 'V2mCH5UR': '',
+                    # 14FMQseU = 0 -> escape allowed (`EncountInfo::getEnableEscape`, +0x120).
+                    '14FMQseU': '0',
+                })
+
+    rows: list[dict] = []
     for zone, battles in zones:
         counts: dict[str, int] = {}
         for group in battles:
             counts[group] = counts.get(group, 0) + 1
         for group, times in counts.items():
-            members = sorted(slots.get(group, []), key=lambda row: int(row['Z0EN6jSh']))
-            if not members:
-                continue
-            drops: list[str] = []
-            for slot in members:
-                for part in parts.get(str(slot['xqartN26']), []):
-                    for item in str(part.get('9BetM2Ds') or '').split(','):
-                        if item and len(item.split(':')) >= 4 and item not in drops:
-                            drops.append(item)
-            for field in fields:
-                if zone and field_zone(field) != zone:
-                    continue
-                for n in range(times):
-                    rows.append({
-                        'qo3PECw6': mid, 'YzGa63QM': str(field), '2fY1IomW': group, 'h4Sjf96p': str(n),
-                        'Z0EN6jSh': '1', 'xqartN26': str(members[0]['xqartN26']), '6Yc4RkdM': '1',
-                        '9BetM2Ds': ','.join(drops), 'MZn8LC6H': '', 'g4voc2Aw': '', 'Vf5DGw07': '',
-                        '4K8t5dVh': '0', 'V2mCH5UR': '',
-                        # 14FMQseU = 0 -> escape allowed (`EncountInfo::getEnableEscape`, +0x120).
-                        '14FMQseU': '0',
-                    })
+            emit(group, times, [f for f in fields if not zone or field_zone(f) == zone])
+    # A field the mission's own tiles are on, in a zone the plan has no battles for (the wiki's zones and the
+    # map's don't always line up: Kolobos Marsh has tiles on field 30 and a plan for zones 1 and 2), takes every
+    # zone's battles once, so no tile is left on a field without rows.
+    planned = {zone for zone, battles in zones if battles}
+    orphans = [] if 0 in planned else [f for f in own_fields(mid) if field_zone(f) not in planned]
+    if orphans:
+        most: dict[str, int] = {}
+        for _zone, battles in zones:
+            for group in set(battles):
+                most[group] = max(most.get(group, 0), battles.count(group))
+        for group, times in most.items():
+            emit(group, times, orphans)
     return rows
 
 
@@ -882,6 +992,12 @@ def field_mission_bundle(carrier: dict, mission: dict) -> dict:
         with open(path, encoding='utf8') as stream:
             _FIELD_GROUP_BINDINGS = json.load(stream)['missions']
     group_ids.update(_FIELD_GROUP_BINDINGS.get(mid, []))
+    # Fixed fights this mission's own scripts start whose enemy group is numbered after another mission (The
+    # Enchanted Maze - ADV uses the BGN and INT quests' groups and two chambers'): without the group in this
+    # reply the fight has no enemies to load (2026-11-13, content/scenario_fights.json).
+    known = {str(row['2fY1IomW']) for row in source.load('F_BATTLE_GROUP_MST')}
+    group_ids.update(g for g in sorted(scenario_fight_groups(mid))
+                     if g in known and g not in group_ids and _fight_group_loads(mid, g, source))
     zones: list[tuple[int, list[str]]] = []
     if encount_enabled():
         plans = exploration_plans()

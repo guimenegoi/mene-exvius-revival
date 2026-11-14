@@ -6,7 +6,7 @@ The upstream Java launcher implements DataDownloadActivity, DataUpdates, DataPac
 and GameAssets; no embedded APKs, new network permissions, or game logic changes.
 The embedded Python adapter reconciles upstream receipts after data setup.
 The launcher waits off-thread for the real Revival HTTP hello with a bounded
-failure path; successful 19-pack gameplay is not yet verified.
+failure path; successful 20-pack gameplay is not yet verified.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from first_run_readiness import patch_smali
 UPSTREAM_APK_SHA256 = "98875e7b8ebcd04794b36392f8afa71c207bebeba2f90d939ee9572f034e95e2"
 UPSTREAM_INSTALLER_DEX = "classes6.dex"
 UPSTREAM_LATEST = "https://raw.githubusercontent.com/Elvlin/exvius-offline/main/data/latest.json"
-UPSTREAM_PINNED = "https://raw.githubusercontent.com/Elvlin/exvius-offline/b0b73648ceb1a3783105ed2104600be651c9c515/data/latest.json"
+UPSTREAM_PINNED = "https://raw.githubusercontent.com/CreamySeaman6/Exvius-revival-ios/d6e8858861969a2764e31345884453dde79fc71f/data/latest.json"
 UPSTREAM_UPDATES_SMALI = "smali_classes6/com/exvius/local/DataUpdates.smali"
 FIRST_RUN_DEX = "classes4.dex"
 MAIN = "com.square_enix.android_googleplay.FFBEWW.Lapis"

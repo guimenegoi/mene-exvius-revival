@@ -1,6 +1,6 @@
 """Guarded, loopback-only adapter for the *real* Revival handler in Android.
 
-No dummy handler: startup is refused until the 19 verified resource packs
+No dummy handler: startup is refused until the 20 verified resource packs
 and the client-native data layout are present. The embedded Java worker calls
 run() only when preflight() says the private installation is ready.
 
@@ -17,7 +17,7 @@ import zipfile
 from pathlib import Path
 
 DATA_MANIFEST = "ffbe_offline_manifest.json"
-PACK_COUNT = 19
+PACK_COUNT = 20
 PORT = 18080
 NATIVE_NAMES = frozenset(("mst", "localized_texts", "common_lang", "en", "homeMarquee"))
 REQUIRED_FILES = (
@@ -57,7 +57,7 @@ def _read_json(path: Path, *, limit: int = 1 << 20) -> dict:
 
 
 # This asset is derived from the SHA-256-verified client-assets.zip
-# in manifest revision 9 (72 MB uncompressed APK).
+# in manifest revision 10 (unchanged 72 MB client asset).
 EXPECTED_CLIENT_SIZE = 71997144
 EXPECTED_CLIENT_PACK_SHA256 = "eb70867cc2a97251f01873d31b87702ca90e5612eb8a2f18257ed74cd7d36224"
 EXPECTED_CLIENT_SHA256 = "7791690815938dc4a45b2cfce65b0d7745be0f67c3854c7d020cd424bedf33ac"
@@ -101,7 +101,8 @@ def _manifest(archive: Path) -> dict:
     if not isinstance(manifest, dict):
         raise ValueError("invalid data manifest")
     packs = manifest.get("packs", [])
-    if manifest.get("schema") != 1 or not isinstance(packs, list) or len(packs) != PACK_COUNT:
+    if (manifest.get("schema") != 1 or manifest.get("revision") != 10
+            or not isinstance(packs, list) or len(packs) != PACK_COUNT):
         raise ValueError("pack manifest not supported")
     return manifest
 
@@ -255,7 +256,7 @@ def preflight(archive: Path | None = None,
         ) + int((data / "registry.json").is_file())
         if counted < expected_count:
             return False, f"file inventory incomplete: {counted}/{expected_count}"
-        return True, "verified 19-pack private data layout"
+        return True, "verified 20-pack private data layout"
     except (OSError, ValueError, KeyError, TypeError, zipfile.BadZipFile, json.JSONDecodeError) as exc:
         return False, "preflight failed: " + type(exc).__name__
 

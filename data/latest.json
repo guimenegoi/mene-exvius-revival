@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "revision": 9,
-  "version": "2026.11.04.9",
+  "revision": 10,
+  "version": "2026.11.13.10",
   "minAppVersionCode": 9015,
   "packs": [
     {
@@ -136,9 +136,16 @@
       "size": 3713,
       "unpackedSize": 61440,
       "sha256": "f2d59c981f3ad1d3d511e872314c74eec5bb1fd12473a9b820f76b87ee3bf854"
+    },
+    {
+      "id": "summon-art",
+      "url": "https://github.com/CreamySeaman6/Data/releases/download/data-r10/exvius-summon-art-r10.zip",
+      "size": 306714637,
+      "unpackedSize": 306428065,
+      "sha256": "41277b62bd4da7efc0fae02f0462019ec74c9f0f2aedd7a84fab3663064bc837"
     }
   ],
-  "downloadBytes": 14647871919,
-  "installedBytes": 14948691529,
-  "files": 12487
+  "downloadBytes": 14954586556,
+  "installedBytes": 15255119594,
+  "files": 14178
 }

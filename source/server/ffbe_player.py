@@ -716,49 +716,85 @@ def serve_unit_mix(spec, plaintext: str | None):
     """
     req = _request_json(plaintext)
     rows = req.get(MIX_GROUP) if req else None
-    if not isinstance(rows, list) or not rows:
+    if not isinstance(rows, list) or not rows or State.player is None:
         return spec
-    node = rows[0] if isinstance(rows[0], dict) else {}
-    base_id = str(node.get("og2GHy49") or "").strip()
-    materials = []
-    for x in str(node.get("WbGYcN17") or "").split(","):
-        if x.strip():
-            materials.append(x.strip())
-    if not base_id or not materials or State.player is None:
+    # One node per base unit. The Fuse Units screen sends one; Bulk Fusion sends one for every base it fuses
+    # (`UnitMixAutoSelectConnectScene::createRequestList` 0x26b1900 calls `UnitMixRequest::setMixInfo` per base,
+    # `createBody` 0x19a5890 writes a node each). Only the first was read until 2026-11-13, so a Bulk Fusion
+    # fused one unit's copies and the reply's unit list brought every other material back (GitHub #8).
+    pairs, used = [], set()
+    for node in rows:
+        node = node if isinstance(node, dict) else {}
+        base_id = str(node.get("og2GHy49") or "").strip()
+        materials = [x.strip() for x in str(node.get("WbGYcN17") or "").split(",") if x.strip()]
+        if base_id and materials:
+            pairs.append((base_id, materials))
+    if not pairs:
         return spec
-    base = State.player.roster_row(base_id) or {}
-    affinity_before = list(base.get('affinity_points') or ('', ''))
-    res = State.player.mix_units(base_id, materials)
     out = dict(spec) if isinstance(spec, dict) else {}
-    if not res:
-        _note(f"unit-mix: refused (base {base_id} or materials not in the roster, or frozen)")
+    # All or nothing. The phone has already taken every material off its own list, so a request done in part
+    # would leave its list and the save apart. Each node needs its base and at least one of its materials in
+    # the roster (within a node, unknown and repeated materials are dropped, as before), and no unit may be in
+    # two nodes (a material of two bases, or a base that is another node's material).
+    problem = None
+    for base_id, materials in pairs:
+        if State.player.roster_row(base_id) is None:
+            problem = f"base {base_id} is not in the roster"
+            break
+        mine = {base_id} | {iid for iid in materials if State.player.roster_row(iid) is not None}
+        if len(mine) < 2:
+            problem = f"none of base {base_id}'s materials is in the roster"
+        elif mine & used:
+            problem = f"unit {sorted(mine & used)[0]} is in two nodes"
+        if problem:
+            break
+        used |= mine
+    if problem:
+        _note(f"unit-mix: refused ({problem}); nothing was fused")
         return out
-    base = State.player.roster_row(base_id)
-    State.player.record_archive({'TOTAL_UNIT_MIX': 1})
-    if any(int(after or 0) > int(before or 0) for before, after in
-           zip(affinity_before, base.get('affinity_points') or ())):
-        score_quest_action('31')
-    score_daily('unit_fuse')
-    lb_level = int(base.get("lb_level", 0) or 0)
-    lb_exp = int(base.get("lb_exp", 0) or 0)
-    (b_lv, b_ex), (a_lv, a_ex) = res["before"], res["after"]
-    before = _lv_half(b_lv, b_ex, unit_stats(base["master_id"], b_lv), lb_level, lb_exp)
-    after = _lv_half(a_lv, a_ex, unit_stats(base["master_id"], a_lv), lb_level, lb_exp)
-    out[MIX_GROUP] = [{"og2GHy49": base_id,
-                       "WbGYcN17": ",".join(res["materials"]),
-                       "B6H34Mea": str(res["gain"]),          # Exp
-                       "UDMIFB72": str(res["lb_gain"]),       # LbExp
-                       "1dT7ha9H": "1",                        # success type (authored; see docstring)
-                       "7UR4J2SE": "0",                        # gil (authored; no unit-mix gil exists)
-                       "Qic38SuC": f"{base_id}@{before}_{after}",
-                       "E90oBqct": "0"}]
-    # ...and let the client relearn the roster (materials gone, base levelled) from the same reply. The
+    before_all, dirty_all = copy.deepcopy(State.player.data), State.player.dirty
+    results = []
+    for base_id, materials in pairs:
+        base = State.player.roster_row(base_id) or {}
+        affinity_before = list(base.get('affinity_points') or ('', ''))
+        res = State.player.mix_units(base_id, materials)
+        if not res:
+            State.player.data, State.player.dirty = before_all, dirty_all
+            _note(f"unit-mix: refused (base {base_id} or its materials could not be fused, or frozen); "
+                  f"nothing was fused")
+            return out
+        results.append((base_id, res, affinity_before))
+    mix_rows = []
+    for base_id, res, affinity_before in results:
+        base = State.player.roster_row(base_id)
+        State.player.record_archive({'TOTAL_UNIT_MIX': 1})
+        if any(int(after or 0) > int(before or 0) for before, after in
+               zip(affinity_before, base.get('affinity_points') or ())):
+            score_quest_action('31')
+        score_daily('unit_fuse')
+        lb_level = int(base.get("lb_level", 0) or 0)
+        lb_exp = int(base.get("lb_exp", 0) or 0)
+        (b_lv, b_ex), (a_lv, a_ex) = res["before"], res["after"]
+        before = _lv_half(b_lv, b_ex, unit_stats(base["master_id"], b_lv), lb_level, lb_exp)
+        after = _lv_half(a_lv, a_ex, unit_stats(base["master_id"], a_lv), lb_level, lb_exp)
+        mix_rows.append({"og2GHy49": base_id,
+                         "WbGYcN17": ",".join(res["materials"]),
+                         "B6H34Mea": str(res["gain"]),          # Exp
+                         "UDMIFB72": str(res["lb_gain"]),       # LbExp
+                         "1dT7ha9H": "1",                        # success type (authored; see docstring)
+                         "7UR4J2SE": "0",                        # gil (authored; no unit-mix gil exists)
+                         "Qic38SuC": f"{base_id}@{before}_{after}",
+                         "E90oBqct": "0"})
+        lb_note = f" +{res['lb_gain']} lb" if res["lb_gain"] else ""
+        print(f"unit: MIX {len(res['removed'])} material(s) into {base_id} -> +{res['gain']} exp{lb_note}; "
+              f"level {b_lv} -> {a_lv}, roster {len(State.player.data['roster'])}", flush=True)
+    # One row per base, in the request's order (the phone keeps one result, `UserUnitMixResult`, so the last
+    # row is the one the single-fusion screen shows; Bulk Fusion's result window reads the unit list instead).
+    out[MIX_GROUP] = mix_rows
+    # ...and let the client relearn the roster (materials gone, bases levelled) from the same reply. The
     # FULL player groups, not `currency_groups()`: fusion changes the ROSTER, and the roster group
     # (`B71MekS8`) is what makes the consumed materials disappear client-side.
     out.update(State.player.groups())
-    lb_note = f" +{res['lb_gain']} lb" if res["lb_gain"] else ""
-    print(f"unit: MIX {len(res['removed'])} material(s) into {base_id} -> +{res['gain']} exp{lb_note}; "
-          f"level {b_lv} -> {a_lv}, roster {len(State.player.data['roster'])}", flush=True)
     return out
 def serve_favourite_info(spec, reply_id: str | None = None):
     """Attach the cumulative favourite list (`UserUnitFavoriteResponse`, tag `F2pYJGt5`) to user-state replies.
@@ -3708,6 +3744,13 @@ def apply_carry_edit(plaintext, spec, reply_id=None):
     clear-and-rebuild group does to pending client state (`UnitEquipRequest` / `5Eb0Rig6`).
     """
     if str(reply_id) == CARRY_LOGIN_REPLY and State.player is not None:
+        # A set holding more than is owned (topped up from stock that wasn't there, before 2026-11-13) is cut
+        # to what there is before the login sends it.
+        cut = State.player.fit_carry_to_owned()
+        if cut:
+            State.state_dirty = True
+            print("item set: lowered to what is owned at login: "
+                  + ", ".join(f"{item} -{count}" for item, count in cut.items()), flush=True)
         # The login copy (2026-11-12): without it the item set the phone saved came back empty after a relaunch.
         # `GameResponseFactory::createResponseData` reads `nE7pV2wr` on whatever reply carries it, and
         # `LoginScene::initConnect` sends GetUserInfo, GetUserInfo2 and GetUserInfo3 at every login, so the first
@@ -3738,6 +3781,13 @@ def apply_carry_edit(plaintext, spec, reply_id=None):
             except ValueError:
                 continue
     stored = State.player.set_carry_items(entries)
+    # The set is part of what is owned: an edit can't put more of an item in it than there is (the phone only
+    # moves what its bag shows, so this cuts nothing for a phone that was sent the right bag).
+    cut = State.player.fit_carry_to_owned()
+    if cut:
+        stored = State.player.set_carry_items(State.player.data["inventory"]["carry_items"])
+        print("item set: edit cut to what is owned: "
+              + ", ".join(f"{item} -{count}" for item, count in cut.items()), flush=True)
     # Coherence, logged rather than enforced: an id with no `F_ITEM_MST` row draws nameless, and a count the
     # bag cannot cover is a slot the client could not have filled legitimately. Both mean the client sent
     # something our state does not back -- worth a line in the log, not worth breaking the screen over.

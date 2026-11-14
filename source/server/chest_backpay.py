@@ -52,9 +52,21 @@ def _missions(row) -> set:
     return missions
 
 
-def _reports(folder):
-    """(mission id, opened switches, reported tuples, file name) from saved battle-end requests."""
+def _when(text, form):
+    from datetime import datetime, timezone
+    try:
+        stamp = datetime.strptime(str(text), form)
+    except ValueError:
+        return None
+    return stamp if stamp.tzinfo else stamp.replace(tzinfo=timezone.utc)
+
+
+def _reports(folder, created=None):
+    """(mission id, opened switches, reported tuples, file name) from saved battle-end requests. Records made
+    before the save existed (`created`, the save's meta.created_utc) belong to an earlier save (a New Game
+    keeps the request records) and are left out (2026-11-12)."""
     from exvius_field_treasures import RESULT, reported_tuples
+    born = _when(created, "%Y-%m-%dT%H:%M:%SZ") if created else None
     try:
         names = sorted(os.listdir(folder))
     except OSError:
@@ -66,6 +78,9 @@ def _reports(folder):
             rec = json.loads(Path(folder, name).read_text(encoding="utf-8"))
             text = rec.get("plaintext") or ""
             if "jQsE54Iz" not in text or RESULT not in text or not (rec.get("reply") or {}).get("len"):
+                continue
+            made = _when(rec.get("ts"), "%Y-%m-%dT%H:%M:%S%z") if born else None
+            if made and made < born:
                 continue
             req = json.JSONDecoder().raw_decode(text)[0]
         except (OSError, ValueError, AttributeError):
@@ -85,7 +100,7 @@ def owed(player, folder) -> dict:
     candidates = {iid: row for iid, row in catalogue().items()
                   if _affected(row) and _missions(row) and not _received(player, iid, row)}
     out = {}
-    for mid, opened, reported, name in _reports(folder):
+    for mid, opened, reported, name in _reports(folder, (player.data.get("meta") or {}).get("created_utc")):
         for iid, row in candidates.items():
             if iid in out or mid not in _missions(row):
                 continue
@@ -94,9 +109,15 @@ def owed(player, folder) -> dict:
             if all(entry + ":" + str(row["switch"]) in reported for entry in row["rewards"].split(",")):
                 out[iid] = "request " + name
     switches = player.switches
+    # A chest that paid saved its switch too, and the catalogue gives some switches to two different chests
+    # (40003003: Earth Shrine's Potion chest and a Rod chest in Latius Woods). A saved switch a paid chest
+    # accounts for proves nothing about the other chest (2026-11-12).
+    paid = {str(catalogue()[key]["switch"]) for key in map(str, player.data.get("exvius_field_treasures", []))
+            if key in catalogue() and catalogue()[key]["switch"]}
     for iid, row in candidates.items():
         pos = switch_position(row["switch"]) if row["switch"] else None
-        if iid not in out and pos and int(pos[1]) in switches.get(pos[0], set()):
+        if (iid not in out and pos and str(row["switch"]) not in paid
+                and int(pos[1]) in switches.get(pos[0], set())):
             out[iid] = "saved switch " + str(row["switch"])
     return out
 

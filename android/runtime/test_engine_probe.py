@@ -89,11 +89,11 @@ class EngineBundleTests(unittest.TestCase):
             path = root / "result.zip"
             (root / "data").mkdir()
             (root / "data/latest.json").write_text(json.dumps({
-                "schema": 1, "files": 1,
+                "schema": 1, "revision": 10, "files": 1,
                 "packs": [
                     {"id": "client-assets" if i == 0 else f"data-{i:03}",
                      "sha256": f"{i + 1:064x}"}
-                    for i in range(19)
+                    for i in range(20)
                 ],
             }))
             source = {

@@ -45,6 +45,28 @@ class LocalCacheTests(unittest.TestCase):
                 self.assertEqual(result["unpackedSize"], previous["unpackedSize"])
                 self.assertEqual(result["url"], f"http://127.0.0.1:18082/packs/{result['id']}.zip")
 
+    def test_revision_10_serves_extra_art_without_changing_old_packs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            manifest, files = self.fixture(Path(temp))
+            before = json.loads(manifest.read_text())
+            before["revision"] = 10
+            name = "summon-art"
+            content = b"synthetic-art"
+            (files / (name + ".zip")).write_bytes(content)
+            before["packs"].append({
+                "id": name, "size": len(content),
+                "sha256": hashlib.sha256(content).hexdigest(),
+                "url": "https://github.com/test/art.zip",
+                "unpackedSize": len(content),
+            })
+            manifest.write_text(json.dumps(before))
+            body, indexed = pinned_data(manifest, files, "http://127.0.0.1:18082")
+            self.assertEqual(len(indexed), 20)
+            self.assertEqual(json.loads(body)["packs"][-1]["sha256"],
+                             before["packs"][-1]["sha256"])
+            for entry in before["packs"]:
+                self.assertEqual(indexed[entry["id"]][1], entry["size"])
+
     def test_rejects_bad_pack_size_and_symlink(self):
         with tempfile.TemporaryDirectory() as temp:
             manifest, files = self.fixture(Path(temp))

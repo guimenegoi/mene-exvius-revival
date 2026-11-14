@@ -54,9 +54,29 @@ def _folder() -> str:
     return folder
 
 
+def _digest(plaintext) -> str:
+    import hashlib
+    text = plaintext if isinstance(plaintext, str) else repr(plaintext)
+    return hashlib.sha1(text.encode("utf-8", "replace")).hexdigest()[:16]
+
+
+def saved_copy(plaintext) -> str | None:
+    """The file an identical upload was already saved in, or None. The game sends every log file it still holds
+    at each launch (the operator's phone: the same six older logs again, then the newest, 2026-11-13), so without
+    this each launch added tens of MB of copies. The digest is the last part of the file name."""
+    mark = "-" + _digest(plaintext) + ".txt"
+    try:
+        for name in sorted(os.listdir(_folder())):
+            if name.endswith(mark):
+                return os.path.join(_folder(), name)
+    except OSError:
+        pass
+    return None
+
+
 def _save(plaintext) -> str:
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    path = os.path.join(_folder(), f"{stamp}-{int(time.time() * 1000) % 1000:03d}.txt")
+    path = os.path.join(_folder(), f"{stamp}-{int(time.time() * 1000) % 1000:03d}-{_digest(plaintext)}.txt")
     text = plaintext if isinstance(plaintext, str) else repr(plaintext)
     # The log itself is usually one string field inside the request; unwrap it so the file is readable.
     pretty = text
@@ -79,13 +99,73 @@ def _save(plaintext) -> str:
     return path
 
 
+# The game encrypts each line of its log (AES-CBC, padded twice; key and IV from libgame, as in
+# ios-server/devtools/decode_reports.py).
+LOG_KEY, LOG_IV = b"FFBE2020DevsRGod", b"dZMjkk8gFDzKHlsx"
+LOG_GROUP, LOG_FIELD = "a8035010", "FPGJbL8x"
+
+
+def log_lines(plaintext) -> list:
+    """The readable lines of an uploaded game log (lines that don't decode are left out)."""
+    import ffbe_crypto
+    text = plaintext if isinstance(plaintext, str) else repr(plaintext)
+    try:
+        body = json.JSONDecoder().raw_decode(text)[0]
+        raw = str(body[LOG_GROUP][0][LOG_FIELD])
+    except (ValueError, KeyError, IndexError, TypeError):
+        return []
+    out = []
+    for line in raw.split("\n"):
+        if not line.strip():
+            continue
+        try:
+            plain = ffbe_crypto.cbc_decrypt(LOG_KEY, line.strip(), LOG_IV)
+        except Exception:  # noqa: BLE001 -- not a line the game encrypted
+            continue
+        if plain and 1 <= plain[-1] <= 16 and plain[-plain[-1]:] == bytes([plain[-1]]) * plain[-1]:
+            plain = plain[:-plain[-1]]              # the game's own second padding
+        out.append(plain.decode("utf-8", "replace"))
+    return out
+
+
+def table_report(plaintext, name: str = "F_SACRIFICE_MST", token: str = "w5JFGPh3") -> list:
+    """`CONVERT-TABLE phone log` lines for the server log: what the phone's own log says about the Convert
+    screens' table (2026-11-13, operator's test: the lists were empty and the phone had not asked for the table).
+    A failed table load is written there as `MST > Failed to load MST. REASON=... MSTNAME=... MSTFILE=...`."""
+    import collections
+    import re
+    lines = log_lines(plaintext)
+    if not lines:
+        return ["CONVERT-TABLE phone log: no readable line in the upload"]
+    about = [ln for ln in lines if name in ln or token in ln]
+    failed = collections.Counter(m for ln in lines if "Failed to load MST" in ln for m in re.findall(r"MSTNAME=(\w+)", ln))
+    out = [f"CONVERT-TABLE phone log: {len(lines)} line(s) read, {len(about)} about {name}"]
+    for ln in about[-3:]:
+        out.append("CONVERT-TABLE phone log, about the table: " + " ".join(ln.split())[:400])
+    if failed:
+        out.append("CONVERT-TABLE phone log, tables the phone failed to load: "
+                   + ", ".join(f"{table} x{count}" for table, count in failed.most_common(8)))
+    else:
+        out.append("CONVERT-TABLE phone log: no failed table load in it")
+    return out
+
+
 def handle(spec, reply_id, plaintext):
     """Add the report-back request to carrier replies (when on), and answer a log upload (saved when on)."""
     if reply_id == STORE_LOG_REQUEST:
         size = len(plaintext or "")
         if enabled():
+            have = saved_copy(plaintext or "")
+            if have:
+                print(f"CLIENT REPORT: game sent a log again ({size} chars); already saved as {have}", flush=True)
+                return {REPORT_STATE_GROUP: [{REPORT_STATE_VALUE: "0"}]}
             path = _save(plaintext or "")
             print(f"CLIENT REPORT: game uploaded its log ({size} chars) -> {path}", flush=True)
+            try:
+                for line in table_report(plaintext or ""):
+                    print(line, flush=True)
+            except Exception as exc:  # noqa: BLE001 -- the upload is saved either way
+                print(f"CONVERT-TABLE phone log: could not be read ({exc!r})", flush=True)
         else:
             print(f"CLIENT REPORT: game uploaded a queued log ({size} chars); not saved "
                   f"(EXVIUS_CLIENT_REPORTS=0)", flush=True)

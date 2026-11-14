@@ -175,7 +175,7 @@ Java_com_mene_exvius_LocalPythonProbe_execute(JNIEnv *env, jclass unused,
     }
     if (ready) {
         __android_log_print(ANDROID_LOG_INFO, TAG,
-                            "19 packs verified: starting real Revival on 127.0.0.1:18080");
+                            "20 packs verified: starting real Revival on 127.0.0.1:18080");
         /* This blocks on the dedicated FFBE-Python Java worker until the
          * process is stopped. serve_forever releases the GIL while polling.
          * This is not the final Android service lifecycle. */

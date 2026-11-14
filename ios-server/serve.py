@@ -69,6 +69,8 @@ def configure_engine() -> None:
     os.environ['FFBE_DATA'] = str(ROOT)
     # The deal banners' art, downloaded once on startup (source/server/deal_art.py).
     os.environ.setdefault('DEAL_ART_ROOT', str(ROOT / 'deal_art'))
+    # The summon art pack, part of the game data (source/server/art_pack.py).
+    os.environ.setdefault('SUMMON_ART_PACK_ROOT', str(static / 'summon_art'))
     os.environ['OUT_REQUESTS'] = str(ROOT / 'requests')
     for key, value in (('GACHA_ONLY', 'all'), ('GACHA_CAMPAIGN', 'all'), ('EXVIUS_SUMMON_ARCHIVE', '1'),
                        ('EXVIUS_EVENT_ARCHIVE', '1'), ('GACHA_STANDARD', '1'), ('GACHA_CATALOGUE', '1'),
@@ -369,7 +371,10 @@ def main() -> int:
     def build_art():
         import event_archive
         import ios_tables
-        event_archive.fetch_added_art(log=log)   # banners of events added by event_history.json (once)
+        # Banners of the events added by event_history.json: in the game data since 2026-11-13; downloaded
+        # from the wiki only when EXVIUS_EVENT_ART_FETCH=1 asks for it.
+        if os.environ.get('EXVIUS_EVENT_ART_FETCH', '0') == '1':
+            event_archive.fetch_added_art(log=log)
         ios_tables.art()
     threading.Thread(target=build_art, name='ios-art', daemon=True).start()
 

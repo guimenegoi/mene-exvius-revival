@@ -1,7 +1,7 @@
 """Readiness, fail-closed startup and loopback wiring of the Android Revival HTTP adapter.
 
 The live socket test uses a stub handler and must NOT be confused with
-proving the real 19-pack Revival engine or offline gameplay.
+proving the real 20-pack Revival engine or offline gameplay.
 """
 from __future__ import annotations
 
@@ -30,8 +30,8 @@ def sample(root: Path) -> tuple[Path, Path, dict]:
     data = files / "exvius/data"
     data.mkdir(parents=True)
     packs = [{"id": "client-assets" if i == 0 else f"data-{i:03}",
-              "sha256": f"{i + 1:064x}"} for i in range(19)]
-    manifest = {"schema": 1, "packs": packs, "files": 11}
+              "sha256": f"{i + 1:064x}"} for i in range(20)]
+    manifest = {"schema": 1, "revision": 10, "packs": packs, "files": 11}
     with zipfile.ZipFile(archive, "w") as zf:
         zf.writestr(local_http.DATA_MANIFEST, json.dumps(manifest),
                     compress_type=zipfile.ZIP_STORED)
@@ -106,13 +106,31 @@ class LocalHttpTests(unittest.TestCase):
             archive, files, manifest = sample(Path(tmp))
             ok, msg = local_http.preflight(archive, files)
             self.assertTrue(ok, msg)
-            self.assertIn("19-pack", msg)
+            self.assertIn("20-pack", msg)
             receipt = files / "exvius/data/installed.json"
             record = json.loads(receipt.read_text())
             del record["data-001"]
             receipt.write_text(json.dumps(record))
             self.assertFalse(local_http.preflight(archive, files)[0])
             self.assertFalse((files / "exvius/server-root").exists())
+
+    def test_old_manifest_or_missing_new_art_pack_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive, files, manifest = sample(Path(tmp))
+            receipt = files / "exvius/data/installed.json"
+            old = json.loads(receipt.read_text())
+            del old["data-019"]
+            receipt.write_text(json.dumps(old))
+            ok, reason = local_http.preflight(archive, files)
+            self.assertFalse(ok)
+            self.assertIn("data-019", reason)
+            self.assertFalse((files / "exvius/server-root").exists())
+            manifest["revision"] = 9
+            with zipfile.ZipFile(archive, "w") as zf:
+                zf.writestr(local_http.DATA_MANIFEST, json.dumps(manifest),
+                            compress_type=zipfile.ZIP_STORED)
+            self.assertEqual(local_http.preflight(archive, files),
+                             (False, "preflight failed: ValueError"))
 
     def test_client_hash_and_file_inventory_guards(self):
         with tempfile.TemporaryDirectory() as tmp:

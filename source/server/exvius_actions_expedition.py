@@ -727,6 +727,22 @@ def mission_update(spec, req):
     return _out(_refresh(spec), JG96kr5C=list(block.get('quests', {}).values())) if operation else _out(spec)
 
 
+def quest_steps(spec, req):
+    """Quest steps carried by requests other than the two map updates. The game writes the same `1sGiqV9T` group
+    into the battle-start request (`MissionStartRequest::createStartQuestTag`: `i9han5Sz`, a step accepted), the
+    battle-end request (`MissionEndRequest::createEndQuestTag`: `9YPZuB2i`, the current step of each quest that
+    is complete when the quest ends) and the town-exit request (TownOutRequest is a MapUpdateRequest, as
+    MissionUpdateRequest is). Until 2026-11-13 only TownUpdateRequest and MissionUpdateRequest were read, so a
+    step reported in the others was lost: never saved, never paid, no switch. Here the step goes through
+    `mission_update` for the save only; these replies keep their own groups (the battle end's user-state
+    projection and switch group already carry the result). The battle end adds one node per quest whose step
+    is complete, so each node is handled on its own."""
+    for node in req.get('1sGiqV9T') or []:
+        if isinstance(node, dict):
+            mission_update(spec, {**req, '1sGiqV9T': [node]})
+    return spec
+
+
 def _reward_rows(text):
     # Use the project's currency shorthand, but refuse unrecovered unit suffixes.
     from ffbe_player import _parse_reward
@@ -1176,6 +1192,7 @@ HANDLERS = {
     "D9xphQ8X": challenge_clear, "nQMb2L4h": dungeon_liberation,
     "Tvq54dx6": mission_switch_update, "j5JHKq6S": mission_update,
     "G1hQM8Dr": mission_update,
+    "29JRaDbd": quest_steps, "x5Unqg2d": quest_steps, "sJcMPy04": quest_steps,   # MissionStart, MissionEnd, TownOut
     "1IOdaWOW": comeback_claim, "AOY6npa3": panel_extra, "egJpaGtk": panel_status,
     "LJhqu0x6": mission_unlock, "dzU2t3HA": extra_challenge_info,
     "68RQ9GwN": exbonus_execute, "HaJp14F6": exbonus_update,

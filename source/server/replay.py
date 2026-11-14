@@ -169,6 +169,8 @@ def unit_dates() -> dict[str, str]:
         # And the units unit_release.json dates EARLIER than Global did (2026-11-12: Silent Knight Charlotte dated
         # 2022-07-07, out on Global on 2022-12-29): Global's date wins both ways (research/UNIT_RELEASE_CHECK.md).
         for unit, day in global_release_earlier().items():
+            if unit in global_release_fixes():
+                continue      # dated earlier on purpose (the launch roster): Terra, Kuja, Garland, Zidane, Vivi ...
             if unit in _CACHE['units'] and day > _CACHE['units'][unit]:
                 _CACHE['units'][unit] = day
     return _CACHE['units']

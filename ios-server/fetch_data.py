@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download and unpack the Exvius Offline game data (about 14.6 GB) into /srv/ffbe/data.
+"""Download and unpack the Exvius Offline game data (about 14.9 GB) into /srv/ffbe/data.
 
 Uses the data manifest bundled with this build (data/latest.json from the repository), so the data
 always matches the server code. Each pack is downloaded (resuming if interrupted), checked against

@@ -319,9 +319,10 @@ def package_engine(repository: Path, pyyaml_sdist: Path,
             offline_manifest = (repository / "data/latest.json").read_bytes()
             offline_metadata = json.loads(offline_manifest)
             if (offline_metadata.get("schema") != 1
-                    or len(offline_metadata.get("packs", [])) != 19
+                    or offline_metadata.get("revision") != 10
+                    or len(offline_metadata.get("packs", [])) != 20
                     or offline_metadata.get("files", 0) < 1):
-                raise ValueError("Expected pinned 19-pack offline data manifest")
+                raise ValueError("Expected pinned revision-10 20-pack offline data manifest")
             extra = {
                 "ffbe_engine_bootstrap.py": BOOTSTRAP.read_bytes(),
                 "ffbe_local_http.py": HTTP_LAUNCHER.read_bytes(),

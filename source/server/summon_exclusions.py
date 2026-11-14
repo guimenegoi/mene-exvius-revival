@@ -53,6 +53,14 @@ def limited_out() -> frozenset:
     return frozenset(gacha_archive.limited_unit_ids())
 
 
+def guessed_limited() -> frozenset:
+    """Listed units the wiki does not mark limited (the story units and a few rewards): the banner guess in
+    gacha_archive.limited_unit_ids counts them limited, which kept them out with EXVIUS_SUMMON_EXCLUSIONS=0 too.
+    They are kept out by that setting alone."""
+    return frozenset(uid for uid, row in (_doc().get("excluded") or {}).items()
+                     if (row or {}).get("limited") not in ("Yes", "Collaboration", "Seasonal"))
+
+
 def sell_prices() -> dict:
     """Unit table row id -> sell Gil for the story units (empty when switched off)."""
     if not _on("EXVIUS_SELL_STORY_UNITS"):

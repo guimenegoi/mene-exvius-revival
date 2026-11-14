@@ -162,6 +162,10 @@ def limited_unit_ids() -> set:
                 limited.add(str(uid))
             elif flag == 'No' and not str((row or {}).get('page', '')).endswith('/JP'):
                 limited.discard(str(uid))
+        # The units Global launched with were its regular pool. Xiao and Cerius have no flag on the wiki and
+        # were caught by the banner guess above (their featured banners were holiday ones).
+        for uid in ((doc.get('launch') or {}).get('units') or {}):
+            limited.discard(str(uid))
     except (OSError, ValueError, KeyError):
         pass
     _LIMITED = limited

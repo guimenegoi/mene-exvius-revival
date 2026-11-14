@@ -58,7 +58,12 @@ WORK = os.path.dirname(HERE)  # APK_emulator_work/
 # `files/homeMarquee` are NOT extracted CPKs and stay anchored to the code/game tree respectively.
 AREA_ART_ROOTS = [os.path.join(data_paths.ART_ROOT, "en", "area"),
                   os.path.join(data_paths.ART_ROOT, "common_lang", "area")]
-BANNER_ART_ROOTS = [os.path.join(data_paths.ART_ROOT, "en", "banner"),
+BANNER_ART_ROOTS = [# the summon art pack's files come first (art_pack.py): they replace what the server
+                    # used to download or draw into DEAL_ART_ROOT
+                    *([os.path.join(data_paths.SUMMON_ART_PACK_ROOT, "base")]
+                      if os.environ.get("EXVIUS_SUMMON_ART_PACK", "1").strip().lower()
+                      not in ("0", "off", "false", "no") else []),
+                    os.path.join(data_paths.ART_ROOT, "en", "banner"),
                     os.path.join(data_paths.ART_ROOT, "en", "gacha"),
                     os.path.join(data_paths.ART_ROOT, "common_lang", "banner"),
                     os.path.join(data_paths.ART_ROOT, "common_lang", "gacha"),

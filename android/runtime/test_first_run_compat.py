@@ -23,7 +23,7 @@ import offline_data  # noqa: E402
 
 def upstream_fixture(root: Path):
     archive, files, manifest = sample(root)
-    manifest["revision"] = 9
+    manifest["revision"] = 10
     for record in manifest["packs"]:
         record["unpackedSize"] = 10
     asset = files / "exvius/data/static/client/game-assets.apk"
@@ -33,7 +33,7 @@ def upstream_fixture(root: Path):
         output.writestr(local_http.DATA_MANIFEST, json.dumps(manifest),
                         compress_type=zipfile.ZIP_STORED)
     data = files / "exvius/data"
-    installed = {"schema": 1, "revision": 9,
+    installed = {"schema": 1, "revision": 10,
                  "packs": [dict(p) for p in manifest["packs"]]}
     (data / "installed.json").write_text(json.dumps(installed))
     (data / "offline-client-assets.json").unlink()
@@ -93,7 +93,7 @@ class FirstRunCompatTests(unittest.TestCase):
                     # No fake server and no saves during the adapter.
                     self.assertFalse((files / "exvius/server-root").exists())
                     self.assertEqual(json.loads((files / "exvius/data/installed.json").read_text())
-                                     ["revision"], 9)
+                                     ["revision"], 10)
             finally:
                 sys.path[:] = before
 
@@ -153,7 +153,7 @@ class FirstRunCompatTests(unittest.TestCase):
             archive, files, manifest, asset = upstream_fixture(Path(tmp))
             receipt = files / "exvius/data/installed.json"
             current = json.loads(receipt.read_text())
-            current["revision"] = 10
+            current["revision"] = 9
             receipt.write_text(json.dumps(current))
             ok, reason = local_http.reconcile_first_run(archive, files)
             self.assertFalse(ok)

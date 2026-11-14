@@ -141,6 +141,26 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):  # silence the default stderr line; we log structurally
         pass
 
+    def parse_request(self):
+        """A request line with bytes above ASCII is taken as UTF-8 that wasn't percent-encoded (2026-11-13).
+
+        The standard parser decodes the line as Latin-1 and splits it on whitespace, and Latin-1 0x85 and 0xA0
+        count as whitespace: the star of `Gacha-7★-Aranea.png` is E2 98 85, so a client sending that name as it
+        is got "400 Bad request syntax" before any handler ran, with nothing in the log. Encoding those bytes
+        here gives the file handler the same path a well-behaved client sends."""
+        raw = getattr(self, "raw_requestline", b"") or b""
+        if any(byte >= 0x80 for byte in raw):
+            self.raw_requestline = re.sub(rb"[\x80-\xff]", lambda m: b"%%%02X" % m.group(0)[0], raw)
+        return super().parse_request()
+
+    def send_error(self, code, message=None, explain=None):
+        # Refusals made before a handler runs (a request line that doesn't parse, an unknown method, headers too
+        # long) used to leave no line at all, so a download failing this way couldn't be seen in the log.
+        if code in (400, 408, 414, 431, 501, 505):
+            print(f"HTTP REFUSED {code} {message or ''}  line={getattr(self, 'raw_requestline', b'')[:300]!r}",
+                  flush=True)
+        return super().send_error(code, message, explain)
+
     def _handle(self):
         started = time.monotonic()
         length = int(self.headers.get("Content-Length") or 0)
@@ -614,8 +634,13 @@ class Handler(BaseHTTPRequestHandler):
             rel = marquee_file(replay_banner.group(1)) or rel
         # Summon detail art asked for under its padded name (banner_fit.fit_name): serve the real file, padded.
         # Under its `-full1` name (friend summons' screen has a 640x392 frame): fitted to that frame instead.
+        import art_pack
         import banner_fit
+        # The summon art pack holds list and detail images under the exact names the phone asks for, already
+        # cut or fitted (art_pack.py): sent as they are, before anything is looked up or made.
+        packed = art_pack.literal(rel)
         fit_plain = banner_fit.is_plain(rel)
+        fit_strip = banner_fit.is_strip(rel)       # a list image asked for as `x-strip1.png`: the strip cut from x
         rel = banner_fit.real_rel(rel)
         # EXVIUS_TABLE_VERSION_OFFSET advertises every table at <real version + offset> (see
         # ffbe_battle.serve_version_table); the client then asks for that inflated name. Map it back.
@@ -626,6 +651,9 @@ class Handler(BaseHTTPRequestHandler):
             rel = rel[:inflated.start(2)] + str(int(inflated.group(2)) - offset) + rel[inflated.end(2):]
         data = None
         how = None
+        if packed:
+            with open(packed, "rb") as content:
+                data, how = content.read(), "summon art pack"
         # Tables the iPhone server serves patched: the resource table (the battle's packs moved into the first
         # download) and the two resource version tables (new sound file versions). See ios_tables.py.
         # Reuse the Revival Vortex patch pipeline for both stock clients.
@@ -738,12 +766,13 @@ class Handler(BaseHTTPRequestHandler):
                 and b"\r\n" in data):
             data = data.replace(b"\r\n", b"\n")
             how = f"{how}, CRLF->LF"
-        if data is not None and rel:
-            import banner_fit
-            if banner_fit.wants(rel):
-                data, fit_note = banner_fit.fit(data, banner_fit.BASE_FRAME if fit_plain else banner_fit.FRAME)
-                if fit_note:
-                    how = f"{how}, {fit_note}"
+        if data is not None and rel and not packed:
+            # Summon art: detail images padded to their frame, and nothing larger than the phone can use.
+            # for_phone never raises: an image it can't work on is sent as it is, or as a drawn stand-in
+            # (2026-11-13: one oversized web image raised here, and the summon download could never finish).
+            data, fit_note = banner_fit.for_phone(rel, data, fit_plain, fit_strip)
+            if fit_note:
+                how = f"{how}, {fit_note}"
         n = len(data) if data is not None else 0
         verdict = f"200 {n} B ({how})" if data is not None else f"404 ({how or 'not in the CDN root'})"
         print(f"CDN  {self.command} {self.path}  host={self.headers.get('Host')}  "

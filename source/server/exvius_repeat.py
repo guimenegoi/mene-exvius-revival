@@ -168,20 +168,39 @@ def observe_load(spec, mid, is_battle_bundle, plaintext=None):
     from ffbe_state import State
     from ffbe_config import RESULT_TAG
     if is_battle_bundle and isinstance(spec, dict) and RESULT_TAG not in spec:
-        if begin_attempt(State.player, mid):
+        player = State.player
+        started = begin_attempt(player, mid)
+        # The same quest loaded again while its attempt is still open (the player backed out and picked it again,
+        # retired, or the app closed mid-battle): the battle is rolled again and the phone now holds THIS roll,
+        # so what the attempt keeps about the battle (its pots, unit drops, monsters, event currency) must follow
+        # it. Until 2026-11-12 it kept the abandoned battle's: the backstop paid that battle's currency, and the
+        # Guide lost the knockdowns and Libra scans of monsters only the new roll had.
+        attempt = (player.data.get('exvius_repeat', {}) or {}).get('attempt', {}) if player is not None else {}
+        reloaded = (not started and player is not None and player.mode != 'frozen'
+                    and attempt.get('mid') == str(mid) and attempt.get('status') == 'pending'
+                    and not attempt.get('normal_rewards_recorded'))
+        if reloaded:
+            for key in ('series_drops', 'unit_drops', 'guide_monsters', 'currency_placed'):
+                attempt.pop(key, None)
+            player.dirty = True
+        if started or reloaded:
             # Who was brought along is in the START request; the end request may not repeat it (the iPhone's
             # "Go on a quest with a friend!" never counted, 2026-11-06). Kept on the attempt for the clear.
             helper = helper_from_request(plaintext)
             if helper:
                 State.player.data['exvius_repeat']['attempt']['helper'] = helper
             pots = {}                # unit pots (kind 28) this roll drops: credited at MissionEnd if unreported
+            units = {}               # and units (kind 10: the Burst Pot of Vow of the Revived Legend's Lv. 7 stage)
             for row in spec.get('y35YvQjZ') or []:
                 for entry in str((row or {}).get('9BetM2Ds') or '').split(',') if isinstance(row, dict) else []:
                     f = entry.split(':')
-                    if len(f) >= 3 and f[0] == '28' and f[1].isdigit() and f[2].isdigit():
-                        pots[f[1]] = pots.get(f[1], 0) + int(f[2])
+                    if len(f) >= 3 and f[0] in ('28', '10') and f[1].isdigit() and f[2].isdigit():
+                        kept = pots if f[0] == '28' else units
+                        kept[f[1]] = kept.get(f[1], 0) + int(f[2])
             if pots:
                 State.player.data['exvius_repeat']['attempt']['series_drops'] = pots
+            if units:
+                State.player.data['exvius_repeat']['attempt']['unit_drops'] = units
             import guide            # the battle's monsters, for the Guide at MissionEnd (guide.record_battle)
             monsters = guide.monster_map(spec)
             if monsters:

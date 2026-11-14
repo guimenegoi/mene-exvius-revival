@@ -73,6 +73,30 @@ class OfflineDataTests(unittest.TestCase):
                 self.assertEqual(offline_data.main(["install", "--data", str(data), "--manifest", str(path)]), 0)
                 self.assertEqual(offline_data.main(["verify", "--data", str(data), "--manifest", str(path)]), 0)
 
+    def test_revision_10_appends_only_summon_art_without_reinstalling_old_packs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            data, path, manifest = fixture(Path(tmp))
+            self.assertEqual(offline_data.main(["install", "--data", str(data), "--manifest", str(path)]), 0)
+            asset = data / offline_data.ASSET_FILE
+            asset_mtime = asset.stat().st_mtime_ns
+            native = data / "native/mst/Ver001_test.dat"
+            native_mtime = native.stat().st_mtime_ns
+            saved = data / "save.json"
+            saved.write_text('{"progress": 42}')
+            extra = pack(Path(tmp) / "sources", "summon-art", {
+                "static/summon-art/example.png": b"demo art"
+            })
+            manifest["revision"] = 10
+            manifest["packs"].append(extra)
+            self.assertEqual([pack["id"] for pack in offline_data.plan(manifest, data)[0]],
+                             ["summon-art"])
+            self.assertIsNone(offline_data.plan(manifest, data)[1])
+            self.assertEqual(asset.stat().st_mtime_ns, asset_mtime)
+            self.assertEqual(native.stat().st_mtime_ns, native_mtime)
+            self.assertEqual(saved.read_text(), '{"progress": 42}')
+            self.assertIn("pack not installed/current: summon-art",
+                          offline_data.verify(manifest, data))
+
     def test_client_asset_damage_detected(self):
         with tempfile.TemporaryDirectory() as tmp:
             data, path, manifest = fixture(Path(tmp))

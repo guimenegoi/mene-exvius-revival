@@ -57,9 +57,49 @@ def _int(value, minimum=0):
 
 def _table(name, key=None):
     try:
+        if name == "F_MEDAL_EXCHANGE_MST":
+            return _fixed_medal_exchange(key)
         return _mst(name + ".ndjson", key)
     except FileNotFoundError:
         raise Refused(name + " is missing from shipped masters") from None
+
+
+# Exchange rows that are wrong in the game's last table (content/medal_exchange_fixes.json). Battle at the
+# Borders' store (900120, Hairpins) has 53 of its 57 rows priced in Debased Coins, The Frozen Cavern's
+# currency (an event six weeks later); Global's own list of that run has every row in Hairpins (wiki "Battle
+# at the Borders", King Mog). `store_currency` {store: currency} prices every row of the store in its currency.
+# Every reader of the table here goes through `_table`/`_rows`; ios_tables serves the phone the same rows.
+@lru_cache(maxsize=1)
+def medal_exchange_fixes():
+    """{exchange row id: {field: value}}."""
+    path = Path(__file__).with_name('content') / 'medal_exchange_fixes.json'
+    try:
+        doc = json.loads(path.read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return {}
+    medals = _mst("F_MEDAL_EXCHANGE_MST.ndjson", "S21FT3L8")
+    out = {}
+    for store, currency in (doc.get('store_currency') or {}).items():
+        for item in _mst("F_STORE_ITEM_MST.ndjson", None).get("__rows__", []):
+            if str(item.get("Z20mNDvL")) == str(store) and str(item.get("YWF08vZS")) == "50":
+                row = medals.get(str(item.get("6uIYE15X")))
+                if row and str(row.get("ak2dhKm3")) != str(currency):
+                    out[str(row["S21FT3L8"])] = {"ak2dhKm3": str(currency)}
+    return out
+
+
+@lru_cache(maxsize=None)
+def _fixed_medal_exchange(key):
+    table = _mst("F_MEDAL_EXCHANGE_MST.ndjson", key)
+    fixes = medal_exchange_fixes()
+    if not fixes:
+        return table
+
+    def fixed(row):
+        return dict(row, **fixes[str(row.get("S21FT3L8"))]) if str(row.get("S21FT3L8")) in fixes else row
+    if key is None:
+        return {"__rows__": [fixed(row) for row in table.get("__rows__", [])]}
+    return {rid: fixed(row) for rid, row in table.items()}
 
 
 def _rows(name):
@@ -167,7 +207,9 @@ def _grant(rows):
             cards = State.player.data.setdefault('vision_cards', [])
             for _ in range(row['count']):
                 key = str(max([int(c['user_vc_id']) for c in cards] + [int(time.time() * 1000)]) + 1)
-                cards.append({'user_vc_id': key, 'vc_id': str(row['id']), 'level': 1,
+                # The level the reward names (`27:id:count:100:level`): the VC Select Ticket exchanges sell
+                # their cards at level 10 (58 rows of F_MEDAL_EXCHANGE_MST); every other sold card is level 1.
+                cards.append({'user_vc_id': key, 'vc_id': str(row['id']), 'level': int(row.get('level', 1)),
                               'exp': 0, 'total_exp': 0})
     if rows:
         State.player.dirty = True

@@ -79,6 +79,11 @@ def unit_class_up(spec, req):
     if not step:
         _note(f"unit-class-up: no F_UNIT_CLASS_UP_MST row for {unit['master_id']}")
         return _refuse_awakening(spec, "this unit has no further awakening")
+    from player_state import unit_mst
+    if unit_mst(step.get("t74crqAL")) is None:
+        # One shipped row awakens into a unit the game has no data for (Kevin 312000306 -> 312000307).
+        _note(f"unit-class-up: {unit['master_id']} awakens into {step.get('t74crqAL')}, which is not in F_UNIT_MST")
+        return _refuse_awakening(spec, "this unit has no further awakening")
     materials = str(step.get("KCk8u0am") or "")
     gil = int(step.get("7UR4J2SE") or 0)
     rows = [m.split(":") for m in materials.split(",") if m.count(":") == 2]

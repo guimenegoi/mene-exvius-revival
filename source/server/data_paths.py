@@ -108,6 +108,8 @@ COMMUNITY_ART_ROOT = _new("COMMUNITY_ART_ROOT", "gacha_community", "art",
                           legacy=os.path.join(LEGACY, "gacha_community", "art"))
 # The DEAL banners' art (gacha_deals.json), downloaded once from the Wayback Machine on startup (deal_art.py).
 DEAL_ART_ROOT = _new("DEAL_ART_ROOT", "deal_art", legacy=os.path.join(WORK, "out", "deal_art"))
+# The summon art pack (art_pack.py): the images the server used to download, draw, pad or cut, as files.
+SUMMON_ART_PACK_ROOT = _new("SUMMON_ART_PACK_ROOT", "summon_art", legacy=os.path.join(WORK, "out", "summon_art"))
 # The JP/Memorial battle oracle. OPTIONAL at serve time: the battle index ships in `server/content/battle/`.
 ORACLE_DIR = _rooted("jp_battle_oracle", "decoded") if DATA_ROOT \
     else os.path.join(LEGACY, "jp_battle_oracle", "decoded")
@@ -132,5 +134,6 @@ __all__ = [
     "CERT_DIR",
     "COMMUNITY_ART_ROOT",
     "DEAL_ART_ROOT",
+    "SUMMON_ART_PACK_ROOT",
     "ORACLE_DIR",
 ]

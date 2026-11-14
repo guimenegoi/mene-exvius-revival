@@ -8,6 +8,10 @@
   "1442010": {"name": "Sword King’s Command +2", "description": "Increases physical and magic damage against beastmen for all allies."},
   "1442020": {"name": "Sword King’s Command +3", "description": "Increases physical and magic damage against beastmen for all allies."},
   "244184": {"name": "Mightiest Armor of the Sword King’s Village", "description": "Increases physical and magic damage against beasts by 75%."},
-  "244185": {"name": "Breathe Fire, Caesar!", "description": "Deals fire magic damage to all enemies."}
+  "244185": {"name": "Breathe Fire, Caesar!", "description": "Deals fire magic damage to all enemies."},
+  "244188": {"name": "[VC] The Hero Roto’s Promise", "description": "Increases physical and magic damage against humans by 50%."},
+  "244189": {"name": "[VC] Sword King, Fist King, and Sage King", "description": "Increases physical and magic damage against beasts by 50%."},
+  "244190": {"name": "[VC] Sword King, Fist King, and Sage King", "description": "Increases ATK and MAG by 300."},
+  "244202": {"name": "Warrior Fulcas’s Teachings", "description": "Increases physical and magic damage against humans by 50% and LB damage by 50%."}
  }
 }
