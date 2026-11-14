@@ -469,7 +469,14 @@ def save_state() -> None:
         State.state_dirty = False
         return
     if State.player is not None and (State.player.dirty or State.state_dirty):
-        State.player.save(STATE_FILE)
+        saved = State.player.save(STATE_FILE)
+        if saved and os.environ.get("FFBE_ANDROID_EMBEDDED") == "1":
+            # The opt-in worker performs any network IO away from the game reply.
+            try:
+                import save_backup
+                save_backup.after_save(STATE_FILE)
+            except Exception as exc:
+                print("SAVE-BACKUP: hook unavailable (" + type(exc).__name__ + ")", flush=True)
     State.state_dirty = False
 
 __all__ = ["State", "LAST_DROPS", "NOTES", "_note", "SEASON", "SEASON_SELECTOR", "SEASON_MTIME",

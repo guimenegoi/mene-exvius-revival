@@ -37,6 +37,18 @@ Entrega: **um único aplicativo**, sem Termux, VPN, root, Proxmox ou outro app.
 - [ ] Comprovar que todos os caminhos necessários (inclusive nativos, se houver)
       deixam de atingir endpoints externos, sem interceptar conexões de outros apps.
 
+## Diagnósticos e backup em Android — integração experimental 14/11/2026
+
+- [x] Reutilizado `client_reports.py` para telemetria, com opt-in privado e
+      coleta desabilitada por padrão.
+- [x] Incorporado transporte HTTPS de `feature/lxc-save-backup` e gatilho
+      assíncrono após gravação atômica de `campaign.json`; sem enviar tokens
+      no APK e sem exigir rede para salvar ou jogar.
+- [ ] Implementar pareamento seguro do dispositivo e teste de upload real
+      para a LXC 120, conferindo SHA-256 e preservação do save em modo avião.
+- [ ] Implementar restauração separada com confirmação e backup local prévio.
+- [ ] Validar emissão e deduplicação de logs na nova build Android real.
+
 ## RC2 — APK único ARM64 em inglês (12/11/2026)
 
 **Artefato de teste mais simples:** `~/Downloads/FFBE-Revival-RC2-ARM64-English.apk`,

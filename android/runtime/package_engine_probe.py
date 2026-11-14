@@ -39,7 +39,8 @@ OFFLINE_MANIFEST = "ffbe_offline_manifest.json"
 def git_tracked_engine(repository: Path) -> dict[str, bytes]:
     result = subprocess.run(
         ["git", "-C", str(repository), "ls-files", "-z", "--",
-         "source/server", "ios-server", "android/data/offline_data.py", "data/latest.json"],
+         "source/server", "ios-server", "android/data/offline_data.py",
+         "android/backup/lxc_backup.py", "data/latest.json"],
         check=True, stdout=subprocess.PIPE,
     )
     contents = {}
@@ -49,7 +50,8 @@ def git_tracked_engine(repository: Path) -> dict[str, bytes]:
         relative = item.decode("utf-8")
         if not (relative.startswith("source/server/") or
                 relative.startswith("ios-server/") and relative.endswith(".py") or
-                relative in {"android/data/offline_data.py", "data/latest.json"}):
+                relative in {"android/data/offline_data.py", "android/backup/lxc_backup.py",
+                             "data/latest.json"}):
             continue
         validate_relative(relative)
         file = repository / relative
@@ -58,6 +60,7 @@ def git_tracked_engine(repository: Path) -> dict[str, bytes]:
         contents[relative] = file.read_bytes()
     if not {"ios-server/serve.py", "ios-server/certs.py",
             "source/server/capture_server.py", "android/data/offline_data.py",
+            "android/backup/lxc_backup.py", "source/server/save_backup.py",
             "data/latest.json"}.issubset(contents):
         raise ValueError("Missing core Revival source files")
     return contents

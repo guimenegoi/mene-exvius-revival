@@ -339,7 +339,7 @@ def run(archive: Path | None = None, app_files: Path | None = None,
     # The bootstrap module exists inside the signed stdlib ZIP, not as a
     # separate Android app, and uses the existing SHA-256 installer.
     importlib.import_module("ffbe_engine_bootstrap").install(archive, target)
-    for relative in ("vendor", "source/server", "ios-server"):
+    for relative in ("vendor", "source/server", "ios-server", "android/backup"):
         path = target / relative
         if not path.is_dir():
             raise RuntimeError("Revival bundle incomplete: " + relative)
@@ -354,6 +354,25 @@ def run(archive: Path | None = None, app_files: Path | None = None,
     # The native Android client already has its own shipped MST and CPK data.
     # Never advertise the iPhone-only table rewrites/large version offset.
     os.environ["FFBE_ANDROID_EMBEDDED"] = "1"
+    # Optional per-install enrollment, never provisioned or included in APK.
+    # The private config only exists after an explicit user-authorized setup.
+    enrollment = files / "exvius/backup/config.json"
+    if enrollment.is_file() and not enrollment.is_symlink() and not enrollment.stat().st_mode & 0o077:
+        os.environ["FFBE_SAVE_BACKUP_CONFIG"] = str(enrollment)
+    else:
+        os.environ.pop("FFBE_SAVE_BACKUP_CONFIG", None)
+    # Existing client_reports transport: explicit private opt-in only.
+    diagnostics = files / "exvius/diagnostics.json"
+    os.environ["EXVIUS_CLIENT_REPORTS"] = "0"
+    try:
+        if (diagnostics.is_file() and not diagnostics.is_symlink()
+                and diagnostics.stat().st_mode & 0o077 == 0
+                and diagnostics.stat().st_size <= 4096):
+            setting = json.loads(diagnostics.read_text(encoding="utf-8"))
+            if isinstance(setting, dict) and setting.get("client_reports") is True:
+                os.environ["EXVIUS_CLIENT_REPORTS"] = "1"
+    except (OSError, ValueError, UnicodeError):
+        pass  # malformed config must never prevent the game from starting
     os.environ["EXVIUS_TABLE_VERSION_OFFSET"] = "0"
     os.environ["EXVIUS_IOS_HCA"] = "0"
     os.environ["EXVIUS_IOS_HCA_PLAIN"] = "0"

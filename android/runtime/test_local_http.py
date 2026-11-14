@@ -189,7 +189,7 @@ class LocalHttpTests(unittest.TestCase):
 
             def setup(_archive: Path, engine: Path):
                 used.append("verified-sha-installer")
-                for relative in ("vendor", "source/server", "ios-server"):
+                for relative in ("vendor", "source/server", "ios-server", "android/backup"):
                     (engine / relative).mkdir(parents=True, exist_ok=True)
 
             fake_bootstrap = types.SimpleNamespace(install=setup)
@@ -251,6 +251,7 @@ class LocalHttpTests(unittest.TestCase):
                                      str(files / "exvius/data"))
                     self.assertEqual(os.environ["FFBE_SERVER_ROOT"],
                                      str(files / "exvius/server-root"))
+                    self.assertEqual(os.environ["EXVIUS_CLIENT_REPORTS"], "0")
                 finally:
                     if servers:
                         servers[0].shutdown()

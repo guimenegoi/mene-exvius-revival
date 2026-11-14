@@ -34,7 +34,7 @@ class EngineBundleTests(unittest.TestCase):
         for name in (
             "/etc/passwd", "source/server/../../outside.py",
             "ios-server/../outside.py", "vendor/yaml/x\\y.py",
-            "other/unknown.py",
+            "other/unknown.py", "android/backup/secrets.json",
         ):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 embedded_engine.validate_relative(name)
@@ -50,6 +50,8 @@ class EngineBundleTests(unittest.TestCase):
             contents = {
                 "ios-server/serve.py": b"print('fake serve')\n",
                 "source/server/capture_server.py": b"class Handler: pass\n",
+                "source/server/save_backup.py": b"def after_save(path): return False\n",
+                "android/backup/lxc_backup.py": b"def upload(*args): pass\n",
                 "vendor/yaml/__init__.py": b"def safe_load(text): return {'enabled': True}\n",
             }
             make_archive(bundle, contents)
@@ -100,6 +102,8 @@ class EngineBundleTests(unittest.TestCase):
                 "ios-server/serve.py": b"def configure_engine(): pass\n",
                 "ios-server/certs.py": b"x=1\n",
                 "source/server/capture_server.py": b"class Handler: pass\n",
+                "source/server/save_backup.py": b"def after_save(path): return False\n",
+                "android/backup/lxc_backup.py": b"def upload(*args): pass\n",
             }
             with patch.object(package_engine_probe, "git_tracked_engine",
                               return_value=source), patch.object(
@@ -110,14 +114,14 @@ class EngineBundleTests(unittest.TestCase):
                 counts = package_engine_probe.package_engine(
                     root, root / "fake.tar.gz", stdlib, path,
                 )
-            self.assertEqual(counts["engine_files"], 5)
+            self.assertEqual(counts["engine_files"], 7)
             with zipfile.ZipFile(path) as zf:
                 self.assertIn("ffbe_engine_bootstrap.py", zf.namelist())
                 self.assertIn("ffbe_engine/source/server/capture_server.py", zf.namelist())
                 self.assertEqual(zf.testzip(), None)
             self.assertEqual(
                 embedded_engine.install(path, root / "engine"),
-                5,
+                7,
             )
 
     def test_pillow_cp314_wheel_uses_existing_engine_bundle(self):
