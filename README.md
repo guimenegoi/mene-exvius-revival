@@ -1,13 +1,14 @@
 # Exvius Revival for iOS
 
-> **Android — RC2 de teste (12/11/2026):** o fork tem um APK único ARM64
-> com o servidor Revival embarcado. O arquivo local está em
-> `~/Downloads/FFBE-Revival-RC2-ARM64-English.apk` no desktop de desenvolvimento
-> (não distribuído no Git). Título, Home e Vortex foram validados no Waydroid,
-> mas instalação limpa, batalha e save com rede desligada em celular real
-> **ainda não foram aprovados**. A primeira instalação exige baixar os 19 pacotes.
-> Veja o [checklist Android atualizado](docs/ANDROID_CHECKLIST.md) e as
-> [instruções de distribuição](android/distribution/README.md).
+> **Android — RC3 com inicialização confirmada em celular ARM64 (15/11/2026):**
+> o instalador rev10 baixou corretamente os 20 pacotes, e o usuário confirmou
+> que o servidor local iniciou na APK `MutableInventory` (versionCode 9101).
+> Este é um **marco de inicialização**, não uma release estável: batalha,
+> saves/restauração, funcionamento sem rede, ciclo de vida e gameplay ainda
+> precisam de validação física. A APK assinada de teste fica na distribuição
+> privada, não neste repositório. Consulte o [marco RC3](docs/ANDROID_RC3_BASELINE_2026-11-15.md),
+> o [checklist](docs/ANDROID_CHECKLIST.md) e [distribuição](android/distribution/README.md).
+> Não desinstale nem limpe os dados da instalação para atualizar.
 >
 > **O guia abaixo é o README original do upstream, para iOS.** Não se aplica
 > à instalação Android e continua preservado para facilitar os merges.

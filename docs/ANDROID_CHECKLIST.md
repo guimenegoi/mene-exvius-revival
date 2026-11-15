@@ -649,3 +649,19 @@ Documentação técnica: [Android](ANDROID.md),
       Android ARM64 9101 e mesma assinatura v1/v2/v3.
 - [ ] Validar início do servidor HTTP em aparelho Android real; o próximo
       problema, se houver, deve ser diagnosticado por logcat.
+
+## RC3 — aceite de inicialização no Samsung (15/11/2026)
+
+- [x] Usuário confirmou que a APK `MutableInventory` abriu corretamente
+      depois de instalar os pacotes rev10 e superar o bloqueio de inventário.
+- [x] Bundle Python/JNI, manifesto e validação rev10 testados na bancada;
+      139 testes automatizados, assinatura v1/v2/v3 e diff de APK verificados.
+- [ ] Capturar prova independente do endpoint `/__exvius/hello` no celular;
+      o aceite do usuário confirma a experiência de inicialização, mas não
+      constitui teste de todas as rotas HTTP.
+- [ ] Testar em celular: título, Home, exploração, batalha, reinício sem
+      redownload, persistência de save, backup/restauração e modo sem rede.
+- [ ] Testar versão limpa separadamente, sem desinstalar a instalação atual.
+- [ ] Promover a estável somente após regressão funcional e decisão explícita.
+
+Registro: [RC3 Android baseline](ANDROID_RC3_BASELINE_2026-11-15.md).

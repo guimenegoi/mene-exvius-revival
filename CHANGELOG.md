@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-15: Android RC3 — marco de inicialização em aparelho físico
+
+- O usuário confirmou que a RC3 ARM64 iniciou após o download incremental da
+  revisão 10 (20 pacotes) e a correção do bootstrap/inventário do cache nativo.
+- Foram preservados o motor Revival real, o backup opcional de saves e as
+  verificações de SHA-256, assinatura e integridade dos recursos essenciais.
+- A APK `MutableInventory` segue como **candidata testada apenas na inicialização**;
+  não foi promovida a estável. Batalha, persistência, backup/restauração,
+  funcionamento sem rede e lifecycle do processo permanecem pendentes.
+- Registro de referência e SHA-256: [Android RC3](docs/ANDROID_RC3_BASELINE_2026-11-15.md).
+
 ## 2026-11-12: Android RC2 — APK único de teste
 
 - O fork Android agora tem APK único ARM64 para instalação direta, reunindo
