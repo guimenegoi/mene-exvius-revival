@@ -249,13 +249,19 @@ def preflight(archive: Path | None = None,
             return False, "expected inventory invalid"
         # Walk the exact five symlink targets and static tree, avoiding a
         # recursive traversal of the app-private files directory or saves.
-        counted = sum(
-            len(file_names)
-            for root in [files / name for name in NATIVE_NAMES] + [data / "static"]
-            for _, _, file_names in os.walk(root)
-        ) + int((data / "registry.json").is_file())
+        counts = {
+            name: sum(len(filenames) for _, _, filenames in os.walk(files / name))
+            for name in sorted(NATIVE_NAMES)
+        }
+        counts["static"] = sum(
+            len(filenames) for _, _, filenames in os.walk(data / "static")
+        )
+        registry_present = int((data / "registry.json").is_file())
+        counted = sum(counts.values()) + registry_present
         if counted < expected_count:
-            return False, f"file inventory incomplete: {counted}/{expected_count}"
+            by_group = ", ".join(f"{name}={count}" for name, count in counts.items())
+            return False, (f"file inventory incomplete: {counted}/{expected_count}; "
+                           f"groups: {by_group}; registry={registry_present}")
         return True, "verified 20-pack private data layout"
     except (OSError, ValueError, KeyError, TypeError, zipfile.BadZipFile, json.JSONDecodeError) as exc:
         return False, "preflight failed: " + type(exc).__name__

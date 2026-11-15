@@ -614,3 +614,22 @@ Documentação técnica: [Android](ANDROID.md),
       confirmado: apenas `classes4.dex` em relação à RC3 StartupFix.
 - [ ] Validar em celular que o download incremental rev10 conclui e o
       Revival HTTP local inicia; não promover a release estável ainda.
+
+## RC3 diagnóstico bootstrap/inventário (15/11/2026)
+
+- [x] Relatório Android 12:26:06 mostra import `Unexpected bundled engine
+      path: android/backup/lxc_backup.py` e inventário `14153/14178`.
+- [x] Verificado: a APK PackURLFix tinha `ffbe_engine_bootstrap.py` antigo,
+      apesar de o repositório já autorizar o módulo `android/backup/lxc_backup.py`.
+- [x] Bundle Python regenerado com bootstrap atual e contagem de arquivos
+      separada por grupo no erro de pré-verificação. Guardas inalterados.
+- [x] Comparado com pacote `summon-art` SHA-256 válido: 1691 caminhos únicos,
+      sem colisões com instalação de referência rev9; referência rev10 possui
+      14177 caminhos, 1 a menos que o total de 14178 informado no manifesto.
+      No celular são 14153, restando 24 arquivos não identificados.
+- [x] 138 testes; bootstrap da APK extrai 1088 arquivos com SHA-256 e
+      segunda execução incremental extrai 0; assinatura/zipalign válidos.
+      O diff de conteúdo da APK limita-se a `assets/ffbe_python/stdlib.zip`.
+- [ ] Capturar nova execução no celular e comparar as contagens por grupo
+      antes de qualquer mudança nos limiares ou tentativa de restauração.
+- [ ] Validar HTTP do jogo no Android físico; não promover candidata.

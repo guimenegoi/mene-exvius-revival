@@ -145,7 +145,12 @@ class LocalHttpTests(unittest.TestCase):
                 manifest["files"] = 100_000
                 zf.writestr(local_http.DATA_MANIFEST, json.dumps(manifest),
                             compress_type=zipfile.ZIP_STORED)
-            self.assertIn("inventory incomplete", local_http.preflight(archive, files)[1])
+            reason = local_http.preflight(archive, files)[1]
+            self.assertIn("inventory incomplete", reason)
+            self.assertIn("groups:", reason)
+            self.assertIn("static=", reason)
+            self.assertIn("mst=", reason)
+            self.assertIn("registry=1", reason)
 
     def test_rejects_native_symlink_escape(self):
         with tempfile.TemporaryDirectory() as tmp:

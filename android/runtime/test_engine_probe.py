@@ -43,6 +43,14 @@ class EngineBundleTests(unittest.TestCase):
             "source/server/capture_server.py",
         )
 
+    def test_backup_allowlist_matches_packaged_runtime_entry(self):
+        source = Path(embedded_engine.__file__).read_bytes()
+        self.assertIn(b'"android/backup/lxc_backup.py"', source)
+        self.assertEqual(
+            embedded_engine.validate_relative("android/backup/lxc_backup.py").as_posix(),
+            "android/backup/lxc_backup.py",
+        )
+
     def test_extract_verify_and_incremental_repair(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
