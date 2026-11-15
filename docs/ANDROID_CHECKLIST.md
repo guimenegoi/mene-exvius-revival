@@ -602,3 +602,15 @@ Documentação técnica: [Android](ANDROID.md),
       em relação à RC3 anterior, assinatura DEBUG original preservada.
 - [ ] Validar no Android físico o download complementar de `summon-art`, a
       criação do recibo rev10 e a abertura real de `127.0.0.1:18080`.
+
+## RC3 revisão 10 — corrigir "Invalid data pack information" (15/11/2026)
+
+- [x] Diagnóstico reproduzido pelo manifesto real: 20 URLs
+      `CreamySeaman6/Data` rejeitadas pela validação Java antiga
+      `DataUpdates.validate()` limitada a `Elvlin/exvius-offline`.
+- [x] Patch mínimo da origem autorizada **somente** em `validate()`;
+      verificação de atualizações do próprio APK mantida como estava.
+- [x] 137 testes; APK assinada v1/v2/v3; zipalign; diff de membros
+      confirmado: apenas `classes4.dex` em relação à RC3 StartupFix.
+- [ ] Validar em celular que o download incremental rev10 conclui e o
+      Revival HTTP local inicia; não promover a release estável ainda.

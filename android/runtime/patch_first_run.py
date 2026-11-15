@@ -82,6 +82,27 @@ def patch_installed_manifest_gate(source: str) -> str:
     return before + start + method + end + after
 
 
+def patch_data_pack_origin(source: str) -> str:
+    """Allow pinned rev10 data packs without altering APK update origin.
+
+    The upstream DataUpdates.validate() restricts all pack URLs to Elvlin,
+    while the pinned manifest ships 20 URLs from CreamySeaman6/Data. Patch
+    *only* that validator, not downloadApp() or generic HTTP transports.
+    """
+    method = ".method private static validate(Lorg/json/JSONObject;)V"
+    if source.count(method) != 1:
+        raise ValueError("Unrecognized DataUpdates manifest validator")
+    before, section = source.split(method, 1)
+    if ".end method" not in section:
+        raise ValueError("Unterminated DataUpdates validator")
+    body, after = section.split(".end method", 1)
+    old = 'https://github.com/Elvlin/exvius-offline/releases/download/'
+    new = 'https://github.com/CreamySeaman6/Data/releases/download/'
+    if body.count(old) != 1 or new in body:
+        raise ValueError("Unexpected pack origin or duplicate patch")
+    return before + method + body.replace(old, new, 1) + ".end method" + after
+
+
 def patch_manifest(source: bytes) -> bytes:
     root = ET.fromstring(source)
     if root.get("package") != "com.square_enix.android_googleplay.FFBEWW":
@@ -218,8 +239,8 @@ def main() -> None:
              "-o", str(upstream_dir), str(args.upstream_apk)], check=True,
         )
         updates = upstream_dir / UPSTREAM_UPDATES_SMALI
-        updates.write_text(patch_installed_manifest_gate(
-            pin_manifest_url(updates.read_text(encoding="utf-8"))),
+        updates.write_text(patch_data_pack_origin(patch_installed_manifest_gate(
+            pin_manifest_url(updates.read_text(encoding="utf-8")))),
             encoding="utf-8")
         patch_smali(upstream_dir)
         upstream_rebuilt = scratch / "upstream-compiled.apk"

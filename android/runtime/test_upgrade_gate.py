@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import unittest
+import json
+from pathlib import Path
 
-from patch_first_run import patch_installed_manifest_gate
+from patch_first_run import patch_installed_manifest_gate, patch_data_pack_origin
 
 
 METHOD = '''
@@ -42,6 +44,23 @@ class UpgradeGateTests(unittest.TestCase):
         self.assertIn('return v4', out)
         with self.assertRaisesRegex(ValueError, 'stacked patch'):
             patch_installed_manifest_gate(out)
+
+    def test_pack_urls_match_rev10_manifest_and_app_origin_is_untouched(self):
+        data = json.loads((Path(__file__).resolve().parents[2] / "data/latest.json").read_text())
+        pack_origin = "https://github.com/CreamySeaman6/Data/releases/download/"
+        self.assertEqual(len(data["packs"]), 20)
+        self.assertTrue(all(row["url"].startswith(pack_origin) for row in data["packs"]))
+        old = "https://github.com/Elvlin/exvius-offline/releases/download/"
+        sample = (".method private static downloadApp()V\n" + old + "\n.end method\n"
+                  ".method private static validate(Lorg/json/JSONObject;)V\n"
+                  + old + "\n.end method\n" + old)
+        updated = patch_data_pack_origin(sample)
+        self.assertEqual(updated.count(pack_origin), 1)
+        self.assertEqual(updated.count(old), 2)
+        with self.assertRaisesRegex(ValueError, "duplicate patch"):
+            patch_data_pack_origin(updated)
+        with self.assertRaisesRegex(ValueError, "validator"):
+            patch_data_pack_origin("nothing")
 
     def test_unknown_upstream_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'exactly one'):
