@@ -258,7 +258,26 @@ def preflight(archive: Path | None = None,
         )
         registry_present = int((data / "registry.json").is_file())
         counted = sum(counts.values()) + registry_present
-        if counted < expected_count:
+        # Rev10 is installed from 20 SHA-256-verified ZIPs. The game then
+        # legitimately evicts/replaces its mutable native MST, marquee and CPK
+        # caches, so a snapshot total cannot remain a startup invariant.
+        # Keep stable extracted groups and pinned server resources as guards.
+        # Never use this exception for any other manifest revision or inventory.
+        if manifest.get("revision") == 10 and expected_count == 14178:
+            for name, minimum in (("common_lang", 5607),
+                                  ("localized_texts", 157), ("static", 7184)):
+                if counts[name] < minimum:
+                    return False, (f"stable resource inventory incomplete: "
+                                   f"{name}={counts[name]}/{minimum}")
+            if not registry_present:
+                return False, "resource registry missing"
+            for relative in ("native/mst/Ver709_i5QEJpua.dat",
+                             "native/mst/Ver9001_YW9MUm2H.dat",
+                             "native/en/sd/area/Ver461_spdungeon1.cpk"):
+                file = data / relative
+                if file.is_symlink() or not file.is_file() or file.stat().st_size == 0:
+                    return False, "pinned native resource missing: " + relative
+        elif counted < expected_count:
             by_group = ", ".join(f"{name}={count}" for name, count in counts.items())
             return False, (f"file inventory incomplete: {counted}/{expected_count}; "
                            f"groups: {by_group}; registry={registry_present}")

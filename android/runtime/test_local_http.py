@@ -152,6 +152,38 @@ class LocalHttpTests(unittest.TestCase):
             self.assertIn("mst=", reason)
             self.assertIn("registry=1", reason)
 
+    def test_rev10_accepts_mutable_cache_churn_with_stable_data_guards(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive, files, manifest = sample(Path(tmp))
+            manifest["files"] = 14178
+            with zipfile.ZipFile(archive, "w") as zf:
+                zf.writestr(local_http.DATA_MANIFEST, json.dumps(manifest),
+                            compress_type=zipfile.ZIP_STORED)
+            counts = {"mst": 265, "homeMarquee": 3, "en": 935,
+                      "common_lang": 5607, "localized_texts": 157,
+                      "static": 7185}
+            native_walk = os.walk
+
+            def fixture_walk(root, *args, **kwargs):
+                name = Path(root).name
+                if name in counts and (name != "static" or root == files / "exvius/data/static"):
+                    return iter([(str(root), [], ["file"] * counts[name])])
+                return native_walk(root, *args, **kwargs)
+
+            with patch.object(local_http.os, "walk", side_effect=fixture_walk):
+                self.assertTrue(local_http.preflight(archive, files)[0])
+                counts["common_lang"] -= 1
+                self.assertIn("stable resource inventory incomplete",
+                              local_http.preflight(archive, files)[1])
+                counts["common_lang"] += 1
+                counts["static"] -= 2
+                self.assertIn("stable resource inventory incomplete",
+                              local_http.preflight(archive, files)[1])
+                counts["static"] += 2
+                (files / "mst/Ver709_i5QEJpua.dat").unlink()
+                self.assertIn("pinned native resource missing",
+                              local_http.preflight(archive, files)[1])
+
     def test_rejects_native_symlink_escape(self):
         with tempfile.TemporaryDirectory() as tmp:
             archive, files, _ = sample(Path(tmp))

@@ -633,3 +633,19 @@ Documentação técnica: [Android](ANDROID.md),
 - [ ] Capturar nova execução no celular e comparar as contagens por grupo
       antes de qualquer mudança nos limiares ou tentativa de restauração.
 - [ ] Validar HTTP do jogo no Android físico; não promover candidata.
+
+## RC3 inventário mutável — 15/11/2026
+
+- [x] Relatório Samsung 12:58 registra Python/cryptography/Revival imports OK,
+      com recusa `14153/14178` e contagens de cada raiz.
+- [x] Comparação rev10: `mst=265` vs 299; `homeMarquee=3` vs 9;
+      `common_lang=5607`, `localized_texts=157`, `static=7185`.
+- [x] Preflight rev10 preserva os 20 receipts de packs, SHA-256 do cliente,
+      grupos estáveis mínimos, symlinks privados e os 3 recursos nativos
+      fixados, mas tolera a substituição legítima do cache nativo.
+- [x] 139 testes, incluindo simulação exata das contagens Samsung e
+      rejeição de recursos estáveis ausentes ou arquivo pinado removido.
+- [x] APK de teste com diff restrito a `assets/ffbe_python/stdlib.zip`,
+      Android ARM64 9101 e mesma assinatura v1/v2/v3.
+- [ ] Validar início do servidor HTTP em aparelho Android real; o próximo
+      problema, se houver, deve ser diagnosticado por logcat.
