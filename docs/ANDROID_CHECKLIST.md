@@ -587,3 +587,18 @@ Estado de laboratório e bloqueadores em
 Documentação técnica: [Android](ANDROID.md),
 [arquitetura de APK único](ANDROID_STANDALONE.md) e
 [bootstrap de laboratório](../android/runtime/README.md).
+
+## RC3 revisão 10 — correção do gate Java (15/11/2026)
+
+- [x] Diagnosticada incompatibilidade no upgrade rev9 (19 packs) -> rev10
+      (20 packs): `DataUpdates.installedManifestComplete()` antigo aceitava
+      um `installed.json` com qualquer quantidade de pacotes, enquanto
+      `ffbe_local_http.preflight()` exigia 20; a Activity avançava sem
+      baixar `summon-art` e o servidor local recusava o startup.
+- [x] Patch mínimo no gate do instalador Java exige revisão 10 e pelo menos
+      20 recibos, encaminhando o cliente já instalado ao downloader upstream
+      incremental existente; os hashes dos 19 pacotes antigos não mudaram.
+- [x] Testes do gate e integridade da nova APK: somente `classes4.dex` alterado
+      em relação à RC3 anterior, assinatura DEBUG original preservada.
+- [ ] Validar no Android físico o download complementar de `summon-art`, a
+      criação do recibo rev10 e a abertura real de `127.0.0.1:18080`.

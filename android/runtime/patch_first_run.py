@@ -50,6 +50,38 @@ def pin_manifest_url(source: str) -> str:
     return source.replace(UPSTREAM_LATEST, UPSTREAM_PINNED)
 
 
+def patch_installed_manifest_gate(source: str) -> str:
+    """Route rev9/19-pack installations to the existing incremental updater."""
+    start = ".method private static installedManifestComplete(Landroid/content/Context;)Z"
+    end = ".end method"
+    if source.count(start) != 1:
+        raise ValueError("Expected exactly one installed manifest gate")
+    before, remainder = source.split(start, 1)
+    if end not in remainder:
+        raise ValueError("Unterminated installed manifest gate")
+    method, after = remainder.split(end, 1)
+    ready_marker = ('    move-result-object v1\n\n    .line 86\n'
+                    '    .local v1, "current":Lorg/json/JSONObject;\n'
+                    '    const-string v2, "packs"')
+    checked = ('    move-result-object v1\n\n'
+               '    const-string v2, "revision"\n'
+               '    invoke-virtual {v1, v2}, Lorg/json/JSONObject;->optInt(Ljava/lang/String;)I\n'
+               '    move-result v2\n'
+               '    const/16 v3, 0xa\n'
+               '    if-eq v2, v3, :rev10_ready\n'
+               '    return v0\n'
+               '    :rev10_ready\n\n'
+               '    .line 86\n'
+               '    .local v1, "current":Lorg/json/JSONObject;\n'
+               '    const-string v2, "packs"')
+    old_count = '    const/4 v4, 0x1\n\n    if-ge v3, v4, :cond_0'
+    new_count = '    const/4 v4, 0x1\n\n    const/16 v5, 0x14\n    if-ge v3, v5, :cond_0'
+    if method.count(ready_marker) != 1 or method.count(old_count) != 1:
+        raise ValueError("Unrecognized installed manifest gate; refusing stacked patch")
+    method = method.replace(ready_marker, checked, 1).replace(old_count, new_count, 1)
+    return before + start + method + end + after
+
+
 def patch_manifest(source: bytes) -> bytes:
     root = ET.fromstring(source)
     if root.get("package") != "com.square_enix.android_googleplay.FFBEWW":
@@ -186,8 +218,9 @@ def main() -> None:
              "-o", str(upstream_dir), str(args.upstream_apk)], check=True,
         )
         updates = upstream_dir / UPSTREAM_UPDATES_SMALI
-        updates.write_text(pin_manifest_url(updates.read_text(encoding="utf-8")),
-                           encoding="utf-8")
+        updates.write_text(patch_installed_manifest_gate(
+            pin_manifest_url(updates.read_text(encoding="utf-8"))),
+            encoding="utf-8")
         patch_smali(upstream_dir)
         upstream_rebuilt = scratch / "upstream-compiled.apk"
         subprocess.run(
