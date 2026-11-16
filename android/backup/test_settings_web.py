@@ -208,6 +208,25 @@ class SettingsWebTests(unittest.TestCase):
         code, _, _, _, _ = self.request("POST", "/settings", form)
         self.assertEqual(code, 303)
 
+    def test_historical_period_is_shown_as_dates_not_week_number(self):
+        self.login()
+        code, body, _, _, _ = self.request()
+        self.assertEqual(code, 200)
+        self.assertIn('Período histórico', body)
+        self.assertIn('30/06 a 06/07/2016', body)
+        self.assertIn('07/07 a 13/07/2016', body)
+        self.assertNotIn('Semana histórica manual', body)
+        self.assertIn('<option value="0" selected>30/06 a 06/07/2016</option>', body)
+        self.assertIn('<option value="1">07/07 a 13/07/2016</option>', body)
+        self.assertEqual(web.historical_period_label(web.date(2016, 12, 29), 0),
+                         '29/12/2016 a 04/01/2017')
+
+    def test_date_period_follows_custom_historical_start(self):
+        rendered = web.field_html(web.ALL_FIELDS['EXVIUS_REPLAY_MANUAL_WEEK'], {
+            'EXVIUS_REPLAY_START': '2016-12-16', 'EXVIUS_REPLAY_MANUAL_WEEK': 1})
+        self.assertIn('23/12 a 29/12/2016', rendered)
+        self.assertIn('<option value="1" selected>', rendered)
+
     def test_manual_week_advance_with_default_mode_preserves_explicit_start(self):
         self.login()
         form = self.settings_form(EXVIUS_REPLAY_MANUAL_WEEK="1")

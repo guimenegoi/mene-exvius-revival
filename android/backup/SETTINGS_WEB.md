@@ -34,3 +34,18 @@ Depois de salvá-la no gerenciador de senhas, apague a cópia temporária:
     python3 -m unittest discover -s android/backup -p 'test_*.py' -q
 
 O painel no servidor não significa que a sincronização real com o telefone esteja concluída. Nenhum backup real foi pareado até agora.
+## Avanço manual por datas (17/11/2026)
+
+Na seção **Cronologia**, o campo **Período histórico** mostra intervalos
+reais, por exemplo **30/06 a 06/07/2016** e **07/07 a 13/07/2016**.
+Os índices de sete dias (`EXVIUS_REPLAY_MANUAL_WEEK`) continuam somente
+no protocolo de configuração, ocultos do texto exibido ao usuário.
+Escolha o período, confirme a mudança histórica e salve; o servidor
+registra uma revisão e **não reinicia** o FFBE. Com pareamento de backup
+válido, o Android da RC3 Manual2016 busca a revisão em background e a
+aplica apenas na próxima inicialização. Sem pareamento, não há sincronização
+automática nem confirmação de aplicação no aparelho.
+
+A página permanece sem JavaScript, seguindo CSP `default-src 'none'`.
+Validar pelo menos uma sincronização e reinicialização reais no Samsung
+antes de marcar o status do dispositivo como conectado/atualizado.

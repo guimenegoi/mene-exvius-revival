@@ -18,7 +18,7 @@ import secrets
 import ssl
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from http import cookies
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -39,7 +39,7 @@ FIELDS = {
         ("EXVIUS_REPLAY", "Reprodução histórica", "bool", "Ativa a progressão histórica de conteúdo."),
         ("EXVIUS_REPLAY_MODE", "Progressão histórica", "replay_mode", "Automática ou manual, sem avanço pelo calendário real."),
         ("EXVIUS_REPLAY_START", "Data inicial", "date", "Primeiro dia da cronologia Global (2016–2024)."),
-        ("EXVIUS_REPLAY_MANUAL_WEEK", "Semana histórica manual", "number", "0 = 30/06/2016; aumentar em 1 avança exatamente sete dias históricos, após reiniciar."),
+        ("EXVIUS_REPLAY_MANUAL_WEEK", "Período histórico", "historical_period", "Selecione as datas que deseja jogar. O calendário fica parado nesse intervalo até você escolher outro; reinicie o jogo após sincronizar."),
         ("EXVIUS_REPLAY_PACE", "Ritmo do calendário", "text", "Ex.: 3,2@2020-08-20 — semanas históricas por semana real."),
         ("EXVIUS_REPLAY_FULL_RUNS", "Duração original dos eventos", "bool", "Considera o intervalo histórico completo de cada evento."),
     ],
@@ -197,7 +197,7 @@ def parse_settings(form: dict) -> dict:
             if raw not in ("true", "false"):
                 raise ValueError("Invalid boolean: " + key)
             settings[key] = raw == "true"
-        elif kind == "number":
+        elif kind in ("number", "historical_period"):
             if not re.fullmatch(r"[0-9]{1,5}", raw):
                 raise ValueError("Invalid number: " + key)
             settings[key] = int(raw)
@@ -215,6 +215,26 @@ def parse_settings(form: dict) -> dict:
     return config_model.validate_document({"schema": 1, "settings": settings})
 
 
+def historical_period_label(start: date, index: int) -> str:
+    first = start + timedelta(weeks=index)
+    last = first + timedelta(days=6)
+    if first.year == last.year:
+        return f"{first:%d/%m} a {last:%d/%m/%Y}"
+    return f"{first:%d/%m/%Y} a {last:%d/%m/%Y}"
+
+
+def historical_period_options(saved: dict) -> str:
+    """Render date ranges without exposing replay index in the visible UI."""
+    start = date.fromisoformat(saved.get("EXVIUS_REPLAY_START", EFFECTIVE_DEFAULTS["EXVIUS_REPLAY_START"]))
+    selected = saved.get("EXVIUS_REPLAY_MANUAL_WEEK", 0)
+    return "".join(
+        f'<option value="{index}"{" selected" if index == selected else ""}>'
+        f'{esc(historical_period_label(start, index))}</option>'
+        for index in range(config_model.RANGES["EXVIUS_REPLAY_MANUAL_WEEK"][1] + 1)
+        if start + timedelta(weeks=index) <= date(2024, 10, 30)
+    )
+
+
 def field_html(item: tuple, saved: dict) -> str:
     key, label, kind, description = item
     custom = key in saved
@@ -230,6 +250,11 @@ def field_html(item: tuple, saved: dict) -> str:
         control = f'<select name="{name}" id="{name}">' + "".join(
             f'<option value="{esc(v)}"{" selected" if v == selected else ""}>{esc(text)}</option>'
             for v, text in options) + "</select>"
+    elif kind == "historical_period":
+        control = (f'<select name="{name}" id="{name}">'
+                   + historical_period_options(saved) + '</select>')
+        default_text = historical_period_label(
+            date.fromisoformat(saved.get("EXVIUS_REPLAY_START", EFFECTIVE_DEFAULTS["EXVIUS_REPLAY_START"])), 0)
     elif kind == "replay_mode":
         options = [("", "Padrão da próxima APK · Manual"), ("manual", "Manual — data fixa"),
                    ("automatic", "Automática (restaura a âncora original)")]
@@ -511,7 +536,7 @@ def make_handler(app: WebApp):
                 oldsettings = previous["document"]["settings"] if previous else {}
                 edits = any(candidate["settings"].get(k) != oldsettings.get(k)
                             for k in ("EXVIUS_REPLAY_START", "EXVIUS_REPLAY_PACE",
-                      "EXVIUS_REPLAY_MODE", "EXVIUS_REPLAY_MANUAL_WEEK"))
+                                  "EXVIUS_REPLAY_MODE", "EXVIUS_REPLAY_MANUAL_WEEK"))
                 if edits and form.get("confirm_timeline") != ["yes"]:
                     return self._dashboard(record, error="Confirme a alteração de cronologia "
                                            "para continuar.", code=422)
