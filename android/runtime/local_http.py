@@ -12,7 +12,9 @@ import hashlib
 import importlib
 import json
 import os
+import shutil
 import sys
+import tempfile
 import zipfile
 from pathlib import Path
 
@@ -304,6 +306,32 @@ def preserve_native_mst_for_cdn(files: Path) -> int:
         raise ValueError("native MST cache is unavailable or unsafe")
     target.mkdir(parents=True, exist_ok=True)
     linked = 0
+
+    def pin_file(original: Path, dest: Path) -> None:
+        # Android may deny hardlinks between the client's native cache and
+        # app-private server files even when both paths are readable.
+        try:
+            os.link(original, dest, follow_symlinks=False)
+            return
+        except PermissionError:
+            pass
+        # Only a denied hardlink falls back to copying. The temporary file
+        # stays on the destination filesystem and is never used if incomplete.
+        fd, staging = tempfile.mkstemp(prefix=".ffbe-pin-", dir=dest.parent)
+        try:
+            with os.fdopen(fd, "wb") as output, original.open("rb") as inp:
+                shutil.copyfileobj(inp, output, length=1 << 20)
+                output.flush()
+                os.fsync(output.fileno())
+            digest = lambda path: hashlib.file_digest(path.open("rb"), "sha256").digest()
+            if digest(original) != digest(Path(staging)):
+                raise ValueError("CDN pinned resource changed during copy")
+            if dest.is_symlink() or dest.exists():
+                raise ValueError("CDN pin target unexpectedly appeared")
+            os.replace(staging, dest)
+        finally:
+            Path(staging).unlink(missing_ok=True)
+
     for current, dirs, names in os.walk(source, followlinks=False):
         current_path = Path(current)
         if any((current_path / name).is_symlink() for name in dirs + names):
@@ -320,7 +348,7 @@ def preserve_native_mst_for_cdn(files: Path) -> int:
             if dest.is_symlink() or (dest.exists() and not dest.is_file()):
                 raise ValueError("CDN overlay contains invalid file")
             if not dest.exists():
-                os.link(original, dest, follow_symlinks=False)
+                pin_file(original, dest)
                 linked += 1
     for name in ("Ver709_i5QEJpua.dat", "Ver9001_YW9MUm2H.dat"):
         if not (target / name).is_file():
@@ -339,7 +367,7 @@ def preserve_native_mst_for_cdn(files: Path) -> int:
     if not pinned_pack.exists():
         if not base_pack.is_file() or base_pack.stat().st_size == 0:
             raise ValueError("original Vortex resource pack unavailable")
-        os.link(base_pack, pinned_pack, follow_symlinks=False)
+        pin_file(base_pack, pinned_pack)
         linked += 1
     if not pinned_pack.is_file() or pinned_pack.stat().st_size == 0:
         raise ValueError("CDN overlay has an invalid Vortex resource pack")
