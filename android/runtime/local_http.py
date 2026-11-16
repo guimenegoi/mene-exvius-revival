@@ -323,8 +323,10 @@ def preserve_native_mst_for_cdn(files: Path) -> int:
                 shutil.copyfileobj(inp, output, length=1 << 20)
                 output.flush()
                 os.fsync(output.fileno())
-            digest = lambda path: hashlib.file_digest(path.open("rb"), "sha256").digest()
-            if digest(original) != digest(Path(staging)):
+            with original.open("rb") as original_in, Path(staging).open("rb") as staged_in:
+                original_hash = hashlib.file_digest(original_in, "sha256").digest()
+                staged_hash = hashlib.file_digest(staged_in, "sha256").digest()
+            if original_hash != staged_hash:
                 raise ValueError("CDN pinned resource changed during copy")
             if dest.is_symlink() or dest.exists():
                 raise ValueError("CDN pin target unexpectedly appeared")
