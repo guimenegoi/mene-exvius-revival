@@ -30,7 +30,7 @@ A unit's release date is the first Global banner that featured it (unit_release.
 same game series, so a reward unit is never early. Where Global's own update history (the FFBE wiki) dates
 a unit earlier than that, its date wins (global_release_fixes, 2026-11-10).
 
-The replay's week 0 is stored in state/replay.json. Delete that file to start over from EXVIUS_REPLAY_START.
+Automatic replay anchors its first week in state/replay.json. Manual mode uses EXVIUS_REPLAY_MODE=manual, EXVIUS_REPLAY_START=2016-06-30 and EXVIUS_REPLAY_MANUAL_WEEK=0; it leaves replay.json untouched.
 
 Preview from a shell:  python3 replay.py --weeks 8
 """
@@ -48,6 +48,22 @@ _CACHE: dict = {}
 def enabled() -> bool:
     import gacha_rotation
     return os.environ.get('EXVIUS_REPLAY') == '1' and gacha_rotation.enabled()
+
+
+def manual_enabled() -> bool:
+    """Explicit, read-only historical override; never migrates the save anchor."""
+    return os.environ.get('EXVIUS_REPLAY_MODE', 'automatic') == 'manual'
+
+
+def manual_week() -> int:
+    """Manual progression in one-week increments, bounded to Global history."""
+    raw = os.environ.get('EXVIUS_REPLAY_MANUAL_WEEK', '0')
+    if not raw.isascii() or not raw.isdecimal() or len(raw) > 3:
+        raise ValueError('Invalid historical manual week')
+    value = int(raw)
+    if value > 434:
+        raise ValueError('Manual historical week outside Global replay')
+    return value
 
 
 def start_date() -> date:
@@ -103,6 +119,8 @@ def _pace_at(day: date) -> int:
 def historical_start(index: int) -> date:
     """Where history stands at the start of replay week `index` (0 = the first replay week)."""
     day = start_date()
+    if manual_enabled():
+        return day + timedelta(weeks=max(0, index))
     for _ in range(max(0, index)):
         day += timedelta(days=7 * _pace_at(day))
     return day
@@ -115,6 +133,10 @@ def _state_file() -> str:
 
 def anchor_week(current: int, record: bool) -> int:
     """The rotation week that is replay week 0, recorded the first time summons are served."""
+    if manual_enabled():
+        # The virtual anchor keeps the existing notices/rotation consumers on
+        # the chosen historical week, without reading/writing state/replay.json.
+        return current - manual_week()
     path = _state_file()
     try:
         with open(path, encoding='utf-8') as fh:
@@ -135,8 +157,12 @@ def window(now: datetime | None = None, record: bool = False, anchor: int | None
     """This real week's slice of history: {'index', 'from', 'to', 'finished'} ('to' is exclusive)."""
     import gacha_rotation
     number = gacha_rotation.week(now)[0]
-    first = anchor if anchor is not None else anchor_week(number, record)
-    index = number - first
+    if manual_enabled():
+        index = manual_week()
+        first = number - index
+    else:
+        first = anchor if anchor is not None else anchor_week(number, record)
+        index = number - first
     begin, end = historical_start(index), historical_start(index + 1)
     return {'index': index, 'from': begin, 'to': end, 'finished': begin >= end_date(), 'anchor': first}
 

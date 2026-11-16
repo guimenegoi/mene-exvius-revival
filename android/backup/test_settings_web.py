@@ -208,6 +208,23 @@ class SettingsWebTests(unittest.TestCase):
         code, _, _, _, _ = self.request("POST", "/settings", form)
         self.assertEqual(code, 303)
 
+    def test_manual_launch_settings_require_confirmation_and_store_revision(self):
+        self.login()
+        form = self.settings_form(EXVIUS_REPLAY_MODE="manual",
+                                  EXVIUS_REPLAY_START="2016-06-30",
+                                  EXVIUS_REPLAY_MANUAL_WEEK="0")
+        code, _, _, _, _ = self.request("POST", "/settings", form)
+        self.assertEqual(code, 422)
+        self.assertIsNone(config_service.get(self.store, "phone"))
+        form["confirm_timeline"] = "yes"
+        code, _, _, dest, _ = self.request("POST", "/settings", form)
+        self.assertEqual(code, 303)
+        self.assertEqual(dest, "/?saved=1")
+        saved = config_service.get(self.store, "phone")["document"]["settings"]
+        self.assertEqual(saved["EXVIUS_REPLAY_MODE"], "manual")
+        self.assertEqual(saved["EXVIUS_REPLAY_START"], "2016-06-30")
+        self.assertNotIn("EXVIUS_REPLAY_MANUAL_WEEK", saved)  # default=0
+
     def test_optimistic_conflict_does_not_overwrite(self):
         self.login()
         first = config_model.validate_document({

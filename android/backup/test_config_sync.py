@@ -100,6 +100,48 @@ class ConfigModelTests(unittest.TestCase):
             self.assertTrue(model.compatible_with_save(
                 doc(EXVIUS_REPLAY_START="2016-12-16"), None, replay)[0])
 
+    def test_manual_2016_virtual_migration_preserves_old_replay_and_rolls_back(self):
+        with tempfile.TemporaryDirectory() as t:
+            base = pathlib.Path(t)
+            private = base / "config"
+            replay = base / "replay.json"
+            original = b'{"anchor_week": 44, "start": "2016-12-16"}'
+            replay.write_bytes(original)
+            manual = doc(EXVIUS_REPLAY_MODE="manual", EXVIUS_REPLAY_START="2016-06-30",
+                         EXVIUS_REPLAY_MANUAL_WEEK=0)
+            model.write_private(private / "staged-config.json", manual)
+            env = {}
+            result = model.apply_on_boot(private, replay, env)
+            self.assertTrue(result["applied"], result)
+            self.assertEqual(env["EXVIUS_REPLAY_MODE"], "manual")
+            self.assertEqual(env["EXVIUS_REPLAY_START"], "2016-06-30")
+            self.assertEqual(env["EXVIUS_REPLAY_MANUAL_WEEK"], "0")
+            self.assertEqual(replay.read_bytes(), original)
+            # Manual progression changes only a versioned setting; no save edit.
+            model.write_private(private / "staged-config.json", doc(
+                EXVIUS_REPLAY_MODE="manual", EXVIUS_REPLAY_START="2016-06-30",
+                EXVIUS_REPLAY_MANUAL_WEEK=1))
+            result = model.apply_on_boot(private, replay, {})
+            self.assertTrue(result["applied"], result)
+            self.assertEqual(replay.read_bytes(), original)
+            # Return to automatic without rebasing the original anchor.
+            model.write_private(private / "staged-config.json", doc())
+            result = model.apply_on_boot(private, replay, {})
+            self.assertTrue(result["applied"], result)
+            self.assertEqual(replay.read_bytes(), original)
+
+    def test_manual_requires_valid_explicit_start_and_week(self):
+        for configuration in (
+            {"EXVIUS_REPLAY_MODE": "manual"},
+            {"EXVIUS_REPLAY_MODE": "manual", "EXVIUS_REPLAY_START": "2016-06-30",
+             "EXVIUS_REPLAY_MANUAL_WEEK": 435},
+            {"EXVIUS_REPLAY_MANUAL_WEEK": 1},
+            {"EXVIUS_REPLAY_MODE": "manual", "EXVIUS_REPLAY_START": "2016-06-30",
+             "EXVIUS_REPLAY": False},
+        ):
+            with self.assertRaises(ValueError):
+                model.validate_document(doc(**configuration))
+
     def test_staged_config_applies_only_on_restart(self):
         with tempfile.TemporaryDirectory() as t:
             private = pathlib.Path(t)/"config"

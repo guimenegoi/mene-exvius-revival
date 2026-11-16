@@ -30,8 +30,10 @@ RANGES = {
     "EXVIUS_QUEST_TRUST_BIG_CHANCE": (0, 100),
     "EXVIUS_QUEST_TRUST_BIG_POINTS": (0, 1000),
     "EXVIUS_REPLAY_NOTICE_WEEKS": (1, 52),
+    "EXVIUS_REPLAY_MANUAL_WEEK": (0, 434),
 }
-SPECIAL = frozenset({"EXVIUS_REPLAY_START", "EXVIUS_REPLAY_PACE", "MARQUEE_FLAG"})
+SPECIAL = frozenset({"EXVIUS_REPLAY_START", "EXVIUS_REPLAY_PACE", "MARQUEE_FLAG",
+                     "EXVIUS_REPLAY_MODE"})
 ALLOWED = BOOLEANS | set(RANGES) | SPECIAL
 DEFAULT_START = "2016-12-16"
 DEFAULT_PACE = "3,2@2020-08-20"
@@ -81,10 +83,20 @@ def validate_document(value: dict) -> dict:
                     raise ValueError("Invalid replay pace segment")
                 if day:
                     _day(day)
+        elif key == "EXVIUS_REPLAY_MODE":
+            if raw not in ("manual", "automatic") or not isinstance(raw, str):
+                raise ValueError("Invalid historical replay mode")
         elif key == "MARQUEE_FLAG":
             if raw not in ("0", "1", "flag") or not isinstance(raw, str):
                 raise ValueError("Invalid MARQUEE_FLAG")
         settings[key] = raw
+    if settings.get("EXVIUS_REPLAY_MODE") == "manual":
+        if "EXVIUS_REPLAY_START" not in settings:
+            raise ValueError("Manual historical replay requires an explicit start date")
+        if settings.get("EXVIUS_REPLAY") is False:
+            raise ValueError("Manual historical replay requires enabled replay")
+    elif "EXVIUS_REPLAY_MANUAL_WEEK" in settings:
+        raise ValueError("Manual week requires manual replay mode")
     normalized = {"schema": SCHEMA, "settings": dict(sorted(settings.items()))}
     if len(encode(normalized)) > MAX_BYTES:
         raise ValueError("Configuration exceeds maximum size")
@@ -165,6 +177,10 @@ def compatible_with_save(document: dict, previous: dict | None,
     if not isinstance(anchor, dict) or not isinstance(anchor.get("anchor_week"), int):
         return False, "invalid replay anchor"
     original_start = anchor.get("start")
+    if settings.get("EXVIUS_REPLAY_MODE") == "manual":
+        # Virtual manual timeline never changes replay.json or campaign.json.
+        # The original anchor remains intact for an explicit return to auto.
+        return True, "virtual manual timeline; original replay anchor preserved"
     if ("EXVIUS_REPLAY_START" in settings
             and settings["EXVIUS_REPLAY_START"] != original_start):
         return False, "replay start change requires explicit migration"

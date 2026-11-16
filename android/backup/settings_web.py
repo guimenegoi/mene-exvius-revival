@@ -37,7 +37,9 @@ PBKDF2_ROUNDS = 480000
 FIELDS = {
     "Cronologia": [
         ("EXVIUS_REPLAY", "Reprodução histórica", "bool", "Ativa a progressão histórica de conteúdo."),
+        ("EXVIUS_REPLAY_MODE", "Progressão histórica", "replay_mode", "Automática ou manual, sem avanço pelo calendário real."),
         ("EXVIUS_REPLAY_START", "Data inicial", "date", "Primeiro dia da cronologia Global (2016–2024)."),
+        ("EXVIUS_REPLAY_MANUAL_WEEK", "Semana histórica manual", "number", "0 = 30/06/2016; aumentar em 1 avança exatamente sete dias históricos, após reiniciar."),
         ("EXVIUS_REPLAY_PACE", "Ritmo do calendário", "text", "Ex.: 3,2@2020-08-20 — semanas históricas por semana real."),
         ("EXVIUS_REPLAY_FULL_RUNS", "Duração original dos eventos", "bool", "Considera o intervalo histórico completo de cada evento."),
     ],
@@ -66,7 +68,9 @@ ALL_FIELDS = {item[0]: item for group in FIELDS.values() for item in group}
 # These are presentation defaults, NOT saved overrides.
 EFFECTIVE_DEFAULTS = {
     "EXVIUS_REPLAY": True,
+    "EXVIUS_REPLAY_MODE": "automatic",
     "EXVIUS_REPLAY_START": "2016-12-16",
+    "EXVIUS_REPLAY_MANUAL_WEEK": 0,
     "EXVIUS_REPLAY_PACE": "3,2@2020-08-20",
     "EXVIUS_REPLAY_FULL_RUNS": True,
     "EXVIUS_EVENT_ARCHIVE": True,
@@ -216,6 +220,13 @@ def field_html(item: tuple, saved: dict) -> str:
     if kind == "bool":
         options = [("", "Padrão · " + default_text), ("true", "Ativado"), ("false", "Desativado")]
         selected = ("true" if value else "false") if custom else ""
+        control = f'<select name="{name}" id="{name}">' + "".join(
+            f'<option value="{esc(v)}"{" selected" if v == selected else ""}>{esc(text)}</option>'
+            for v, text in options) + "</select>"
+    elif kind == "replay_mode":
+        options = [("", "Padrão · Automática"), ("manual", "Manual — data fixa"),
+                   ("automatic", "Automática")]
+        selected = str(value) if custom else ""
         control = f'<select name="{name}" id="{name}">' + "".join(
             f'<option value="{esc(v)}"{" selected" if v == selected else ""}>{esc(text)}</option>'
             for v, text in options) + "</select>"
@@ -492,7 +503,8 @@ def make_handler(app: WebApp):
                 candidate = parse_settings(form)
                 oldsettings = previous["document"]["settings"] if previous else {}
                 edits = any(candidate["settings"].get(k) != oldsettings.get(k)
-                            for k in ("EXVIUS_REPLAY_START", "EXVIUS_REPLAY_PACE"))
+                            for k in ("EXVIUS_REPLAY_START", "EXVIUS_REPLAY_PACE",
+                      "EXVIUS_REPLAY_MODE", "EXVIUS_REPLAY_MANUAL_WEEK"))
                 if edits and form.get("confirm_timeline") != ["yes"]:
                     return self._dashboard(record, error="Confirme a alteração de cronologia "
                                            "para continuar.", code=422)
