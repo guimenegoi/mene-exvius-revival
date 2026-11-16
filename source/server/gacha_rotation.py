@@ -137,7 +137,11 @@ HOLIDAYS = {
 
 
 def holidays_enabled() -> bool:
-    return os.environ.get('EXVIUS_ROTATION_HOLIDAYS', '1') == '1'
+    # Manual replay must never pull a later historical holiday into a fixed
+    # 2016 week because the *real-world* calendar reaches that holiday.
+    import replay
+    return (not replay.manual_enabled()
+            and os.environ.get('EXVIUS_ROTATION_HOLIDAYS', '1') == '1')
 
 
 def holiday_of(key: str, names: list) -> str | None:
