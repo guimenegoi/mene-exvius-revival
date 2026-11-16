@@ -68,8 +68,8 @@ ALL_FIELDS = {item[0]: item for group in FIELDS.values() for item in group}
 # These are presentation defaults, NOT saved overrides.
 EFFECTIVE_DEFAULTS = {
     "EXVIUS_REPLAY": True,
-    "EXVIUS_REPLAY_MODE": "automatic",
-    "EXVIUS_REPLAY_START": "2016-12-16",
+    "EXVIUS_REPLAY_MODE": "manual",
+    "EXVIUS_REPLAY_START": "2016-06-30",
     "EXVIUS_REPLAY_MANUAL_WEEK": 0,
     "EXVIUS_REPLAY_PACE": "3,2@2020-08-20",
     "EXVIUS_REPLAY_FULL_RUNS": True,
@@ -205,6 +205,13 @@ def parse_settings(form: dict) -> dict:
             settings[key] = raw
         if key in settings and settings[key] == EFFECTIVE_DEFAULTS[key]:
             settings.pop(key)
+    # In the next Android RC, manual 2016 is the runtime default. Store the
+    # mode/start explicitly when the user changes week or historical start;
+    # otherwise the strict device validator must reject a partial override.
+    if form.get("EXVIUS_REPLAY_MODE") in (None, [""], ["manual"]):
+        if "EXVIUS_REPLAY_MANUAL_WEEK" in settings or "EXVIUS_REPLAY_START" in settings:
+            settings["EXVIUS_REPLAY_MODE"] = "manual"
+            settings.setdefault("EXVIUS_REPLAY_START", EFFECTIVE_DEFAULTS["EXVIUS_REPLAY_START"])
     return config_model.validate_document({"schema": 1, "settings": settings})
 
 
@@ -224,8 +231,8 @@ def field_html(item: tuple, saved: dict) -> str:
             f'<option value="{esc(v)}"{" selected" if v == selected else ""}>{esc(text)}</option>'
             for v, text in options) + "</select>"
     elif kind == "replay_mode":
-        options = [("", "Padrão · Automática"), ("manual", "Manual — data fixa"),
-                   ("automatic", "Automática")]
+        options = [("", "Padrão da próxima APK · Manual"), ("manual", "Manual — data fixa"),
+                   ("automatic", "Automática (restaura a âncora original)")]
         selected = str(value) if custom else ""
         control = f'<select name="{name}" id="{name}">' + "".join(
             f'<option value="{esc(v)}"{" selected" if v == selected else ""}>{esc(text)}</option>'

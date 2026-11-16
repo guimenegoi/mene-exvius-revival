@@ -167,7 +167,7 @@ class SettingsWebTests(unittest.TestCase):
         self.login()
         code, body, _, _, _ = self.request()
         self.assertEqual(code, 200)
-        self.assertIn('value="2016-12-16"', body)
+        self.assertIn('value="2016-06-30"', body)
         self.assertIn('value="3,2@2020-08-20"', body)
         self.assertIn('value="150"', body)
         self.assertIn('value="30"', body)
@@ -200,7 +200,7 @@ class SettingsWebTests(unittest.TestCase):
 
     def test_replay_change_requires_explicit_acknowledgement(self):
         self.login()
-        form = self.settings_form(EXVIUS_REPLAY_START="2016-06-30")
+        form = self.settings_form(EXVIUS_REPLAY_START="2016-07-07")
         code, body, _, _, _ = self.request("POST", "/settings", form)
         self.assertEqual(code, 422)
         self.assertIsNone(config_service.get(self.store, "phone"))
@@ -208,11 +208,31 @@ class SettingsWebTests(unittest.TestCase):
         code, _, _, _, _ = self.request("POST", "/settings", form)
         self.assertEqual(code, 303)
 
+    def test_manual_week_advance_with_default_mode_preserves_explicit_start(self):
+        self.login()
+        form = self.settings_form(EXVIUS_REPLAY_MANUAL_WEEK="1")
+        form["confirm_timeline"] = "yes"
+        code, _, _, _, _ = self.request("POST", "/settings", form)
+        self.assertEqual(code, 303)
+        stored = config_service.get(self.store, "phone")["document"]["settings"]
+        self.assertEqual(stored["EXVIUS_REPLAY_MODE"], "manual")
+        self.assertEqual(stored["EXVIUS_REPLAY_START"], "2016-06-30")
+        self.assertEqual(stored["EXVIUS_REPLAY_MANUAL_WEEK"], 1)
+
+    def test_switching_back_to_automatic_keeps_original_anchor_default(self):
+        self.login()
+        form = self.settings_form(EXVIUS_REPLAY_MODE="automatic")
+        form["confirm_timeline"] = "yes"
+        code, _, _, _, _ = self.request("POST", "/settings", form)
+        self.assertEqual(code, 303)
+        stored = config_service.get(self.store, "phone")["document"]["settings"]
+        self.assertEqual(stored, {"EXVIUS_REPLAY_MODE": "automatic"})
+
     def test_manual_launch_settings_require_confirmation_and_store_revision(self):
         self.login()
         form = self.settings_form(EXVIUS_REPLAY_MODE="manual",
                                   EXVIUS_REPLAY_START="2016-06-30",
-                                  EXVIUS_REPLAY_MANUAL_WEEK="0")
+                                  EXVIUS_REPLAY_MANUAL_WEEK="1")
         code, _, _, _, _ = self.request("POST", "/settings", form)
         self.assertEqual(code, 422)
         self.assertIsNone(config_service.get(self.store, "phone"))
@@ -223,7 +243,7 @@ class SettingsWebTests(unittest.TestCase):
         saved = config_service.get(self.store, "phone")["document"]["settings"]
         self.assertEqual(saved["EXVIUS_REPLAY_MODE"], "manual")
         self.assertEqual(saved["EXVIUS_REPLAY_START"], "2016-06-30")
-        self.assertNotIn("EXVIUS_REPLAY_MANUAL_WEEK", saved)  # default=0
+        self.assertEqual(saved["EXVIUS_REPLAY_MANUAL_WEEK"], 1)
 
     def test_optimistic_conflict_does_not_overwrite(self):
         self.login()
