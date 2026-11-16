@@ -436,6 +436,9 @@ def run(archive: Path | None = None, app_files: Path | None = None,
     # installer. The iPhone's first-battle workaround must not trigger them.
     os.environ["EXVIUS_EARLY_RESOURCES"] = ""
     os.environ["EXVIUS_IOS_SOUND_REFETCH"] = ""
+    # Bind virtual history before importing the server or save state.
+    history = importlib.import_module("ffbe_manual_history")
+    history.configure(files)
     serve = importlib.import_module("serve")
     serve.configure_engine()
     capture = serve.start_engine()
@@ -444,8 +447,12 @@ def run(archive: Path | None = None, app_files: Path | None = None,
         raise ValueError("Android server must use the pinned loopback port")
     server = serve.Server(("127.0.0.1", PORT), handler)
     server.tls = None
+    # Optional, authenticated settings polling starts only AFTER the engine
+    # and local HTTP handler are fully initialized. No effect without pairing.
+    sync_stop = history.start_sync(files)
     try:
         print("FFBE-RevivalHTTP: READY 127.0.0.1:18080 (real Revival)", flush=True)
         server.serve_forever()
     finally:
+        sync_stop.set()
         server.server_close()

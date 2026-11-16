@@ -271,6 +271,8 @@ class LocalHttpTests(unittest.TestCase):
                     return fake_bootstrap
                 if name == "serve":
                     return fake_serve
+                if name == "ffbe_manual_history":
+                    return fake_history
                 raise AssertionError("Unplanned module: " + name)
 
             def factory(address, handler):
@@ -295,6 +297,10 @@ class LocalHttpTests(unittest.TestCase):
             fake_serve = types.SimpleNamespace(
                 configure_engine=configure, start_engine=start_engine,
                 make_handler=make_handler, Server=factory,
+            )
+            fake_history = types.SimpleNamespace(
+                configure=lambda files: None,
+                start_sync=lambda files: threading.Event(),
             )
             errors = []
             before = list(sys.path)
