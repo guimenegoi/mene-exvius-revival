@@ -273,6 +273,11 @@ class LocalHttpTests(unittest.TestCase):
                     return fake_serve
                 if name == "ffbe_manual_history":
                     return fake_history
+                if name == "ffbe_history_pairing":
+                    return types.SimpleNamespace(
+                        Pairing=lambda files: None,
+                        wrap_handler=lambda handler, pairing, status: handler,
+                    )
                 raise AssertionError("Unplanned module: " + name)
 
             def factory(address, handler):
@@ -301,6 +306,7 @@ class LocalHttpTests(unittest.TestCase):
             fake_history = types.SimpleNamespace(
                 configure=lambda files: None,
                 start_sync=lambda files: threading.Event(),
+                status=lambda: {'state': 'not_paired'},
             )
             errors = []
             before = list(sys.path)

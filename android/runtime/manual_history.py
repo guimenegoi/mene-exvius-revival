@@ -9,6 +9,20 @@ import os
 import threading
 from pathlib import Path
 
+_sync = None
+
+
+def status() -> dict:
+    """Local-only, non-secret diagnostic for the current historical period."""
+    index = int(os.environ.get("EXVIUS_REPLAY_MANUAL_WEEK", "0"))
+    from datetime import date, timedelta
+    start = date.fromisoformat(os.environ.get("EXVIUS_REPLAY_START", "2016-06-30"))
+    period = start + timedelta(weeks=index)
+    state = _sync.status() if _sync is not None else {"state": "not_paired", "has_pending": False}
+    return {**state, "historical_from": period.isoformat(),
+            "historical_to": (period + timedelta(days=6)).isoformat(),
+            "mode": os.environ.get("EXVIUS_REPLAY_MODE", "manual")}
+
 
 def configure(files: Path) -> dict:
     """Select the 2016 launch by default; apply only validated local overrides."""
@@ -59,7 +73,9 @@ def start_sync(files: Path) -> threading.Event:
         endpoint, device, token, ca, _token_file = current
         return {"endpoint": endpoint, "device": device, "token": token}, ca
 
+    global _sync
     sync = config_sync.ConfigSync(Path(files) / "exvius/settings", credentials)
+    _sync = sync
 
     def poll():
         while not stop.is_set():

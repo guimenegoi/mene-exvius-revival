@@ -443,6 +443,12 @@ def run(archive: Path | None = None, app_files: Path | None = None,
     serve.configure_engine()
     capture = serve.start_engine()
     handler = serve.make_handler(capture, b"", b"")
+    # Reuse the one-time loopback pairing pattern from embedded_client.
+    # The pairing route is inert until an authorized operator supplies the
+    # temporary ADB challenge; game routes continue to use the real handler.
+    pairing_module = importlib.import_module("ffbe_history_pairing")
+    pairing = pairing_module.Pairing(files)
+    handler = pairing_module.wrap_handler(handler, pairing, history)
     if port != PORT:
         raise ValueError("Android server must use the pinned loopback port")
     server = serve.Server(("127.0.0.1", PORT), handler)
