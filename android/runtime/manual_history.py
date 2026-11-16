@@ -61,17 +61,33 @@ def configure(files: Path) -> dict:
 def start_sync(files: Path) -> threading.Event:
     """Poll optional paired settings asynchronously; never block engine startup."""
     stop = threading.Event()
-    if not os.environ.get("FFBE_SAVE_BACKUP_CONFIG"):
+    import json
+    directory = Path(files) / "exvius/settings"
+    enrolled = directory / "receiver-config.json"
+    if not enrolled.is_file() or enrolled.is_symlink():
         return stop
     import config_sync
-    from save_backup import _configuration
+    from ffbe_history_pairing import ENDPOINT
 
     def credentials():
-        current = _configuration()
-        if current is None:
-            return None
-        endpoint, device, token, ca, _token_file = current
-        return {"endpoint": endpoint, "device": device, "token": token}, ca
+        if enrolled.is_symlink() or not enrolled.is_file() or enrolled.stat().st_mode & 0o077:
+            raise ValueError("Settings credentials are not private")
+        if enrolled.stat().st_size > 4096:
+            raise ValueError("Oversized settings credentials")
+        config = json.loads(enrolled.read_text("utf-8"))
+        if not isinstance(config,dict) or set(config) != {"enabled", "url", "device", "token_file", "ca_file"}:
+            raise ValueError("Invalid settings credentials")
+        if config["enabled"] is not True or config["url"] != ENDPOINT or config["device"] != "samsung-android":
+            raise ValueError("Untrusted settings receiver")
+        token_file, ca = Path(config["token_file"]), Path(config["ca_file"])
+        if (token_file.parent != directory or ca.parent != directory
+                or any(p.is_symlink() or not p.is_file() for p in (token_file, ca))
+                or token_file.stat().st_mode & 0o077 or ca.stat().st_mode & 0o077):
+            raise ValueError("Unsafe settings credential files")
+        token = token_file.read_text("utf-8").strip()
+        if not 32 <= len(token) <= 256:
+            raise ValueError("Invalid settings credential token")
+        return {"endpoint": ENDPOINT, "device": "samsung-android", "token": token}, ca
 
     global _sync
     sync = config_sync.ConfigSync(Path(files) / "exvius/settings", credentials)

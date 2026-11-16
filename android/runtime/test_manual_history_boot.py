@@ -73,6 +73,32 @@ class ManualHistoryBootstrapTests(unittest.TestCase):
             self.assertTrue((settings / 'staged-config.json').is_file())
             self.assertFalse((settings / 'server-config.json').exists())
 
+    def test_phone_settings_pair_does_not_enable_save_backup(self):
+        import history_pairing
+        import config_sync
+        import sys
+        with tempfile.TemporaryDirectory() as t, patch.dict(os.environ, {}, clear=True):
+            files=Path(t)
+            receiver=history_pairing.Pairing(files)
+            with patch.object(history_pairing,'validate',return_value=('samsung-android','x'*48,b'test-CA')):
+                receiver.pair({'test':'synthetic'},receiver.challenge)
+            self.assertFalse((files/'exvius/backup/config.json').exists())
+            self.assertNotIn('FFBE_SAVE_BACKUP_CONFIG',os.environ)
+            calls=[]
+            class FakeSync:
+                def __init__(self,directory,connection):
+                    calls.append(directory)
+                    config,cafile=connection()
+                    self.assert_file=(config,cafile)
+                def poll(self): return False
+                def status(self):return {'state':'pending_restart','has_pending':False}
+            with patch.dict(sys.modules,{'ffbe_history_pairing':history_pairing}),\
+                 patch.object(config_sync,'ConfigSync',FakeSync),\
+                 patch.object(config_sync,'INTERVAL',0.05):
+                stop=manual_history.start_sync(files)
+                self.assertEqual(calls,[files/'exvius/settings'])
+                stop.set()
+
     def test_network_settings_off_without_pairing(self):
         with tempfile.TemporaryDirectory() as t, patch.dict(os.environ, {}, clear=True):
             stop = manual_history.start_sync(Path(t))

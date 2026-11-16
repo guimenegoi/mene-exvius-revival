@@ -50,7 +50,7 @@ class PairingTests(unittest.TestCase):
             pair=history_pairing.Pairing(Path(tmp))
             with self.assertRaises(PermissionError):pair.pair(self.sample(),'incorrect')
             self.assertFalse(pair.paired())
-            self.assertFalse((Path(tmp)/'exvius/backup/config.json').exists())
+            self.assertFalse((Path(tmp)/'exvius/settings/receiver-config.json').exists())
 
     def test_pair_is_one_time_and_writes_existing_bootstrap_format(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -58,13 +58,14 @@ class PairingTests(unittest.TestCase):
                 pair=history_pairing.Pairing(Path(tmp))
                 pair.pair(self.sample(),pair.challenge)
             self.assertTrue(pair.paired())
-            root=Path(tmp)/'exvius/backup'
-            config=json.loads((root/'config.json').read_text())
+            root=Path(tmp)/'exvius/settings'
+            self.assertFalse((Path(tmp)/'exvius/backup/config.json').exists())
+            config=json.loads((root/'receiver-config.json').read_text())
             self.assertEqual(set(config),{'enabled','url','device','token_file','ca_file'})
             self.assertEqual(config['url'],history_pairing.ENDPOINT)
             self.assertEqual(Path(config['token_file']).read_text(),'x'*48)
             self.assertEqual(Path(config['ca_file']).read_bytes(),b'test-CA')
-            for path in (root,root/'config.json',root/'receiver-ca.pem',root/'receiver-token.txt'):
+            for path in (root,root/'receiver-config.json',root/'receiver-ca.pem',root/'receiver-token.txt'):
                 self.assertEqual(path.stat().st_mode & 0o077,0)
             with self.assertRaises(PermissionError):pair.pair(self.sample(),pair.challenge)
 
@@ -74,6 +75,64 @@ class PairingTests(unittest.TestCase):
         with self.assertRaises(ValueError):history_pairing.validate(sample)
         sample=self.sample();sample['device']='../../etc'
         with self.assertRaises(ValueError):history_pairing.validate(sample)
+
+    def test_phone_browser_page_and_code_exchange_without_adb(self):
+        from unittest.mock import patch
+        from urllib.parse import urlencode
+        with tempfile.TemporaryDirectory() as tmp:
+            pair=history_pairing.Pairing(Path(tmp))
+            handler=history_pairing.wrap_handler(Base,pair,None)
+            server=ThreadingHTTPServer(('127.0.0.1',0),handler)
+            threading.Thread(target=server.serve_forever,daemon=True).start()
+            conn=http.client.HTTPConnection(*server.server_address,timeout=3)
+            try:
+                conn.request('GET',history_pairing.CONNECT)
+                response=conn.getresponse();body=response.read().decode('utf-8')
+                self.assertEqual(response.status,200)
+                self.assertIn('Conectar ao Web Helper',body)
+                self.assertNotIn(pair.challenge,body)
+                with patch.object(pair,'claim_via_phone') as claim:
+                    conn.request('POST',history_pairing.CONNECT,
+                        body=urlencode({'code':'A'*24}),headers={
+                        'Content-Type':'application/x-www-form-urlencoded',
+                        'Origin':'http://127.0.0.1:18080'})
+                    response=conn.getresponse();body=response.read().decode('utf-8')
+                    self.assertEqual(response.status,200)
+                    claim.assert_called_once_with('A'*24)
+                    self.assertIn('Conexão autorizada',body)
+                conn.request('POST',history_pairing.CONNECT,
+                    body=urlencode({'code':'A'*24}),headers={
+                    'Content-Type':'application/x-www-form-urlencoded',
+                    'Origin':'https://malicious.example'})
+                response=conn.getresponse();body=response.read().decode('utf-8')
+                self.assertNotIn('Conexão autorizada',body)
+            finally:
+                conn.close();server.shutdown();server.server_close()
+
+    def test_remote_claim_uses_https_and_private_credentials(self):
+        from unittest.mock import patch
+        from io import BytesIO
+        with tempfile.TemporaryDirectory() as tmp:
+            pair=history_pairing.Pairing(Path(tmp))
+            cert='-----BEGIN CERTIFICATE-----\nFAKE\n-----END CERTIFICATE-----'
+            response=json.dumps(self.sample(cert)).encode('utf-8')
+            class FakeResponse:
+                status=200
+                def __enter__(self):return self
+                def __exit__(self,*args):pass
+                def read(self,size):return response
+            class FakeOpener:
+                def open(self,request,timeout):
+                    self_request=request
+                    assert self_request.full_url==history_pairing.CLAIM_URL
+                    assert json.loads(self_request.data)['code']=='A'*24
+                    assert timeout==12
+                    return FakeResponse()
+            with patch.object(history_pairing.urllib.request,'build_opener',return_value=FakeOpener()),\
+                 patch.object(history_pairing,'validate',return_value=('samsung-android','x'*48,b'CA')):
+                pair.claim_via_phone('A'*24)
+            self.assertTrue(pair.paired())
+            self.assertEqual((Path(tmp)/'exvius/settings/receiver-token.txt').read_text(),'x'*48)
 
     def test_loopback_routes_do_not_interfere_with_game(self):
         with tempfile.TemporaryDirectory() as tmp:

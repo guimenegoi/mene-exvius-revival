@@ -7,6 +7,9 @@ after observing a one-use challenge on the device's restricted logcat.
 from __future__ import annotations
 
 import hmac
+import html
+import urllib.request
+import urllib.error
 import json
 import os
 import re
@@ -19,6 +22,11 @@ from urllib.parse import urlsplit
 
 PAIR = '/__exvius/config/pair'
 STATUS = '/__exvius/config/status'
+CONNECT = '/__exvius/config/connect'
+CLAIM_URL = 'https://proxmox.tailcf6a16.ts.net:8445/pair/claim'
+# Public Let's Encrypt roots for embedded Python, which may lack Android's
+# OS CA bundle. Never accept an unverified TLS connection.
+PAIRING_CA = '-----BEGIN CERTIFICATE-----\nMIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw\nTzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh\ncmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4\nWhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu\nZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY\nMTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc\nh77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+\n0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U\nA5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW\nT8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH\nB5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC\nB5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv\nKBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn\nOlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn\njh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw\nqHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI\nrU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV\nHRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq\nhkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL\nubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ\n3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK\nNFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5\nORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur\nTkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC\njNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc\noyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq\n4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA\nmRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d\nemyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIICGzCCAaGgAwIBAgIQQdKd0XLq7qeAwSxs6S+HUjAKBggqhkjOPQQDAzBPMQsw\nCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJuZXQgU2VjdXJpdHkgUmVzZWFyY2gg\nR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBYMjAeFw0yMDA5MDQwMDAwMDBaFw00\nMDA5MTcxNjAwMDBaME8xCzAJBgNVBAYTAlVTMSkwJwYDVQQKEyBJbnRlcm5ldCBT\nZWN1cml0eSBSZXNlYXJjaCBHcm91cDEVMBMGA1UEAxMMSVNSRyBSb290IFgyMHYw\nEAYHKoZIzj0CAQYFK4EEACIDYgAEzZvVn4CDCuwJSvMWSj5cz3es3mcFDR0HttwW\n+1qLFNvicWDEukWVEYmO6gbf9yoWHKS5xcUy4APgHoIYOIvXRdgKam7mAHf7AlF9\nItgKbppbd9/w+kHsOdx1ymgHDB/qo0IwQDAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0T\nAQH/BAUwAwEB/zAdBgNVHQ4EFgQUfEKWrt5LSDv6kviejM9ti6lyN5UwCgYIKoZI\nzj0EAwMDaAAwZQIwe3lORlCEwkSHRhtFcP9Ymd70/aTSVaYgLXTWNLxBo1BfASdW\ntL4ndQavEi51mI38AjEAi/V3bNTIZargCyzuFJ0nN6T5U6VR5CmD1/iQMVtCnwr1\n/q4AaOeMSQ+2b1tbFfLn\n-----END CERTIFICATE-----\n'
 ENDPOINT = 'https://proxmox.tailcf6a16.ts.net:18447'
 MAX_BYTES = 8192
 ATTEMPTS = 6
@@ -61,13 +69,32 @@ def validate(body: object) -> tuple[str, str, bytes]:
 
 class Pairing:
     def __init__(self, files: Path):
-        self.directory = Path(files) / 'exvius/backup'
-        self.config = self.directory / 'config.json'
+        # Pair only settings. Do not enable the independent save-backup worker.
+        self.directory = Path(files) / 'exvius/settings'
+        self.config = self.directory / 'receiver-config.json'
         self.challenge = secrets.token_urlsafe(24)
         self.deadline = time.monotonic() + TTL_SECONDS
         self.attempts = 0
         if not self.config.is_file():
             print('FFBE-CONFIG-PAIR: ' + self.challenge, flush=True)
+
+    def claim_via_phone(self, code: str) -> None:
+        if not isinstance(code,str) or not re.fullmatch(r'[A-F0-9]{24}',code):
+            raise ValueError('Invalid pairing code')
+        body = json.dumps({'code':code,'device':'samsung-android'}).encode('ascii')
+        request = urllib.request.Request(CLAIM_URL, data=body, method='POST',
+                                         headers={'Content-Type':'application/json'})
+        class NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self,*args): return None
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}),
+                    urllib.request.HTTPSHandler(context=ssl.create_default_context(cadata=PAIRING_CA)),NoRedirect())
+        with opener.open(request,timeout=12) as response:
+            if response.status != 200:
+                raise ValueError('Pairing server refused the claim')
+            raw=response.read(MAX_BYTES+1)
+            if len(raw)>MAX_BYTES:
+                raise ValueError('Oversized pairing response')
+        self.pair(json.loads(raw),self.challenge)
 
     def paired(self) -> bool:
         return self.config.is_file() and not self.config.is_symlink()
@@ -103,13 +130,68 @@ def wrap_handler(base, pairing: Pairing, state) -> type:
             self.end_headers()
             self.wfile.write(data)
 
+        def _page(self, message=''):
+            details = ('<p>Celular conectado. Feche e reabra o FFBE para receber as configurações.</p>'
+                       if pairing.paired() else
+                       '<p>1. No Web Helper, toque em Gerar código para o celular.</p>'
+                       '<p>2. Cole abaixo o código exibido. Mantenha o FFBE aberto.</p>'
+                       '<form action="/__exvius/config/connect" method="POST">'
+                       '<label for="code">Código de conexão</label>'
+                       '<input id="code" name="code" maxlength="24" pattern="[A-Fa-f0-9]{24}" required autocomplete="off">'
+                       '<button type="submit">Conectar ao Web Helper</button></form>')
+            escaped = html.escape(message)
+            content = ('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
+                       '<meta name="viewport" content="width=device-width,initial-scale=1">'
+                       '<title>FFBE Revival · Conexão</title>'
+                       '<style>body{font:16px system-ui;background:#101925;color:#f5f7fb;padding:24px}'
+                       'main{max-width:440px;margin:auto}p{line-height:1.55;color:#c5cfdd}'
+                       'input,button{box-sizing:border-box;width:100%;display:block;padding:14px;'
+                       'border-radius:10px;margin:12px 0;font:inherit}'
+                       'input{background:#202b3c;color:white;border:1px solid #536078}'
+                       'button{background:#557ded;color:white;border:0;font-weight:600}'
+                       '</style></head><body><main><h1>Conectar ao Web Helper</h1>'
+                       + ('<p>'+escaped+'</p>' if escaped else '') + details + '</main></body></html>')
+            data=content.encode('utf-8')
+            self.send_response(200)
+            for key,val in [('Content-Type','text/html; charset=utf-8'),('Content-Length',str(len(data))),
+                ('Cache-Control','no-store'),('Content-Security-Policy',"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"),
+                ('X-Frame-Options','DENY'),('Referrer-Policy','no-referrer')]:
+                self.send_header(key,val)
+            self.end_headers()
+            self.wfile.write(data)
+
         def do_GET(self):
+            if self.path == CONNECT:
+                return self._page()
             if self.path == STATUS:
                 report = state.status() if state is not None else {'state': 'not_paired'}
                 return self._json(200, {'paired': pairing.paired(), **report})
             return super().do_GET()
 
         def do_POST(self):
+            if self.path == CONNECT:
+                try:
+                    if self.client_address[0] not in ('127.0.0.1','::1'):
+                        raise PermissionError('Local only')
+                    origin=self.headers.get('Origin')
+                    referer=self.headers.get('Referer','')
+                    if origin not in ('http://127.0.0.1:18080',None):
+                        raise PermissionError('Invalid origin')
+                    if origin is None and not referer.startswith('http://127.0.0.1:18080/__exvius/config/connect'):
+                        raise PermissionError('Missing same-origin proof')
+                    if self.headers.get_content_type() != 'application/x-www-form-urlencoded':
+                        raise ValueError('Invalid form type')
+                    length=int(self.headers.get('Content-Length','0'))
+                    if not 1 <= length <= 128:
+                        raise ValueError('Invalid form size')
+                    from urllib.parse import parse_qs
+                    values=parse_qs(self.rfile.read(length).decode('ascii'),strict_parsing=True)
+                    if set(values) != {'code'} or len(values['code'])!=1:
+                        raise ValueError('Invalid form')
+                    pairing.claim_via_phone(values['code'][0].strip().upper())
+                    return self._page('Conexão autorizada. Feche e reabra o FFBE para receber as configurações.')
+                except (OSError, ValueError, PermissionError, UnicodeError, KeyError, TypeError,urllib.error.URLError):
+                    return self._page('Não foi possível conectar. Confira o código e a Tailscale e tente novamente.')
             if self.path != PAIR:
                 return super().do_POST()
             try:
