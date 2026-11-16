@@ -36,29 +36,29 @@ LOGIN_WINDOW = 900
 PBKDF2_ROUNDS = 480000
 FIELDS = {
     "Cronologia": [
-        ("EXVIUS_REPLAY", "Reprodução histórica", "bool", "Ativa a progressão histórica de conteúdo."),
-        ("EXVIUS_REPLAY_MODE", "Progressão histórica", "replay_mode", "Automática ou manual, sem avanço pelo calendário real."),
-        ("EXVIUS_REPLAY_START", "Data inicial", "date", "Primeiro dia da cronologia Global (2016–2024)."),
-        ("EXVIUS_REPLAY_MANUAL_WEEK", "Período histórico", "historical_period", "Selecione as datas que deseja jogar. O calendário fica parado nesse intervalo até você escolher outro; reinicie o jogo após sincronizar."),
-        ("EXVIUS_REPLAY_PACE", "Ritmo do calendário", "text", "Ex.: 3,2@2020-08-20 — semanas históricas por semana real."),
-        ("EXVIUS_REPLAY_FULL_RUNS", "Duração original dos eventos", "bool", "Considera o intervalo histórico completo de cada evento."),
+        ("EXVIUS_REPLAY", "Restringir conteúdo à época escolhida", "bool", "Quando ativo, invocações e eventos respeitam a cronologia; quando desligado, essa restrição é desativada."),
+        ("EXVIUS_REPLAY_MODE", "Como a cronologia avança", "replay_mode", "Manual: fica nas datas escolhidas. Automática: avança conforme o tempo real."),
+        ("EXVIUS_REPLAY_START", "Início da cronologia", "date", "Data de referência dos períodos. Para o lançamento Global, mantenha 30/06/2016; não altere para avançar."),
+        ("EXVIUS_REPLAY_MANUAL_WEEK", "Datas que aparecem no jogo", "historical_period", "Escolha o intervalo histórico. No modo manual, ele permanece fixo até você salvar outra escolha e reiniciar o FFBE."),
+        ("EXVIUS_REPLAY_PACE", "Velocidade do avanço automático", "text", "Somente no modo automático. Formato avançado: 3,2@2020-08-20 significa 3 períodos por semana real e 2 a partir de 20/08/2020."),
+        ("EXVIUS_REPLAY_FULL_RUNS", "Manter eventos durante todo o período original", "bool", "Deixa cada evento disponível durante todas as datas em que ocorreu, não apenas na data de lançamento."),
     ],
     "Eventos e invocações": [
-        ("EXVIUS_EVENT_ARCHIVE", "Arquivo de eventos", "bool", "Mantém o acervo de eventos disponível."),
-        ("EXVIUS_SUMMON_ARCHIVE", "Arquivo de invocações", "bool", "Disponibiliza as invocações históricas."),
-        ("EXVIUS_REPLAY_NOTICES", "Notícias históricas", "bool", "Exibe notícias relativas à semana histórica."),
-        ("EXVIUS_REPLAY_NOTICE_WEEKS", "Semanas de notícias", "number", "Quantidade de semanas mantidas no mural."),
-        ("EXVIUS_REPLAY_MARQUEE", "Banners históricos na Home", "bool", "Ativa a seleção histórica de banners."),
-        ("MARQUEE_FLAG", "Modo de exibição dos banners", "marquee", "O modo flag é experimental; mantenha o padrão se houver instabilidade."),
+        ("EXVIUS_EVENT_ARCHIVE", "Eventos históricos disponíveis", "bool", "Habilita os eventos recuperados da história do FFBE Global."),
+        ("EXVIUS_SUMMON_ARCHIVE", "Invocações históricas disponíveis", "bool", "Habilita o catálogo de invocações. A data selecionada ainda limita quais banners aparecem."),
+        ("EXVIUS_REPLAY_NOTICES", "Mostrar notícias da época", "bool", "Mostra notícias correspondentes ao período histórico escolhido."),
+        ("EXVIUS_REPLAY_NOTICE_WEEKS", "Períodos anteriores de notícias", "number", "Quantos períodos anteriores continuam no mural. O valor 1 mostra apenas o período atual."),
+        ("EXVIUS_REPLAY_MARQUEE", "Mostrar destaques da época na Home", "bool", "Exibe banners do período histórico na tela inicial, quando houver registros."),
+        ("MARQUEE_FLAG", "Aparência dos destaques na Home", "marquee", "Normal: banners completos. Oculto: não exibe. Somente indicador: experimental; mantenha Normal em caso de dúvida."),
     ],
     "Economia e Trust": [
-        ("EXVIUS_LAPIS_MULTIPLIER", "Multiplicador de Lapis", "number", "Multiplica Lapis obtidos no jogo."),
-        ("EXVIUS_DAILY_QUEST_LAPIS", "Lapis das missões diárias", "number", "Valor concedido por missão diária."),
-        ("EXVIUS_QUEST_TRUST", "Trust nas missões", "bool", "Permite evolução de Trust ao concluir missões."),
-        ("EXVIUS_QUEST_TRUST_CHANCE", "Chance de Trust (%)", "number", "Chance de evolução de Trust por unidade."),
-        ("EXVIUS_QUEST_TRUST_POINTS", "Trust por acerto", "number", "Valor em décimos de ponto percentual."),
-        ("EXVIUS_QUEST_TRUST_BIG_CHANCE", "Chance de bônus Trust (%)", "number", "Probabilidade de conceder o bônus maior."),
-        ("EXVIUS_QUEST_TRUST_BIG_POINTS", "Valor do bônus Trust", "number", "Valor do bônus maior em décimos."),
+        ("EXVIUS_LAPIS_MULTIPLIER", "Multiplicador de Lapis recebidos", "number", "Exemplo: 5 transforma uma recompensa de 100 Lapis em 500. Não altera seu saldo existente."),
+        ("EXVIUS_DAILY_QUEST_LAPIS", "Lapis por missão diária", "number", "Quantidade recebida por missão diária elegível."),
+        ("EXVIUS_QUEST_TRUST", "Ganhar Trust após missões", "bool", "Permite aumentar o Trust das unidades ao concluir missões."),
+        ("EXVIUS_QUEST_TRUST_CHANCE", "Chance de ganhar Trust (%)", "number", "Probabilidade de cada unidade ganhar o aumento normal de Trust."),
+        ("EXVIUS_QUEST_TRUST_POINTS", "Aumento normal de Trust (décimos de %)", "number", "10 corresponde a 1 ponto percentual de Trust."),
+        ("EXVIUS_QUEST_TRUST_BIG_CHANCE", "Chance de bônus de Trust (%)", "number", "Probabilidade de ocorrer um aumento extra, em vez do normal."),
+        ("EXVIUS_QUEST_TRUST_BIG_POINTS", "Aumento extra de Trust (décimos de %)", "number", "50 corresponde a 5 pontos percentuais de Trust."),
     ],
 }
 ALL_FIELDS = {item[0]: item for group in FIELDS.values() for item in group}
@@ -256,14 +256,14 @@ def field_html(item: tuple, saved: dict) -> str:
         default_text = historical_period_label(
             date.fromisoformat(saved.get("EXVIUS_REPLAY_START", EFFECTIVE_DEFAULTS["EXVIUS_REPLAY_START"])), 0)
     elif kind == "replay_mode":
-        options = [("", "Padrão da próxima APK · Manual"), ("manual", "Manual — data fixa"),
-                   ("automatic", "Automática (restaura a âncora original)")]
+        options = [("", "Padrão · Manual (não avança sozinho)"), ("manual", "Manual — só muda quando eu escolher"),
+                   ("automatic", "Automática — avança com o tempo")]
         selected = str(value) if custom else ""
         control = f'<select name="{name}" id="{name}">' + "".join(
             f'<option value="{esc(v)}"{" selected" if v == selected else ""}>{esc(text)}</option>'
             for v, text in options) + "</select>"
     elif kind == "marquee":
-        options = [("", "Padrão · " + default_text), ("0", "Oculto"), ("1", "Normal"), ("flag", "Somente flag")]
+        options = [("", "Padrão · " + default_text), ("0", "Ocultar destaques"), ("1", "Mostrar banners normalmente"), ("flag", "Somente indicador (experimental)")]
         selected = str(value) if custom else ""
         control = f'<select name="{name}" id="{name}">' + "".join(
             f'<option value="{v}"{" selected" if v == selected else ""}>{esc(text)}</option>'
@@ -429,15 +429,15 @@ def make_handler(app: WebApp):
                 self._send(500, self._layout('<main class="container"><h1>Erro ao ler configuração.</h1></main>'))
                 return
             csrf = esc(record["csrf"])
-            info = ('<div class="alert success">Configuração salva no servidor. '
-                    'O Android aplicará a revisão após sincronizar e reiniciar.</div>' if saved else '')
+            info = ('<div class="alert success">Configuração salva no Web Helper, mas ainda não confirmada no celular. '
+                    'Ela só será aplicada depois da sincronização e da reabertura do FFBE.</div>' if saved else '')
             if error:
                 info += f'<div class="alert error">{esc(error)}</div>'
             panels = []
             for index, (group, items) in enumerate(FIELDS.items()):
                 panels.append(
                     f'<section class="panel" id="section-{index}"><h2>{esc(group)}</h2>'
-                    '<p class="explain">Os valores padrão já aparecem preenchidos. Só alterações diferentes do padrão serão sincronizadas.</p>'
+                    '<p class="explain">Deixe os valores como estão para manter os padrões. Só as mudanças serão enviadas ao jogo.</p>'
                     + "".join(field_html(item, settings) for item in items)
                     + '</section>')
             past = ('<ol class="history">' + "".join(
@@ -447,14 +447,14 @@ def make_handler(app: WebApp):
                        '<div><b>FFBE Revival</b><span class="sub">Configurações do servidor</span></div></div>'
                        '<span class="tag">Tailscale · Privado</span></div></header>'
                        '<main class="container"><div class="hero"><h1>Configurações</h1>'
-                       '<p>Ajuste as regras do Revival sem recompilar o APK. O jogo continuará funcionando '
-                       'offline com a última configuração aprovada.</p></div>'
+                       '<p>Escolha as datas do FFBE Global e personalize as regras sem reinstalar o jogo. Ele continuará funcionando '
+                       'offline. Salvar aqui não significa que a alteração já chegou ao celular.</p></div>'
                        '<div class="metrics"><div class="metric"><small>Dispositivo</small>'
                        f'<strong>{esc(app.device)}</strong></div><div class="metric">'
                        f'<small>Revisão da LXC</small><strong>{esc(revision[:12])}'
                        f'{"…" if revision != "0" else " · inicial"}</strong></div>'
                        '<div class="metric"><small>Aplicação no Android</small>'
-                       '<strong>Pendente de sincronização</strong></div></div>'
+                       '<strong>Aplicação ainda não confirmada</strong></div></div>'
                        f'{info}<div class="layout"><nav><a href="#section-0">Cronologia</a>'
                        '<a href="#section-1">Eventos e invocações</a>'
                        '<a href="#section-2">Economia e Trust</a>'
@@ -464,13 +464,14 @@ def make_handler(app: WebApp):
                        f'<input type="hidden" name="revision" value="{esc(revision)}">'
                        + "".join(panels)
                        + '<div class="alert"><strong>Atenção à campanha histórica</strong><p>'
-                       'Alterar data inicial ou ritmo pode exigir migração da âncora do replay. '
-                       'O Android não deve aplicar uma cronologia incompatível automaticamente.</p>'
+                       'Para avançar no modo manual, escolha apenas as datas que aparecem no jogo. '
+                       'Mudar o início da cronologia ou usar o modo automático pode exigir verificação adicional. '
+                       'O save não é reiniciado por este painel.</p>'
                        '<label class="check"><input type="checkbox" name="confirm_timeline" value="yes">'
-                       '<span>Entendo que mudanças de cronologia poderão ficar pendentes no Android.</span>'
+                       '<span>Confirmo a mudança histórica, mesmo que sua aplicação no celular ainda esteja pendente.</span>'
                        '</label></div>'
-                       '<div class="actions"><small>Salvar cria uma revisão; não reinicia o jogo.</small>'
-                       '<button type="submit">Salvar configurações</button></div></form>'
+                       '<div class="actions"><small>Após salvar, aguarde a sincronização e feche e reabra o FFBE. Não limpe os dados.</small>'
+                       '<button type="submit">Salvar alterações</button></div></form>'
                        '<section class="panel" id="history"><h2>Histórico de revisões</h2>'
                        f'{past}</section>'
                        f'<form action="/logout" method="POST" class="actions">'

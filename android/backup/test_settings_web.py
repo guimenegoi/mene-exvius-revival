@@ -212,7 +212,7 @@ class SettingsWebTests(unittest.TestCase):
         self.login()
         code, body, _, _, _ = self.request()
         self.assertEqual(code, 200)
-        self.assertIn('Período histórico', body)
+        self.assertIn('Datas que aparecem no jogo', body)
         self.assertIn('30/06 a 06/07/2016', body)
         self.assertIn('07/07 a 13/07/2016', body)
         self.assertNotIn('Semana histórica manual', body)
@@ -220,6 +220,23 @@ class SettingsWebTests(unittest.TestCase):
         self.assertIn('<option value="1">07/07 a 13/07/2016</option>', body)
         self.assertEqual(web.historical_period_label(web.date(2016, 12, 29), 0),
                          '29/12/2016 a 04/01/2017')
+
+    def test_clarity_does_not_change_saved_protocol(self):
+        self.login()
+        status, body, _, _, _ = self.request()
+        self.assertEqual(status, 200)
+        for label in ("Como a cronologia avança", "Datas que aparecem no jogo",
+                      "Velocidade do avanço automático", "Aplicação ainda não confirmada",
+                      "Aparência dos destaques na Home", "Ganhar Trust após missões"):
+            self.assertIn(label, body)
+        self.assertIn('name="EXVIUS_REPLAY_MANUAL_WEEK"', body)
+        self.assertIn('value="1">07/07 a 13/07/2016</option>', body)
+        form = self.settings_form(EXVIUS_REPLAY_MANUAL_WEEK="1", confirm_timeline="yes")
+        code, _, _, _, _ = self.request("POST", "/settings", form)
+        self.assertEqual(code, 303)
+        saved = config_service.get(self.store, "phone")["document"]["settings"]
+        self.assertEqual(saved["EXVIUS_REPLAY_MANUAL_WEEK"], 1)
+        self.assertEqual(saved["EXVIUS_REPLAY_MODE"], "manual")
 
     def test_date_period_follows_custom_historical_start(self):
         rendered = web.field_html(web.ALL_FIELDS['EXVIUS_REPLAY_MANUAL_WEEK'], {

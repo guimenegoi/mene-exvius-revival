@@ -49,3 +49,16 @@ automática nem confirmação de aplicação no aparelho.
 A página permanece sem JavaScript, seguindo CSP `default-src 'none'`.
 Validar pelo menos uma sincronização e reinicialização reais no Samsung
 antes de marcar o status do dispositivo como conectado/atualizado.
+
+## Rótulos claros (17/11/2026)
+
+Os campos visíveis mostram a finalidade prática: **Restringir conteúdo à
+época escolhida**, **Como a cronologia avança** e **Datas que aparecem no
+jogo**. A velocidade é identificada explicitamente como exclusiva do modo
+automático. Os demais controles descrevem os efeitos sobre invocações,
+notícias, Home, Lapis e Trust; exemplos de porcentagem explicam a escala
+de décimos de ponto percentual.
+
+Os nomes de protocolo, valores, intervalos permitidos e autenticação
+permanecem iguais. O painel nunca confirma que a revisão chegou ao Android
+sem evidência do pareamento/sincronização, e salvar não reinicia o jogo.
