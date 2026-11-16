@@ -77,6 +77,38 @@ class SettingsWebTests(unittest.TestCase):
         values.update(overrides)
         return values
 
+    def test_authenticated_pair_code_and_one_time_app_claim(self):
+        self.login()
+        with tempfile.TemporaryDirectory() as private:
+            root=pathlib.Path(private)
+            (root/'token').write_text('X'*48)
+            (root/'cert.pem').write_text('-----BEGIN CERTIFICATE-----\nTEST\n-----END CERTIFICATE-----')
+            self.app.pair_codes=web.phone_pairing.PairCodes(root)
+            code,body,_,_,_=self.request('POST','/pair/create',{'csrf':self.csrf})
+            self.assertEqual(code,200)
+            self.assertNotIn('X'*48,body)
+            match=re.search(r'[A-F0-9]{24}',body)
+            self.assertIsNotNone(match)
+            claim=json.dumps({'code':match.group(0),'device':'samsung-android'})
+            def remote_claim():
+                conn=http.client.HTTPConnection('127.0.0.1',self.http.server_port,timeout=4)
+                conn.request('POST','/pair/claim',body=claim,headers={'Content-Type':'application/json'})
+                response=conn.getresponse();status=response.status;payload=json.loads(response.read());conn.close()
+                return status,payload
+            status,payload=remote_claim()
+            self.assertEqual(status,200)
+            self.assertEqual(payload['token'],'X'*48)
+            status,payload=remote_claim()
+            self.assertEqual(status,403)
+            self.assertNotIn('token',payload)
+
+    def test_pair_code_requires_login_and_csrf(self):
+        status,_,_,_,_=self.request('POST','/pair/create',{'csrf':'fake'})
+        self.assertNotEqual(status,200)
+        self.login()
+        status,_,_,_,_=self.request('POST','/pair/create',{'csrf':'bad'})
+        self.assertEqual(status,403)
+
     def test_unauthenticated_pages_are_login_only(self):
         code, body, _, _, sec = self.request()
         self.assertEqual(code, 200)

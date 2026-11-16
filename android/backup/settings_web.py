@@ -26,6 +26,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import config_model
 import config_service
+import phone_pairing
 
 DEVICE = "samsung-android"
 COOKIE = "__Host-ffbe_session"
@@ -297,6 +298,7 @@ class WebApp:
         self.sessions = {}
         self.failed = {}
         self.lock = threading.Lock()
+        self.pair_codes = phone_pairing.PairCodes(Path('/etc/ffbe-backup'))
 
     def session(self, cookie_header: str):
         jar = cookies.SimpleCookie()
@@ -458,6 +460,7 @@ def make_handler(app: WebApp):
                        f'{info}<div class="layout"><nav><a href="#section-0">Cronologia</a>'
                        '<a href="#section-1">Eventos e invocações</a>'
                        '<a href="#section-2">Economia e Trust</a>'
+                       '<a href="#pairing">Conectar celular</a>'
                        '<a href="#history">Histórico</a></nav><div>'
                        '<form action="/settings" method="POST">'
                        f'<input type="hidden" name="csrf" value="{csrf}">'
@@ -472,6 +475,13 @@ def make_handler(app: WebApp):
                        '</label></div>'
                        '<div class="actions"><small>Após salvar, aguarde a sincronização e feche e reabra o FFBE. Não limpe os dados.</small>'
                        '<button type="submit">Salvar alterações</button></div></form>'
+                       '<section class="panel" id="pairing"><h2>Conectar celular</h2>'
+                       '<p>Para sincronizar as datas, gere um código temporário e insira-o na página local do FFBE, no mesmo celular.</p>'
+                       '<form action="/pair/create" method="POST">'
+                       f'<input type="hidden" name="csrf" value="{csrf}">'
+                       '<button type="submit">Gerar código para o celular</button></form>'
+                       '<p class="muted">O código expira em 10 minutos e só funciona uma vez. O token do servidor não aparece neste navegador.</p>'
+                       '</section>'
                        '<section class="panel" id="history"><h2>Histórico de revisões</h2>'
                        f'{past}</section>'
                        f'<form action="/logout" method="POST" class="actions">'
@@ -480,6 +490,41 @@ def make_handler(app: WebApp):
                        '</div></div></main><footer class="container">FFBE Revival · '
                        'Configuração separada do save · Sem dependência de internet para jogar</footer>')
             self._send(code, self._layout(content))
+
+        def _pair_code_page(self, code):
+            panel = ('<main class="container"><div class="hero"><h1>Conectar FFBE no celular</h1>'
+                     '<p>Copie este código. No mesmo celular, abra o FFBE e depois o endereço local abaixo no navegador.</p>'
+                     f'<p><strong style="font-size:1.35rem;letter-spacing:1px">{esc(code)}</strong></p>'
+                     '<p><code>http://127.0.0.1:18080/__exvius/config/connect</code></p>'
+                     '<p>Insira o código na página local. Ele expira em 10 minutos e só pode ser usado uma vez.</p>'
+                     '<p><a href="/">Voltar às configurações</a></p></div></main>')
+            self._send(200, self._layout(panel))
+
+        def _pair_claim(self):
+            # App-to-server capability grant, not a browser session request.
+            # No cookies or login credentials are accepted in this operation.
+            try:
+                if self.headers.get_content_type() != 'application/json':
+                    raise ValueError('Invalid type')
+                size = int(self.headers.get('Content-Length', '0'))
+                if not 1 <= size <= 256:
+                    raise ValueError('Invalid payload size')
+                payload = json.loads(self.rfile.read(size))
+                if not isinstance(payload,dict) or set(payload) != {'code','device'}:
+                    raise ValueError('Invalid pairing payload')
+                result = app.pair_codes.claim(payload['code'], self.client_address[0], payload['device'])
+                data = json.dumps(result,sort_keys=True).encode('utf-8')
+                self.send_response(200)
+            except (PermissionError,ValueError,OSError,KeyError,TypeError):
+                data = b'{"error":"pairing refused"}'
+                self.send_response(403)
+            self.send_header('Content-Type','application/json')
+            self.send_header('Content-Length',str(len(data)))
+            self.send_header('Cache-Control','no-store')
+            self.send_header('X-Content-Type-Options','nosniff')
+            self.send_header('Referrer-Policy','no-referrer')
+            self.end_headers()
+            self.wfile.write(data)
 
         def do_GET(self):
             if self.path == "/healthz":
@@ -493,6 +538,8 @@ def make_handler(app: WebApp):
                                    saved="saved=1" in urlsplit(self.path).query)
 
         def do_POST(self):
+            if self.path == '/pair/claim':
+                return self._pair_claim()
             if not self._origin_ok():
                 return self._send(403, "Forbidden origin")
             try:
@@ -516,6 +563,8 @@ def make_handler(app: WebApp):
             submitted = form.get("csrf", [""])
             if len(submitted) != 1 or not hmac.compare_digest(submitted[0], record["csrf"]):
                 return self._send(403, "CSRF check failed")
+            if self.path == '/pair/create':
+                return self._pair_code_page(app.pair_codes.create())
             if self.path == "/logout":
                 with app.lock:
                     app.sessions.pop(key, None)

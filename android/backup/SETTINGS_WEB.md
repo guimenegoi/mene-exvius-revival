@@ -62,3 +62,29 @@ de décimos de ponto percentual.
 Os nomes de protocolo, valores, intervalos permitidos e autenticação
 permanecem iguais. O painel nunca confirma que a revisão chegou ao Android
 sem evidência do pareamento/sincronização, e salvar não reinicia o jogo.
+
+## Pareamento pelo próprio celular — Web Helper (17/11/2026)
+
+O Web Helper autenticado dispõe de **Conectar celular**. O botão gera um
+código aleatório de 24 caracteres hexadecimais (96 bits), válido por
+**10 minutos e uma única utilização**, guardado somente na memória do
+processo. Login, CSRF, sessão e proteção de origem continuam obrigatórios.
+O painel não exibe o token de backup nem o certificado do receptor.
+
+Na APK compatível, o usuário abre no navegador do **mesmo aparelho**
+`http://127.0.0.1:18080/__exvius/config/connect` enquanto o FFBE está
+em execução, cola o código e confirma. O próprio aplicativo faz uma chamada
+HTTPS autenticada **pelo código**, com verificação da cadeia de certificados,
+para `https://proxmox.tailcf6a16.ts.net:8445/pair/claim`.
+O código é invalidado imediatamente. O receptor retorna as credenciais
+**somente ao aplicativo**, e elas ficam em arquivos privados `0600` dentro de
+`exvius/settings`, nunca no Web Helper, navegador, save ou APK.
+
+Após parear, a **primeira reabertura** do FFBE ativa a sincronização e recebe
+a revisão do Web Helper em `staged-config.json`. A **segunda reabertura**
+aplica o período histórico à execução. Esse fluxo **não habilita backup de
+saves**: o arquivo independente `exvius/backup/config.json` não é criado.
+
+O endpoint `/pair/claim` não aceita sessão de navegador em substituição ao
+código; não suporta redirecionamento, CORS nem exibe o Bearer em erros/logs.
+Há limites por origem e por código. A opção é exclusiva da tailnet.
