@@ -253,11 +253,23 @@ def held_ticket_ids(player, banners):
         return []
     import json
     out, seen = [], set()
+    # Holding a later ticket must not open a future banner during replay.
+    # Keep the original automatic/regular behaviour outside historical replay.
+    import replay
+    window = replay.window(record=False) if replay.enabled() else None
     # Earliest first, so of two identical summons (same ticket, pool and draws) the older one is kept:
     # 9200022 over "NV Guaranteed EX Summon B" 9200023, Bonus Present Ticket Summon 9200029 (2021) over 9503470.
     def released(banner):
         return str(banner.get('release') or (banner.get('community') or {}).get('release') or '9999')
     for banner in sorted(banners, key=lambda b: (released(b), str(b['id']))):
+        if window is not None:
+            # Undated ticket offers cannot be proven to belong to this era.
+            # In particular a 2021 NV ticket must never bypass the 2016
+            # rotation simply because it survived in the existing save.
+            opened = _released(banner)
+            if (opened is None or opened >= window['to']
+                    or not permanent_open(banner, window['from'], window['to'])):
+                continue
         # Only ticket summons: a deal of another kind that happens to cost a ticket (9500060 "5★ Select
         # Ticket Lapis Summon", a 2019 `exchange` deal paid with ticket 260) isn't opened by holding it.
         if banner.get('deal') and banner.get('deal') != 'ticket':
