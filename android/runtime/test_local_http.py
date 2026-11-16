@@ -208,6 +208,41 @@ class LocalHttpTests(unittest.TestCase):
             self.assertEqual(preserved.read_bytes(), b"data-pack-011")
             self.assertEqual(local_http.preserve_native_mst_for_cdn(files), 0)
 
+    def test_cdn_overlay_recovers_from_android_hardlink_permission_denied(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _, files, _ = sample(Path(tmp))
+            mst = files / "mst/Ver709_i5QEJpua.dat"
+            cpk = files / "en/sd/area/Ver461_spdungeon1.cpk"
+            destination = files / "exvius/server-root/overlay"
+            native_link = os.link
+
+            def deny_native_links(src, dst, **kwargs):
+                if Path(src) in (mst, cpk):
+                    raise PermissionError(13, "Permission denied", str(src))
+                return native_link(src, dst, **kwargs)
+
+            with patch.object(local_http.os, "link", side_effect=deny_native_links):
+                self.assertEqual(local_http.preserve_native_mst_for_cdn(files), 4)
+            pinned_mst = destination / "mst/Ver709_i5QEJpua.dat"
+            pinned_cpk = destination / "en/sd/area/Ver461_spdungeon1.cpk"
+            self.assertEqual(pinned_mst.read_bytes(), mst.read_bytes())
+            self.assertEqual(pinned_cpk.read_bytes(), cpk.read_bytes())
+            self.assertFalse(os.path.samefile(pinned_mst, mst))
+            self.assertFalse(os.path.samefile(pinned_cpk, cpk))
+            mst.unlink()
+            cpk.unlink()
+            self.assertEqual(pinned_mst.read_bytes(), b"data-pack-011")
+            self.assertEqual(pinned_cpk.read_bytes(), b"original-cpk")
+            self.assertFalse(list(destination.rglob(".ffbe-pin-*")))
+
+    def test_cdn_overlay_does_not_mask_other_link_failures(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _, files, _ = sample(Path(tmp))
+            with patch.object(local_http.os, "link", side_effect=OSError(28, "Disk full")):
+                with self.assertRaises(OSError):
+                    local_http.preserve_native_mst_for_cdn(files)
+            self.assertFalse(list((files / "exvius/server-root/overlay").rglob(".ffbe-pin-*")))
+
     def test_cdn_overlay_refuses_symlink_escape(self):
         with tempfile.TemporaryDirectory() as tmp:
             _, files, _ = sample(Path(tmp))
