@@ -33,3 +33,29 @@
 5. Documentar o fluxo de rollback; o downgrade entre APKs assinadas com mesmo `versionCode` e código nativo preservado ainda depende de validação em dispositivo, sem desinstalar ou limpar dados.
 
 **Política:** preservar a RC3 HardlinkPermission e a `main` sem modificações. O código experimental está segregado; não publicar APKs nem chaves proprietárias no GitHub.
+
+## Gate de artefato testável — 17/11/2026
+
+- Candidata privada oferecida para **teste no Samsung**, sem promoção a estável:
+  `FFBE-Revival-RC3-Manual2016-ARM64-TEST-20261117.apk`,
+  SHA-256 `0728c85b75c4b2e1dc2446eeb2da51b20f7220dbd25bff7b865cddae20dc713d`.
+  É cópia binária idêntica à LAB; HTTP 200 confirmado pela origem Tailscale.
+- Exercício separado, usando os bytes de `ffbe_manual_history.py`,
+  `config_model.py`, `replay.py` e `gacha_rotation.py` retirados **da APK assinada**,
+  com todos os módulos `source/server` do bundle: quatro subprocessos Python,
+  dois boots manuais consecutivos fixos em 30/06/2016, avanço para 07/07/2016
+  via staged-config, retorno ao automático em 16/12/2016. Hashes de
+  `campaign.json` e `replay.json` **sintéticos** permaneceram iguais após
+  cada subprocesso. Os testes usaram a biblioteca padrão do host Python 3.13,
+  pois a biblioteca padrão Android 3.14 não é executável corretamente no host.
+- Em particular, **não** foi executado Android ou Java no laboratório;
+  os testes da API e do motor não demonstram que o jogo chega à Home ou
+  se reconecta após um force-stop no Samsung. Isso é o propósito desta candidata.
+- Não substituir automaticamente a APK instalada, não limpar dados,
+  não desinstalar, não migrar saves, não trocar o painel de produção.
+- Para o teste autorizado pelo proprietário: conferir que existe backup
+  atual válido; instalar como atualização in-place; abrir, fechar totalmente
+  e reabrir duas vezes; observar a janela histórica fixa; acessar summons,
+  Vortex e uma batalha; confirmar progresso persistente. Coletar relatório
+  Android se qualquer etapa falhar. A interface Web Helper de produção ainda
+  não oferece o novo seletor de semana; esta APK inicia em semana 0 por padrão.
