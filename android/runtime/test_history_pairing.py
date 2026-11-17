@@ -106,6 +106,40 @@ class PairingTests(unittest.TestCase):
                     'Origin':'https://malicious.example'})
                 response=conn.getresponse();body=response.read().decode('utf-8')
                 self.assertNotIn('Conexão autorizada',body)
+                self.assertTrue(response.will_close)
+            finally:
+                conn.close();server.shutdown();server.server_close()
+
+    def test_rejected_post_does_not_poison_http11_next_request(self):
+        from urllib.parse import urlencode
+        with tempfile.TemporaryDirectory() as tmp:
+            pair=history_pairing.Pairing(Path(tmp))
+            class PersistentBase(Base):
+                protocol_version = 'HTTP/1.1'
+                def do_GET(self):
+                    data=b'ok'
+                    self.send_response(200)
+                    self.send_header('Content-Length',str(len(data)))
+                    self.end_headers()
+                    self.wfile.write(data)
+            handler=history_pairing.wrap_handler(PersistentBase,pair,None)
+            server=ThreadingHTTPServer(('127.0.0.1',0),handler)
+            threading.Thread(target=server.serve_forever,daemon=True).start()
+            conn=http.client.HTTPConnection(*server.server_address,timeout=3)
+            try:
+                code='2286E47ADCEE0E570FD637C7'
+                conn.request('POST',history_pairing.CONNECT,
+                    body=urlencode({'code':code}),headers={
+                        'Content-Type':'application/x-www-form-urlencoded',
+                        'Origin':'https://unexpected.example'})
+                response=conn.getresponse()
+                self.assertEqual(response.status,200)
+                self.assertTrue(response.will_close)
+                self.assertIn('Não foi possível conectar',response.read().decode('utf-8'))
+                conn.request('GET','/__exvius/hello')
+                response=conn.getresponse()
+                self.assertEqual(response.status,200)
+                self.assertEqual(response.read(),b'ok')
             finally:
                 conn.close();server.shutdown();server.server_close()
 

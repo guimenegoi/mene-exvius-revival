@@ -157,6 +157,8 @@ def wrap_handler(base, pairing: Pairing, state) -> type:
                 ('Cache-Control','no-store'),('Content-Security-Policy',"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"),
                 ('X-Frame-Options','DENY'),('Referrer-Policy','no-referrer')]:
                 self.send_header(key,val)
+            if self.close_connection:
+                self.send_header('Connection','close')
             self.end_headers()
             self.wfile.write(data)
 
@@ -191,6 +193,10 @@ def wrap_handler(base, pairing: Pairing, state) -> type:
                     pairing.claim_via_phone(values['code'][0].strip().upper())
                     return self._page('Conexão autorizada. Feche e reabra o FFBE para receber as configurações.')
                 except (OSError, ValueError, PermissionError, UnicodeError, KeyError, TypeError,urllib.error.URLError):
+                    # A rejected POST may leave unread form bytes in rfile.
+                    # HTTP/1.1 reuse would parse them as the next method
+                    # (e.g. 'code=...GET'), causing a misleading HTTP 501.
+                    self.close_connection = True
                     return self._page('Não foi possível conectar. Confira o código e a Tailscale e tente novamente.')
             if self.path != PAIR:
                 return super().do_POST()
