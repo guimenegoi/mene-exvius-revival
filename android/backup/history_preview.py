@@ -53,7 +53,7 @@ class Catalogue:
     def summary(self, start: date, week: int) -> dict:
         if not self.available:
             return {'available': False, 'banners': [], 'events': [], 'range': ''}
-        if type(week) is not int or not 0 <= week <= 430 or start < date(2016, 6, 30):
+        if type(week) is not int or not 0 <= week <= 434 or start < date(2016, 6, 30):
             raise ValueError('Invalid historical period')
         begin = start + timedelta(weeks=week)
         end = begin + timedelta(days=6)

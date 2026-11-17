@@ -26,7 +26,8 @@ class PreviewTests(unittest.TestCase):
         self.assertGreater(self.index.summary(date(2016,6,30),3)['banners']['total'],0)
 
     def test_invalid_week_and_source_are_rejected(self):
-        for week in (-1,500,'1',True):
+        self.assertTrue(self.index.summary(date(2016,6,30),434)['available'])
+        for week in (-1,435,500,'1',True):
             with self.assertRaises(ValueError): self.index.summary(date(2016,6,30),week)
         with self.assertRaises(ValueError):self.index.summary(date(2016,6,29),1)
 
