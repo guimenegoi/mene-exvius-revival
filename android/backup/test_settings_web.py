@@ -77,6 +77,34 @@ class SettingsWebTests(unittest.TestCase):
         values.update(overrides)
         return values
 
+    def test_historical_preview_requires_login_and_is_read_only(self):
+        route='/history-preview?start=2016-06-30&week=1'
+        status,body,_,_,_=self.request('GET',route)
+        self.assertEqual(status,401)
+        self.assertNotIn('Kefka',body)
+        self.login()
+        status,body,_,_,_=self.request('GET',route)
+        self.assertEqual(status,200)
+        data=json.loads(body)
+        self.assertEqual(data['range'],'07/07/2016–13/07/2016')
+        self.assertEqual(data['banners']['total'],1)
+        self.assertIn('Kefka',data['banners']['items'][0]['name'])
+        self.assertEqual(config_service.get(self.store,self.app.device),None)
+        for invalid in ('week=-1','week=999','week=1&week=2','week=evil'):
+            status,_,_,_,_=self.request('GET','/history-preview?start=2016-06-30&'+invalid)
+            self.assertEqual(status,400,invalid)
+
+    def test_history_preview_uses_hashed_inline_script_and_escapes_content(self):
+        self.login()
+        status,body,_,_,security=self.request('GET','/')
+        self.assertEqual(status,200)
+        self.assertIn('id="history-period-preview"',body)
+        self.assertIn('<script>'+web.PREVIEW_JS+'</script>',body)
+        self.assertIn("'sha256-"+web.PREVIEW_HASH+"'",security['Content-Security-Policy'])
+        self.assertIn("connect-src 'self'",security['Content-Security-Policy'])
+        self.assertIn('textContent = item.name',web.PREVIEW_JS)
+        self.assertNotIn('innerHTML',web.PREVIEW_JS)
+
     def test_authenticated_pair_code_and_one_time_app_claim(self):
         self.login()
         with tempfile.TemporaryDirectory() as private:

@@ -7,6 +7,7 @@ Never handles FFBE saves, backup bearer tokens, or APK uploads.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import hmac
 import html
@@ -26,6 +27,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import config_model
 import config_service
+import history_preview
 import phone_pairing
 
 DEVICE = "samsung-android"
@@ -89,6 +91,56 @@ EFFECTIVE_DEFAULTS = {
     "EXVIUS_QUEST_TRUST_BIG_POINTS": 50,
 }
 assert set(EFFECTIVE_DEFAULTS) == set(ALL_FIELDS)
+# Static script, hashed in CSP. Only same-origin authenticated read-only API.
+PREVIEW_JS = """
+(() => {
+  const select = document.getElementById('EXVIUS_REPLAY_MANUAL_WEEK');
+  const start = document.getElementById('EXVIUS_REPLAY_START');
+  const box = document.getElementById('history-period-preview');
+  if (!select || !start || !box) return;
+  let revision = 0;
+  async function refresh() {
+    const serial = ++revision;
+    box.querySelector('[data-preview-status]').textContent = 'Consultando calendário histórico…';
+    for (const key of ['banners', 'events']) box.querySelector('[data-preview-list="' + key + '"]').replaceChildren();
+    const args = new URLSearchParams({week: select.value, start: start.value});
+    try {
+      const response = await fetch('/history-preview?' + args, {credentials: 'same-origin', cache: 'no-store'});
+      if (!response.ok) throw Error('Consulta indisponível');
+      const content = await response.json();
+      if (serial !== revision) return;
+      if (!content.available) throw Error('Calendário não disponível');
+      box.querySelector('[data-preview-status]').textContent = 'Período ' + content.range + ' · Prévia, sem salvar';
+      for (const key of ['banners', 'events']) {
+        const section = content[key];
+        box.querySelector('[data-preview-count="' + key + '"]').textContent = String(section.total);
+        const target = box.querySelector('[data-preview-list="' + key + '"]');
+        if (section.total === 0) {
+          const li = document.createElement('li');
+          li.textContent = 'Nenhum registro temporário para este período';
+          target.append(li);
+        }
+        for (const item of section.items) {
+          const li = document.createElement('li');
+          li.textContent = item.name + (item.estimated ? ' · duração estimada' : '');
+          target.append(li);
+        }
+        if (section.total > section.items.length) {
+          const li = document.createElement('li');
+          li.textContent = '+ ' + (section.total - section.items.length) + ' outros';
+          target.append(li);
+        }
+      }
+    } catch (_) {
+      if (serial === revision) box.querySelector('[data-preview-status]').textContent = 'Prévia indisponível. A escolha da data continua funcionando.';
+    }
+  }
+  select.addEventListener('change', refresh);
+  start.addEventListener('change', refresh);
+  refresh();
+})();
+"""
+PREVIEW_HASH = base64.b64encode(hashlib.sha256(PREVIEW_JS.encode('utf-8')).digest()).decode('ascii')
 CSS = """
 :root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#e9eff5;background:#0b121b}
 *{box-sizing:border-box}body{margin:0;line-height:1.48}a{color:inherit;text-decoration:none}
@@ -120,6 +172,11 @@ button:hover{background:#7bebd2}.ghost{background:transparent;border:1px solid #
 .check{display:flex;gap:11px;align-items:flex-start;font-size:13px;color:#d8e4ed}
 .history{font-size:12px;color:#9db0c1}.history li{padding:5px 0;font-variant-numeric:tabular-nums}
 footer{padding:26px 0 40px;font-size:12px;color:#7890a3}
+.period-preview{border:1px solid #30455a;background:#111f2c;border-radius:10px;padding:12px;margin-top:12px}
+.period-preview h3{font-size:13px;margin:12px 0 2px;color:#e9eff5}
+.period-preview p,.period-preview small{font-size:12px;color:#9cacbe}
+.period-preview ul{padding-left:19px;margin:5px 0 9px;font-size:12px;color:#d6e1ea}
+.period-preview li{padding:3px 0;overflow-wrap:anywhere}
 .login-shell{min-height:90vh;display:grid;place-items:center;padding:25px}
 .login{max-width:390px;width:100%;padding:30px;background:#121d2a;border:1px solid #314459;border-radius:16px}
 .login h1{font-size:24px}.login label{display:block;font-size:13px;margin:19px 0 8px}.login button{width:100%;margin-top:16px}
@@ -239,6 +296,7 @@ def historical_period_options(saved: dict) -> str:
 def field_html(item: tuple, saved: dict) -> str:
     key, label, kind, description = item
     custom = key in saved
+    preview = False
     value = saved.get(key, EFFECTIVE_DEFAULTS[key])
     name = esc(key)
     default = EFFECTIVE_DEFAULTS[key]
@@ -252,10 +310,19 @@ def field_html(item: tuple, saved: dict) -> str:
             f'<option value="{esc(v)}"{" selected" if v == selected else ""}>{esc(text)}</option>'
             for v, text in options) + "</select>"
     elif kind == "historical_period":
+        preview = True
         control = (f'<select name="{name}" id="{name}">'
                    + historical_period_options(saved) + '</select>')
         default_text = historical_period_label(
             date.fromisoformat(saved.get("EXVIUS_REPLAY_START", EFFECTIVE_DEFAULTS["EXVIUS_REPLAY_START"])), 0)
+        preview_html = ('<section class="period-preview" id="history-period-preview" aria-live="polite">'
+                    '<p data-preview-status>Selecione um período para consultar os conteúdos históricos.</p>'
+                    '<h3>Banners <span data-preview-count="banners"></span></h3>'
+                    '<ul data-preview-list="banners"></ul>'
+                    '<h3>Eventos temporários <span data-preview-count="events"></span></h3>'
+                    '<ul data-preview-list="events"></ul>'
+                    '<small>Prévia do arquivo Global; eventos permanentes não entram na lista. '
+                    'O conteúdo real pode variar conforme o save e as regras do jogo.</small></section>')
     elif kind == "replay_mode":
         options = [("", "Padrão · Manual (não avança sozinho)"), ("manual", "Manual — só muda quando eu escolher"),
                    ("automatic", "Automática — avança com o tempo")]
@@ -278,7 +345,8 @@ def field_html(item: tuple, saved: dict) -> str:
     source = ("Personalizado" if custom else "Padrão desta versão")
     return (f'<div class="field"><div class="detail"><label for="{name}">{esc(label)}</label>'
             f'<p>{esc(description)}</p><p class="sub">{esc(source)} · {esc(default_text) if not custom else "substitui o padrão"}</p>'
-            f'</div><div class="control">{control}</div></div>')
+            f'</div><div class="control">{control}</div></div>'
+            + (preview_html if preview else ''))
 
 
 class WebApp:
@@ -299,6 +367,7 @@ class WebApp:
         self.failed = {}
         self.lock = threading.Lock()
         self.pair_codes = phone_pairing.PairCodes(Path('/etc/ffbe-backup'))
+        self.history_preview = history_preview.Catalogue(Path(__file__).with_name('history_preview_index.json'))
 
     def session(self, cookie_header: str):
         jar = cookies.SimpleCookie()
@@ -357,6 +426,7 @@ def make_handler(app: WebApp):
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Content-Security-Policy",
                              "default-src 'none'; style-src 'unsafe-inline'; "
+                             f"script-src 'sha256-{PREVIEW_HASH}'; connect-src 'self'; "
                              "form-action 'self'; frame-ancestors 'none'; base-uri 'none'")
             if cookie:
                 self.send_header("Set-Cookie", cookie)
@@ -365,6 +435,17 @@ def make_handler(app: WebApp):
             self.end_headers()
             if data:
                 self.wfile.write(data)
+
+        def _send_json(self, code: int, payload: dict):
+            data = json.dumps(payload, ensure_ascii=False, separators=(',', ':')).encode('utf-8')
+            self.send_response(code)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Content-Length', str(len(data)))
+            self.send_header('Cache-Control', 'no-store')
+            self.send_header('X-Content-Type-Options', 'nosniff')
+            self.send_header('X-Frame-Options', 'DENY')
+            self.end_headers()
+            self.wfile.write(data)
 
         def _form(self):
             if self.headers.get_content_type() != "application/x-www-form-urlencoded":
@@ -488,7 +569,8 @@ def make_handler(app: WebApp):
                        f'<input type="hidden" name="csrf" value="{csrf}">'
                        '<button class="ghost" type="submit">Encerrar sessão</button></form>'
                        '</div></div></main><footer class="container">FFBE Revival · '
-                       'Configuração separada do save · Sem dependência de internet para jogar</footer>')
+                       'Configuração separada do save · Sem dependência de internet para jogar</footer>'
+                       f'<script>{PREVIEW_JS}</script>')
             self._send(code, self._layout(content))
 
         def _pair_code_page(self, code):
@@ -529,6 +611,21 @@ def make_handler(app: WebApp):
         def do_GET(self):
             if self.path == "/healthz":
                 return self._send(200, "ok")
+            if urlsplit(self.path).path == '/history-preview':
+                if not app.session(self.headers.get('Cookie', '')):
+                    return self._send_json(401, {'error': 'authentication required'})
+                try:
+                    query = parse_qs(urlsplit(self.path).query, strict_parsing=True, max_num_fields=2)
+                    if set(query) != {'week', 'start'} or any(len(v) != 1 for v in query.values()):
+                        raise ValueError('Invalid preview query')
+                    if not re.fullmatch(r'[0-9]{1,3}', query['week'][0]):
+                        raise ValueError('Invalid preview week')
+                    start = date.fromisoformat(query['start'][0])
+                    if start > history_preview.END_DATE:
+                        raise ValueError('Invalid preview start')
+                    return self._send_json(200, app.history_preview.summary(start, int(query['week'][0])))
+                except (ValueError, TypeError, OverflowError):
+                    return self._send_json(400, {'error': 'invalid historical period'})
             if self.path.split("?")[0] not in ("/",):
                 return self._send(404, "Not found")
             session = app.session(self.headers.get("Cookie", ""))

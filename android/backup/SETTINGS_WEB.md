@@ -88,3 +88,38 @@ saves**: o arquivo independente `exvius/backup/config.json` não é criado.
 O endpoint `/pair/claim` não aceita sessão de navegador em substituição ao
 código; não suporta redirecionamento, CORS nem exibe o Bearer em erros/logs.
 Há limites por origem e por código. A opção é exclusiva da tailnet.
+
+## Prévia de banners e eventos por período — 18/11/2026
+
+A seção **Cronologia**, sob o campo **Datas que aparecem no jogo**, inclui
+uma prévia instantânea que muda ao selecionar outro período. Exibe até seis
+banners e seis eventos temporários, com totais e indicação de duração
+estimada. Não precisa tocar em **Salvar alterações** para consultar, não
+modifica a configuração da LXC e não acessa o save do celular.
+
+O arquivo `history_preview_index.json` é gerado offline com:
+
+```
+python3 android/backup/build_history_preview.py source/server android/backup/history_preview_index.json
+```
+
+A geração usa `history_runs.banner_run()` e `history_runs.event_runs()`
+com as fontes `gacha_*.json`, `event_archive.json`, `event_history.json` e
+`content/*_runs.json`. Não há lista manual paralela. O índice é pequeno,
+contém apenas nomes e intervalos (sem rates, saves ou credenciais) e é
+carregado uma vez na inicialização do Web Helper. Atualizá-lo exige novo
+build e redistribuição do índice, não alteração do Android.
+
+A consulta é um GET autenticado no mesmo site:
+`/history-preview?start=2016-06-30&week=1`. Responde JSON sem cache.
+O formulário JavaScript usa somente `textContent`, sob hash SHA-256 na CSP.
+Nenhum nome do índice é interpolado como HTML. Selecionar uma data apenas
+consulta; aplicar ao FFBE continua exigindo **Salvar alterações** e sync.
+
+Esta é uma **prévia do calendário Global**, não um espelho exato do runtime:
+exclui eventos permanentes, pode contar campanhas históricas que o jogo
+filtrará pelo save ou outros switches e usa duração padrão quando falta uma
+data de encerramento confirmada. Essas estimativas são identificadas na UI.
+Em caso de índice ausente ou inválido, o seletor de datas continua funcional.
+
+A RC3 Android `android-rc3-manual2016-field-20261118` não é modificada.
