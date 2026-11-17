@@ -155,7 +155,7 @@ def wrap_handler(base, pairing: Pairing, state) -> type:
             self.send_response(200)
             for key,val in [('Content-Type','text/html; charset=utf-8'),('Content-Length',str(len(data))),
                 ('Cache-Control','no-store'),('Content-Security-Policy',"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"),
-                ('X-Frame-Options','DENY'),('Referrer-Policy','no-referrer')]:
+                ('X-Frame-Options','DENY'),('Referrer-Policy','same-origin')]:
                 self.send_header(key,val)
             if self.close_connection:
                 self.send_header('Connection','close')
@@ -179,7 +179,10 @@ def wrap_handler(base, pairing: Pairing, state) -> type:
                     referer=self.headers.get('Referer','')
                     if origin not in ('http://127.0.0.1:18080',None):
                         raise PermissionError('Invalid origin')
-                    if origin is None and not referer.startswith('http://127.0.0.1:18080/__exvius/config/connect'):
+                    if origin is None and not (
+                        referer.startswith('http://127.0.0.1:18080/__exvius/config/connect')
+                        or (self.headers.get('Sec-Fetch-Site') == 'same-origin'
+                            and self.headers.get('Host') == '127.0.0.1:18080')):
                         raise PermissionError('Missing same-origin proof')
                     if self.headers.get_content_type() != 'application/x-www-form-urlencoded':
                         raise ValueError('Invalid form type')

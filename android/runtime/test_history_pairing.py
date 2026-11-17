@@ -110,6 +110,38 @@ class PairingTests(unittest.TestCase):
             finally:
                 conn.close();server.shutdown();server.server_close()
 
+    def test_chrome_same_origin_post_without_origin_or_referer(self):
+        from urllib.parse import urlencode
+        with tempfile.TemporaryDirectory() as tmp:
+            pair=history_pairing.Pairing(Path(tmp))
+            handler=history_pairing.wrap_handler(Base,pair,None)
+            server=ThreadingHTTPServer(('127.0.0.1',0),handler)
+            threading.Thread(target=server.serve_forever,daemon=True).start()
+            conn=http.client.HTTPConnection(*server.server_address,timeout=3)
+            try:
+                conn.request('GET',history_pairing.CONNECT)
+                response=conn.getresponse()
+                self.assertEqual(response.getheader('Referrer-Policy'),'same-origin')
+                response.read()
+                with patch.object(pair,'claim_via_phone') as claim:
+                    conn.request('POST',history_pairing.CONNECT,
+                        body=urlencode({'code':'B'*24}),headers={
+                            'Content-Type':'application/x-www-form-urlencoded',
+                            'Host':'127.0.0.1:18080',
+                            'Sec-Fetch-Site':'same-origin'})
+                    response=conn.getresponse();body=response.read().decode()
+                    self.assertIn('Conexão autorizada',body)
+                    claim.assert_called_once_with('B'*24)
+                conn.request('POST',history_pairing.CONNECT,
+                    body=urlencode({'code':'B'*24}),headers={
+                        'Content-Type':'application/x-www-form-urlencoded',
+                        'Host':'127.0.0.1:18080',
+                        'Sec-Fetch-Site':'cross-site'})
+                response=conn.getresponse();body=response.read().decode()
+                self.assertNotIn('Conexão autorizada',body)
+            finally:
+                conn.close();server.shutdown();server.server_close()
+
     def test_rejected_post_does_not_poison_http11_next_request(self):
         from urllib.parse import urlencode
         with tempfile.TemporaryDirectory() as tmp:
