@@ -4,6 +4,7 @@ from contextlib import redirect_stderr
 import io
 import json
 import os
+import socket
 import ssl
 import subprocess
 import tempfile
@@ -27,6 +28,43 @@ def sample(root: Path) -> Path:
     (state / "backups").mkdir()
     (state / "backups/old.json").write_text('{"not": "exported"}')
     return state
+
+
+class TLSHandshakeIsolationTests(unittest.TestCase):
+    def test_idle_tcp_client_cannot_block_other_tls_clients(self):
+        # A hung TCP proxy/client sends no ClientHello. The server must still
+        # accept a second authenticated TLS connection while that one stalls.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cert, key = root / "cert.pem", root / "key.pem"
+            subprocess.run([
+                "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
+                "-sha256", "-days", "1", "-keyout", str(key),
+                "-out", str(cert), "-subj", "/CN=localhost",
+                "-addext", "subjectAltName=DNS:localhost",
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+               timeout=15, check=True)
+            tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            tls.load_cert_chain(str(cert), str(key))
+            server = backup.ThreadingTLSHTTPServer(
+                ("127.0.0.1", 0),
+                backup.make_handler(root / "data", "t" * 48),
+                tls)
+            serving = threading.Thread(target=server.serve_forever,
+                                       daemon=True)
+            serving.start()
+            idle = socket.create_connection(server.server_address, timeout=2)
+            try:
+                client = ssl.create_default_context(cafile=str(cert))
+                url = f"https://localhost:{server.server_port}/v1/backups/phone"
+                with self.assertRaises(urllib.error.HTTPError) as response:
+                    urllib.request.urlopen(url, context=client, timeout=3)
+                self.assertEqual(response.exception.code, 401)
+            finally:
+                idle.close()
+                server.shutdown()
+                server.server_close()
+                serving.join(3)
 
 
 class BackupTests(unittest.TestCase):

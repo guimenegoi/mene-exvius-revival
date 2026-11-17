@@ -16,6 +16,7 @@ import json
 import os
 import re
 import secrets
+import socket
 import ssl
 import tempfile
 import threading
@@ -24,6 +25,36 @@ import zipfile
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+
+import config_service
+
+class ThreadingTLSHTTPServer(ThreadingHTTPServer):
+    """Handshake in worker threads, not the single accept loop.
+
+    Calling SSLContext.wrap_socket on the listening socket causes
+    SSLSocket.accept() to block the accept loop on a silent TLS client.
+    Tailscale Serve TCP proxies and Wi-Fi reconnects can leave such clients.
+    """
+    daemon_threads = True
+    request_queue_size = 32
+
+    def __init__(self, address, handler, context: ssl.SSLContext):
+        self.tls_context = context
+        super().__init__(address, handler)
+
+    def finish_request(self, request, client_address):
+        # ThreadingHTTPServer invokes this in a separate worker thread.
+        # A client that never sends ClientHello cannot starve other clients.
+        try:
+            request.settimeout(6)
+            with self.tls_context.wrap_socket(request, server_side=True) as secure:
+                secure.settimeout(30)
+                self.RequestHandlerClass(secure, client_address, self)
+        except (ssl.SSLError, TimeoutError, ConnectionError, OSError):
+            pass
+        finally:
+            request.close()
+
 
 SCHEMA = 1
 MAX_FILE = 8 << 20
@@ -214,6 +245,30 @@ def make_handler(root: Path, token: str):
         def do_POST(self):
             if not self._authenticated():
                 return self._json(401, {"error": "unauthorized"})
+            diagnostic_prefix = "/v1/diagnostics/"
+            if self.path.startswith(diagnostic_prefix):
+                import diagnostics_transport
+                device = self.path[len(diagnostic_prefix):]
+                if not DEVICE.fullmatch(device):
+                    return self._json(404, {"error": "not_found"})
+                try:
+                    length = int(self.headers.get("Content-Length", "0"))
+                    if not 0 < length <= diagnostics_transport.MAX_WIRE:
+                        raise ValueError("Invalid diagnostics size")
+                    if self.headers.get("Content-Type") != "application/zip":
+                        raise ValueError("Invalid diagnostics content type")
+                    digest = self.headers.get("X-Content-SHA256", "")
+                    if not re.fullmatch(r"[a-f0-9]{64}", digest):
+                        raise ValueError("Missing diagnostics SHA-256")
+                    data = self.rfile.read(length)
+                    if len(data) != length or not hmac.compare_digest(
+                            hashlib.sha256(data).hexdigest(), digest):
+                        raise ValueError("Diagnostics SHA-256 mismatch")
+                    with guard:
+                        result = diagnostics_transport.store(data, root, device)
+                    return self._json(201, result)
+                except (ValueError, OSError) as exc:
+                    return self._json(400, {"error": type(exc).__name__})
             prefix = "/v1/backups/"
             device = self.path[len(prefix):] if self.path.startswith(prefix) else ""
             if not DEVICE.fullmatch(device):
@@ -236,9 +291,43 @@ def make_handler(root: Path, token: str):
             except (ValueError, OSError) as exc:
                 return self._json(400, {"error": type(exc).__name__})
 
+        def do_PUT(self):
+            if not self._authenticated():
+                return self._json(401, {"error": "unauthorized"})
+            prefix = "/v1/configs/"
+            device = self.path[len(prefix):] if self.path.startswith(prefix) else ""
+            if not DEVICE.fullmatch(device):
+                return self._json(404, {"error": "not_found"})
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if not 0 < length <= config_service.MAX_WIRE:
+                    raise ValueError("Invalid configuration length")
+                body = self.rfile.read(length)
+                if len(body) != length:
+                    raise ValueError("Truncated configuration")
+                config_service.authorize_write_headers(self.headers, body)
+                code, result = config_service.put(
+                    root, device, body, self.headers.get("If-Match", ""))
+                return self._json(code, result)
+            except (OSError, ValueError, TypeError) as exc:
+                return self._json(400, {"error": type(exc).__name__})
+
         def do_GET(self):
             if not self._authenticated():
                 return self._json(401, {"error": "unauthorized"})
+            config_prefix = "/v1/configs/"
+            if self.path.startswith(config_prefix):
+                device = self.path[len(config_prefix):]
+                if not DEVICE.fullmatch(device):
+                    return self._json(404, {"error": "not_found"})
+                try:
+                    result = config_service.get(root, device)
+                    if result is None:
+                        return self._json(404, {"error": "config_not_found",
+                                                "revision": "0"})
+                    return self._json(200, result)
+                except (OSError, ValueError, TypeError) as exc:
+                    return self._json(400, {"error": type(exc).__name__})
             prefix = "/v1/backups/"
             device = self.path[len(prefix):] if self.path.startswith(prefix) else ""
             if not DEVICE.fullmatch(device):
@@ -328,8 +417,8 @@ def main(argv=None):
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.minimum_version = ssl.TLSVersion.TLSv1_2
         context.load_cert_chain(str(args.cert), str(args.key))
-        server = ThreadingHTTPServer((args.bind, args.port), make_handler(args.store, token))
-        server.socket = context.wrap_socket(server.socket, server_side=True)
+        server = ThreadingTLSHTTPServer((args.bind, args.port),
+                                        make_handler(args.store, token), context)
         print(f"SAVE-BACKUP HTTPS READY {args.bind}:{args.port}", flush=True)
         try:
             server.serve_forever()
