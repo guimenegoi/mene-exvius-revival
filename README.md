@@ -1,3 +1,24 @@
+# FFBE Revival — projeto arquivado (19/11/2026)
+
+> **Desenvolvimento encerrado. Repositório somente para consulta.**
+> O trabalho de recuperação de *Final Fantasy Brave Exvius* de 2016 foi
+> congelado após a candidata RC3 Events2016. O usuário optou por acompanhar
+> o projeto comunitário [FFBE-Forever](https://gitlab.com/clbng28/ffbe-forever/-/releases)
+> em vez de manter esta distribuição Android separadamente.
+>
+> O conteúdo abaixo é preservado como documentação histórica, **não como
+> instruções operacionais atuais**. A RC3 não foi validada de ponta a ponta
+> em gameplay; seus banners/eventos de FFT não apareceram no Samsung apesar
+> de a sincronização histórica estar correta. A candidata Events2016
+> recebeu uma correção de alinhamento de APK, mas não foi validada no dispositivo.
+>
+> **Segurança:** APKs e assets proprietários, saves, credenciais e backups
+> da LXC permanecem fora do GitHub. Não reutilize links privados antigos
+> esperando que continuem disponíveis após o desligamento do servidor.
+> Consulte [o termo de encerramento](docs/ARCHIVE_HANDOFF_2026-11-19.md).
+
+---
+
 # Exvius Revival for iOS
 
 > **Android — RC3 com inicialização confirmada em celular ARM64 (15/11/2026):**
