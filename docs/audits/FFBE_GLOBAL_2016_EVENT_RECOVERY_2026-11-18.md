@@ -108,3 +108,75 @@ mapeamento distinto das batalhas posteriores com rótulo *Scorn*.
 **Proteção de escopo:** nenhuma dessas descobertas autoriza liberar todos
 os eventos de 2016, substituir originais por reprises ou alterar a RC3
 aprovada sem testes de compatibilidade e um patch de diff mínimo.
+
+## Continuação: verificação do motor e correções mínimas (18/11/2026)
+
+A matriz de missões foi verificada diretamente com `FFBE_DATA` apontando ao
+pacote estático real. **10 áreas, 40 missões, nenhuma sem fonte de exploração
+ou de combate identificável**: 19 explorações/sem fase direta e 21 missões
+com reconstrução ou derivação de batalha. Áreas: 703, 705, 707, 709, 6193,
+721, 704, 906, 720 e 913. As duas áreas 720/913 **não** estão vinculadas a
+um run original de 2016 e não devem ser antecipadas.
+
+O pacote de Orbonne tem 3 explorações com encontros e 5 batalhas deriváveis;
+os drops de Auracite Shard estão descritos em todas as 8 missões e a troca
+900105 está catalogada com 15 linhas. Nenhuma ação modificou o save.
+
+### Falha reproduzida e correção: evento sazonal no replay manual
+
+`gacha_rotation.holidays_enabled()` já desativa a rotação de feriados
+reais no replay manual. `event_archive.weekly_events()` contudo ainda
+submetia cada run sazonal de `HOLIDAY_EVENTS` ao feriado do **calendário
+real**, em vez de sobrepor o run original à semana histórica escolhida.
+O resultado reproduzido foi **ausência de Dread Frost Arrives (área 906)**
+na seleção de 29/12/2016, mesmo com 3 missões e início em 30/12 no arquivo
+histórico. Correção pontual: quando existe janela histórica manual, o run
+sazonal segue a mesma regra de sobreposição das demais áreas. A rotação
+sazonal automática permanece inalterada.
+
+Com a correção, a área 906 abre nas semanas históricas 26, 27 e 28 (o
+último dia do período catalogado é 12/01/2017), e não na semana 25.
+
+### Falha reproduzida e correção: Orbonne aberta após encerrar
+
+`content/event_runs.json` incluía `2016-09-30` a `2016-10-19` no período
+de **missões** de Orbonne, confundindo o prazo de resgate/troca com
+período de batalha. O registro contemporâneo da comunidade estabelece
+batalhas até **14/10/2016 00:59 PDT** (última data civil 13/10) e claim
+até **18/10/2016 00:59 PDT**. Corrigido o fim da janela jogável para
+`2016-10-13`; a janela separada de 2018 é preservada. Não alteradas
+regras existentes de troca que, quando o jogador guarda a moeda, podem
+servir a loja após o evento. Esse comportamento de loja exige validação
+adicional do contrato histórico.
+
+Fontes:
+- https://www.reddit.com/r/FFBraveExvius/comments/556xad/global_event_megathread_orbonne_monastery_vaults/
+- https://finalfantasy.fandom.com/wiki/Series_event
+
+### Metadados da prévia e da vault
+
+A anotação anual foi reconciliada com os IDs confirmados pelo catálogo
+agregado e fontes de missões, mantendo avisos de **jogabilidade não
+validada no Android**. `build_history_preview.py` agora normaliza sinais
+de pontuação ao relacionar os títulos do calendário com os registros da
+vault; isso resolve o caso de `Dread Frost Arrives!` versus `Dread Frost
+Arrives` sem criar IDs auxiliares ou uma segunda lista manual.
+
+### Limites que impedem declarar conclusão de gameplay
+
+- A APK RC3 aprovada contém recursos preservados, mas não houve controle
+  do dispositivo Samsung, logo **nenhuma vitória, abertura de exploração,
+  compra na loja ou restauração de save foi observada**.
+- `EXVIUS_EVENT_RUN_QUESTS_TABLE` ainda é `0` por padrão: o filtro
+  do Vortex pode impedir missões futuras, mas a tabela nativa do cliente
+  pode mostrá-las antes da época correta. Ativar globalmente sem teste
+  no Android seria um risco de regressão já documentado no README.
+- Datas de introdução individuais das oito missões de Orbonne são
+  ausentes da tabela de update history, embora as oito apareçam na
+  MST preservada. Recompensas de 2018 não foram declaradas originais.
+- Demons Unleashed, Lands of Plenty e outros sem área identificada
+  continuam pendentes de dados originais. Não inventar encontros.
+- A Frosty Offensive tem conteúdo de Chamber of Challenges (905),
+  mas não equivalência comprovada ao raid completo de 2016.
+- Nenhuma mudança destes patches é aplicada à RC3 congelada sem nova
+  APK candidata assinada e teste posterior em Android real.

@@ -34,7 +34,9 @@ def vault_2016_calendar(note: Path) -> list[dict]:
         # Strip only Markdown emphasis; retain the source's terminology.
         name = name.replace('**', '').split(' · ', 1)[0].strip()
         label = 'Trial' if symbol == 'Swords' else 'Evento'
-        matching = [description for title, description in availability if title.casefold() in name.casefold()]
+        normalized_name = re.sub(r'[\W_]+', ' ', name.casefold()).strip()
+        matching = [description for title, description in availability
+                    if re.sub(r'[\W_]+', ' ', title.casefold()).strip() in normalized_name]
         status = matching[0] if matching else 'Disponibilidade no Revival não verificada'
         collected.append({'date': when, 'name': name[:240], 'kind': label,
                           'availability': status[:240]})

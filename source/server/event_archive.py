@@ -184,6 +184,10 @@ def weekly_events(rows=None, now=None):
             except ValueError:
                 pass
         full_runs = bool(win and history_runs.enabled())
+        # A fixed manual history has no real-calendar holiday rotation.
+        # Seasonal Global runs must therefore follow their ORIGINAL dates,
+        # exactly as non-holiday events do (e.g. Dread Frost in Dec 2016).
+        manual_history = bool(win and replay.manual_enabled())
         if not released and not (full_runs and history_runs.event_runs(row)):
             extra.append(row)        # undated: the random weekly few (content/event_runs.json dates some)
             continue
@@ -195,7 +199,8 @@ def weekly_events(rows=None, now=None):
                 return next((name for day, name in holiday.items() if abs((day - start).days) <= 3), None)
             opened = [start for start, last in history_runs.event_runs(row)
                       if (summons['holiday'] == holiday_name(start) and start.isoformat()[:4] in summons['years']
-                          if holiday_name(start) else history_runs.overlaps((start, last), earliest, win['to']))]
+                          if holiday_name(start) and not manual_history
+                          else history_runs.overlaps((start, last), earliest, win['to']))]
             if opened:
                 run = max(opened).isoformat()
                 if str(row.get('area')) in history_runs.OPEN_ENDED:
@@ -209,7 +214,7 @@ def weekly_events(rows=None, now=None):
             continue
         opened = [run for run in released
                   if (summons['holiday'] == holiday[run] and run.isoformat()[:4] in summons['years']
-                      if run in holiday else
+                      if run in holiday and not manual_history else
                       any(timedelta(days=-3) <= run - d <= timedelta(days=13) for d in dates)
                       or (win and earliest <= run < win['to']))]
         if opened:

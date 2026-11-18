@@ -38,6 +38,12 @@ class PreviewTests(unittest.TestCase):
                             for item in september['calendar']['items']))
         self.assertEqual(self.index.summary(date(2016,6,30),1)['calendar']['total'],0)
 
+    def test_2016_dread_frost_punctuation_does_not_hide_recovery_status(self):
+        week = self.index.summary(date(2016, 6, 30), 26)
+        matches = [row for row in week['calendar']['items'] if 'Dread Frost' in row['name']]
+        self.assertEqual(len(matches), 1)
+        self.assertIn('Área 906', matches[0]['availability'])
+
     def test_invalid_week_and_source_are_rejected(self):
         self.assertTrue(self.index.summary(date(2016,6,30),434)['available'])
         for week in (-1,435,500,'1',True):
