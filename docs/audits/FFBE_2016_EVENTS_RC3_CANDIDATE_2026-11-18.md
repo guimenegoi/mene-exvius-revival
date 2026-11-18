@@ -73,3 +73,47 @@ sem o teste Android documentado na auditoria.
 
 **Rollback:** a APK anterior `FFBE-Revival-RC3-Manual2016-ARM64-FIELD-20261118.apk`
 continua íntegra na distribuição privada, sem modificações.
+
+## Correção de empacotamento: falha ao instalar no Samsung
+
+A primeira candidata `Events2016-ARM64-TEST` falhou ao instalar. O diagnóstico
+comparativo identificou que o uso de `zipalign -f 4` (sem `-p`) havia
+eliminado o alinhamento de página das bibliotecas `.so` armazenadas sem
+compressão. A RC3 aprovada tinha **8/8** bibliotecas com offset múltiplo de
+4096 bytes; a candidata falha tinha **0/8**. Isso é uma causa compatível
+com a rejeição de instalação, embora o erro exato do PackageInstaller
+não tenha sido capturado.
+
+Corrigido reutilizando o APK unsigned byte-pinned e `zipalign -f -p 4`,
+seguido de assinatura com a **mesma chave** da RC3. Não houve alterações de
+código-fonte, de gameplay, de save ou da APK aprovada nessa correção.
+
+**APK substituta (única a testar):**
+
+`https://proxmox.tailcf6a16.ts.net:8443/candidates/FFBE-Revival-RC3-Manual2016-Events2016-ARM64-PageAligned-TEST-20261118.apk`
+
+**SHA-256:** `1ace63be6cc7f9124921176fc891099313a92667c2e69495e9f307e85dbdfd0c`
+**Tamanho:** `310434748` bytes.
+
+### Verificação antes/depois
+
+| Artefato | Bibliotecas .so alinhadas a 4096 B | Resultado |
+|---|---:|---|
+| RC3 de campo aprovada | 8/8 | Instalou no Samsung |
+| Events2016 TEST original | 0/8 | Rejeitada pelo instalador |
+| Events2016 PageAligned TEST | 8/8 | Verificações estáticas aprovadas; falta instalação no aparelho |
+
+- `zipalign -c -p 4` passou;
+- assinaturas v1/v2/v3 verificadas;
+- SHA-256 do certificado: `1e08a903aef9c3a721510b64ec764d01d3d094eb954161b62544ea8f187b5953`, igual ao da RC3;
+- package `com.square_enix.android_googleplay.FFBEWW`, versão 9101,
+  ABI ARM64 preservados;
+- o único payload diferente da RC3 aprovada permanece sendo
+  `assets/ffbe_python/stdlib.zip`;
+- os **3302 payloads não-META-INF** da APK defeituosa e corrigida são
+  idênticos; foram modificados apenas offsets de ZIP e assinatura;
+- servidor HTTPS privado retornou HTTP 200 e Content-Length exato.
+
+**Não reinstalar a versão anterior defeituosa.** A versão corrigida ainda
+não recebeu confirmação de instalação no Android físico; nunca desinstalar
+o aplicativo atual nem limpar dados para testar.
