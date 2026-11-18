@@ -19,6 +19,7 @@ class Catalogue:
         self.path = Path(path)
         self.banners = []
         self.events = []
+        self.calendar = []
         try:
             if self.path.is_symlink() or self.path.stat().st_size > MAX_INDEX:
                 raise ValueError('Unsafe historical preview index')
@@ -43,16 +44,28 @@ class Catalogue:
                         if start > end:
                             raise ValueError('Inverted historical preview interval')
                 setattr(self, group, rows)
+            calendar = document.get('calendar', [])
+            if not isinstance(calendar, list) or len(calendar) > 1000:
+                raise ValueError('Invalid Global chronology')
+            for row in calendar:
+                if (not isinstance(row, dict) or set(row) != {'date', 'name', 'kind', 'availability'}
+                        or any(not isinstance(row[key], str) or len(row[key]) > 240
+                               for key in row)
+                        or row['kind'] not in ('Evento', 'Trial')):
+                    raise ValueError('Invalid Global chronology entry')
+                date.fromisoformat(row['date'])
+            self.calendar = calendar
         except (OSError, ValueError, KeyError, TypeError, UnicodeError):
             self.banners = []
             self.events = []
+            self.calendar = []
             self.available = False
         else:
             self.available = True
 
     def summary(self, start: date, week: int) -> dict:
         if not self.available:
-            return {'available': False, 'banners': [], 'events': [], 'range': ''}
+            return {'available': False, 'banners': [], 'events': [], 'calendar': [], 'range': ''}
         if type(week) is not int or not 0 <= week <= 434 or start < date(2016, 6, 30):
             raise ValueError('Invalid historical period')
         begin = start + timedelta(weeks=week)
@@ -75,5 +88,12 @@ class Catalogue:
                 {'name': row['name'], 'kind': row['kind'], 'estimated': row['estimated']}
                 for row in found[:MAX_VISIBLE]]}
 
+        # The vault chronology provides release dates, not full activity
+        # periods. A date within the chosen week means a debut, not proof
+        # that a later week still contained the event.
+        new_entries = sorted((row for row in self.calendar
+                              if begin <= date.fromisoformat(row['date']) <= end),
+                             key=lambda row: (row['date'], row['name']))
         return {'available': True, 'range': f'{begin:%d/%m/%Y}–{end:%d/%m/%Y}',
-                'banners': group(self.banners), 'events': group(self.events)}
+                'banners': group(self.banners), 'events': group(self.events),
+                'calendar': {'total': len(new_entries), 'items': new_entries[:MAX_VISIBLE]}}

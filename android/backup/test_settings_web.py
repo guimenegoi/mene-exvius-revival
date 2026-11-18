@@ -89,6 +89,13 @@ class SettingsWebTests(unittest.TestCase):
         self.assertEqual(data['range'],'07/07/2016–13/07/2016')
         self.assertEqual(data['banners']['total'],1)
         self.assertIn('Kefka',data['banners']['items'][0]['name'])
+        self.assertIn('calendar',data)
+        august_status,august_body,_,_,_=self.request('GET','/history-preview?start=2016-06-30&week=4')
+        self.assertEqual(august_status,200)
+        august=json.loads(august_body)
+        self.assertEqual(august['calendar']['total'],1)
+        self.assertEqual(august['events']['total'],0)
+        self.assertIn('Demons Unleashed',august['calendar']['items'][0]['name'])
         self.assertEqual(config_service.get(self.store,self.app.device),None)
         for invalid in ('week=-1','week=999','week=1&week=2','week=evil'):
             status,_,_,_,_=self.request('GET','/history-preview?start=2016-06-30&'+invalid)
@@ -99,10 +106,13 @@ class SettingsWebTests(unittest.TestCase):
         status,body,_,_,security=self.request('GET','/')
         self.assertEqual(status,200)
         self.assertIn('id="history-period-preview"',body)
+        self.assertIn('Estreias no calendário Global',body)
+        self.assertIn('Eventos no acervo Revival',body)
         self.assertIn('<script>'+web.PREVIEW_JS+'</script>',body)
         self.assertIn("'sha256-"+web.PREVIEW_HASH+"'",security['Content-Security-Policy'])
         self.assertIn("connect-src 'self'",security['Content-Security-Policy'])
-        self.assertIn('textContent = item.name',web.PREVIEW_JS)
+        self.assertIn('li.textContent = key ===',web.PREVIEW_JS)
+        self.assertIn('item.name',web.PREVIEW_JS)
         self.assertNotIn('innerHTML',web.PREVIEW_JS)
 
     def test_authenticated_pair_code_and_one_time_app_claim(self):

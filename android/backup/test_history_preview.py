@@ -25,6 +25,19 @@ class PreviewTests(unittest.TestCase):
                          'Kefka, Golbez, Chizuru Featured Summon')
         self.assertGreater(self.index.summary(date(2016,6,30),3)['banners']['total'],0)
 
+    def test_vault_2016_debuts_remain_distinct_from_playable_events(self):
+        august=self.index.summary(date(2016,6,30),4)
+        self.assertEqual(august['calendar']['total'],1)
+        entry=august['calendar']['items'][0]
+        self.assertEqual(entry['date'],'2016-08-01')
+        self.assertEqual(entry['name'],'Demons Unleashed')
+        self.assertIn('Não localizada',entry['availability'])
+        self.assertEqual(august['events']['total'],0)
+        september=self.index.summary(date(2016,6,30),13)
+        self.assertTrue(any('Orbonne Monastery Vaults' in item['name']
+                            for item in september['calendar']['items']))
+        self.assertEqual(self.index.summary(date(2016,6,30),1)['calendar']['total'],0)
+
     def test_invalid_week_and_source_are_rejected(self):
         self.assertTrue(self.index.summary(date(2016,6,30),434)['available'])
         for week in (-1,435,500,'1',True):

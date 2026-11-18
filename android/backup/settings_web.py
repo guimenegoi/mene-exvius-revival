@@ -102,7 +102,7 @@ PREVIEW_JS = """
   async function refresh() {
     const serial = ++revision;
     box.querySelector('[data-preview-status]').textContent = 'Consultando calendário histórico…';
-    for (const key of ['banners', 'events']) box.querySelector('[data-preview-list="' + key + '"]').replaceChildren();
+    for (const key of ['banners', 'events', 'calendar']) box.querySelector('[data-preview-list="' + key + '"]').replaceChildren();
     const args = new URLSearchParams({week: select.value, start: start.value});
     try {
       const response = await fetch('/history-preview?' + args, {credentials: 'same-origin', cache: 'no-store'});
@@ -111,18 +111,23 @@ PREVIEW_JS = """
       if (serial !== revision) return;
       if (!content.available) throw Error('Calendário não disponível');
       box.querySelector('[data-preview-status]').textContent = 'Período ' + content.range + ' · Prévia, sem salvar';
-      for (const key of ['banners', 'events']) {
+      for (const key of ['banners', 'events', 'calendar']) {
         const section = content[key];
         box.querySelector('[data-preview-count="' + key + '"]').textContent = String(section.total);
         const target = box.querySelector('[data-preview-list="' + key + '"]');
         if (section.total === 0) {
           const li = document.createElement('li');
-          li.textContent = 'Nenhum registro temporário para este período';
+          li.textContent = key === 'calendar'
+            ? 'Nenhuma estreia de evento ou trial registrada nesta semana'
+            : 'Nenhum evento temporário identificado no acervo nesta semana';
           target.append(li);
         }
         for (const item of section.items) {
           const li = document.createElement('li');
-          li.textContent = item.name + (item.estimated ? ' · duração estimada' : '');
+          li.textContent = key === 'calendar'
+            ? (item.date.slice(8, 10) + '/' + item.date.slice(5, 7) + ' · ' + item.kind
+               + ' — ' + item.name + ' · ' + item.availability)
+            : item.name + (item.estimated ? ' · duração estimada' : '');
           target.append(li);
         }
         if (section.total > section.items.length) {
@@ -319,10 +324,13 @@ def field_html(item: tuple, saved: dict) -> str:
                     '<p data-preview-status>Selecione um período para consultar os conteúdos históricos.</p>'
                     '<h3>Banners <span data-preview-count="banners"></span></h3>'
                     '<ul data-preview-list="banners"></ul>'
-                    '<h3>Eventos temporários <span data-preview-count="events"></span></h3>'
+                    '<h3>Estreias no calendário Global <span data-preview-count="calendar"></span></h3>'
+                    '<ul data-preview-list="calendar"></ul>'
+                    '<h3>Eventos no acervo Revival <span data-preview-count="events"></span></h3>'
                     '<ul data-preview-list="events"></ul>'
-                    '<small>Prévia do arquivo Global; eventos permanentes não entram na lista. '
-                    'O conteúdo real pode variar conforme o save e as regras do jogo.</small></section>')
+                    '<small>As estreias vêm da cronologia da vault e não comprovam que o evento '
+                    'esteja jogável. A nota registra datas de início, não necessariamente seu término. '
+                    'O acervo é consultado separadamente; conteúdos permanentes não são listados.</small></section>')
     elif kind == "replay_mode":
         options = [("", "Padrão · Manual (não avança sozinho)"), ("manual", "Manual — só muda quando eu escolher"),
                    ("automatic", "Automática — avança com o tempo")]

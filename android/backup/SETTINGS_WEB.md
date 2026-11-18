@@ -123,3 +123,38 @@ data de encerramento confirmada. Essas estimativas são identificadas na UI.
 Em caso de índice ausente ou inválido, o seletor de datas continua funcional.
 
 A RC3 Android `android-rc3-manual2016-field-20261118` não é modificada.
+
+## Diferença entre cronologia Global e eventos recuperados (18/11/2026)
+
+A prévia apresenta separadamente:
+
+- **Estreias no calendário Global:** somente eventos e trials com data de
+  início publicada na anotação anual da vault. A nota de 2016 é
+  `B04 INTERESSES/REGISTROS/Jogos/Anotações/notas-ffbe-global-cronologia-de-eventos-e-banners-2016.md`.
+  A data de estreia **não garante atividade durante toda a semana** e
+  tampouco garante que o conteúdo esteja disponível na APK. Quando a nota
+  inclui uma correspondência de disponibilidade, o texto é exibido sem
+  promovê-la à categoria de evento jogável.
+- **Eventos no acervo Revival:** períodos de eventos temporários recuperados
+  em `event_archive.json` e `history_runs`, sem provas de funcionamento de
+  cada missão no cliente Android.
+
+A cronologia de 2016 informa 20 estreias de eventos/trials que o índice
+anterior não exibiu como parte do calendário original, incluindo Demon
+Chimera (14/07), Demons Unleashed (01/08), Into the Abyss (19/08) e
+Orbonne Monastery Vaults (30/09). A nota original explicita que alguns
+não foram localizados no catálogo preservado ou existem apenas como reprises.
+
+O gerador lê a nota **apenas ao construir** o índice e incorpora somente
+nome, data, categoria e a descrição já registrada de disponibilidade:
+
+```
+python3 android/backup/build_history_preview.py source/server \
+  android/backup/history_preview_index.json \
+  '/workspace/vaults/obsidian-pessoal/B04 INTERESSES/REGISTROS/Jogos/Anotações/notas-ffbe-global-cronologia-de-eventos-e-banners-2016.md'
+```
+
+A nota da vault não é editada nem disponibilizada na web; a página recebe
+somente a seleção limitada à semana via endpoint autenticado. Os demais
+anos continuam dependentes do catálogo do projeto até suas respectivas
+anotações serem reconciliadas. A release Android congelada não muda.

@@ -6,11 +6,42 @@ intervals are derived using the game's history_runs rather than hand-entered.
 """
 from __future__ import annotations
 import json
+import re
 import sys
 from pathlib import Path
 
 
-def build(source: Path) -> dict:
+def vault_2016_calendar(note: Path) -> list[dict]:
+    """Extract only dated event/trial entries, never infer when they ended.
+
+    Availability wording comes from the vault's separate preservation table.
+    The original note is read at index-generation time, not served at runtime.
+    """
+    contents = Path(note).read_text('utf-8')
+    main = contents.split('## Disponibilidade dos eventos de 2016 no Offline', 1)[0]
+    table = contents.split('## Disponibilidade dos eventos de 2016 no Offline', 1)[-1]
+    availability = []
+    for row in table.splitlines():
+        columns = [item.strip() for item in row.strip().strip('|').split('|')]
+        if len(columns) == 3 and re.fullmatch(r'2016-\d{2}-\d{2}', columns[0]):
+            availability.append((columns[1], columns[2]))
+    collected = []
+    for row in main.splitlines():
+        match = re.match(r'^- \*\*(2016-\d\d-\d\d)\*\* · :Li(CalendarDays|Swords): (?:Evento|Trial) — (.+)$', row)
+        if not match:
+            continue
+        when, symbol, name = match.groups()
+        # Strip only Markdown emphasis; retain the source's terminology.
+        name = name.replace('**', '').split(' · ', 1)[0].strip()
+        label = 'Trial' if symbol == 'Swords' else 'Evento'
+        matching = [description for title, description in availability if title.casefold() in name.casefold()]
+        status = matching[0] if matching else 'Disponibilidade no Revival não verificada'
+        collected.append({'date': when, 'name': name[:240], 'kind': label,
+                          'availability': status[:240]})
+    return collected
+
+
+def build(source: Path, vault_2016: Path | None = None) -> dict:
     source = Path(source).resolve()
     sys.path.insert(0, str(source))
     try:
@@ -19,6 +50,8 @@ def build(source: Path) -> dict:
         from gacha_archive import permanent
         from gacha_rotation import _kind
         out = {'schema': 1, 'banners': [], 'events': []}
+        if vault_2016 is not None:
+            out['calendar'] = vault_2016_calendar(vault_2016)
         seen = set()
         for filename in ('gacha_community.json', 'gacha_authored.json', 'gacha_named.json',
                          'gacha_deals.json', 'gacha_catalogue.json', 'gacha_raids.json'):
@@ -68,9 +101,10 @@ def build(source: Path) -> dict:
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        raise SystemExit('usage: build_history_preview.py SOURCE_DIR OUTPUT_JSON')
+    if len(sys.argv) not in (3, 4):
+        raise SystemExit('usage: build_history_preview.py SOURCE_DIR OUTPUT_JSON [VAULT_2016_NOTE]')
     output = Path(sys.argv[2])
-    contents = json.dumps(build(Path(sys.argv[1])), ensure_ascii=False, separators=(',', ':'))
+    contents = json.dumps(build(Path(sys.argv[1]), Path(sys.argv[3]) if len(sys.argv) == 4 else None),
+                          ensure_ascii=False, separators=(',', ':'))
     output.write_text(contents + '\n', encoding='utf-8')
     print('PREVIEW_INDEX', output, len(contents), 'bytes')
